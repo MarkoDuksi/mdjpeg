@@ -1,0 +1,45 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"array": "cpp",
+			"*.tcc": "cpp",
+			"memory": "cpp",
+			"istream": "cpp",
+			"ranges": "cpp",
+			"functional": "cpp",
+			"tuple": "cpp",
+			"utility": "cpp",
+			"__functional_base": "cpp",
+			"locale": "cpp",
+			"vector": "cpp",
+			"atomic": "cpp",
+			"cstdint": "cpp",
+			"__atomic": "cpp",
+			"cstring": "cpp",
+			"__atomic_generated": "cpp",
+			"__string": "cpp",
+			"string_view": "cpp",
+			"deque": "cpp",
+			"string": "cpp",
+			"unordered_map": "cpp"
+		},
+		"C_Cpp.default.includePath": [
+			"include"
+		],
+		"makefile.launchConfigurations": [
+			{
+				"cwd": "/home/dule/Wrk/C++/mdjpeg/",
+				"binaryPath": "/home/dule/Wrk/C++/mdjpeg/bin/debug/main.out",
+				"binaryArgs": [
+					"input/label_TURNED_OVER/1"
+				]
+			}
+		],
+		"makefile.phonyOnlyTargets": true
+	}
+}

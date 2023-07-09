@@ -1,0 +1,6 @@
+.deps
+obj
+bin
+output*
+input
+*.nogit
