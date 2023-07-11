@@ -3,15 +3,17 @@
 #include "stdint.h"
 
 #include <iostream>
-
+#include <optional>
 
 // marker values from: https://github.com/dannye/jed/blob/master/src/jpg.h
-enum class StateID {
-    // Custom states
-    ENTRY = 0, // Inital state
-    EXIT_OK = 1, // Valid final state
-    ERROR = 2, // Invalid final state
+enum class StateID : uint16_t {
+    // custom final states
+    EXIT_OK = 0, // Valid final state
+    ERROR_PEOB = 1, // Premature End of Buffer Error
+    ERROR_UUM = 2, // Unexpected or Unrecognized Marker
 
+    // custom transient states
+    ENTRY = 10, // Inital state
 
     // Start of Frame, non-differential, Huffman coding
     SOF0 = 0xffc0, // Baseline DCT
@@ -110,14 +112,19 @@ class Jpeg {
         uint8_t* m_buff_current;
         uint8_t* m_buff_end;
 
+        size_t size_remaining() const noexcept;
+        bool seek(size_t rel_pos) noexcept;
+        std::optional<uint8_t> peek(size_t rel_pos = 0) const noexcept;
+        std::optional<uint8_t> read_uint8() noexcept;
+        std::optional<uint16_t> read_uint16() noexcept;
+
     public:
-        Jpeg(uint8_t* buff, size_t size);
+        Jpeg(uint8_t* buff, size_t size) noexcept;
 
-        size_t size_remaining();
-        uint8_t read_uint8();
-        uint16_t read_uint16();
+        StateID parse_header();
 
-        void parse_header();
+        template <StateID ANY>
+        friend class SpecState;
 };
 
 
@@ -126,18 +133,22 @@ class State {
         Jpeg* m_context;
 
     public:
-        State(Jpeg* context);
+        State(Jpeg* context) noexcept;
+
+        bool is_final() const noexcept;
+
         virtual ~State();
-        virtual State* parse() = 0;
-        virtual StateID getID() = 0;
+        virtual State* parse_header() const = 0;
+        virtual StateID getID() const noexcept = 0;
 };
 
 
 template <StateID sID>
-class SpecState : public State {
+class SpecState final : public State {
     private:
         StateID m_id;
-        SpecState(Jpeg* context) :
+
+        SpecState(Jpeg* context) noexcept :
             State(context),
             m_id(sID)
             {}
@@ -146,34 +157,40 @@ class SpecState : public State {
         SpecState(const SpecState& other) = delete;
         SpecState& operator=(const SpecState& other) = delete;
 
-        StateID getID() override {
-
+        StateID getID() const noexcept override {
             return m_id;
         }
 
-        static SpecState* get(Jpeg* context) {
+        static SpecState* get(Jpeg* context) noexcept {
             static SpecState<sID> instance(context);
 
             return &instance;
         }
-        State* parse() override;
+        
+        State* parse_header() const override;
 };
 
 
 template<>
-State* SpecState<StateID::ENTRY>::parse();
+State* SpecState<StateID::ENTRY>::parse_header() const;
 
 template<>
-State* SpecState<StateID::SOI>::parse();
+State* SpecState<StateID::SOI>::parse_header() const;
 
 template<>
-State* SpecState<StateID::APP0>::parse();
+State* SpecState<StateID::APP0>::parse_header() const;
 
 template<>
-State* SpecState<StateID::EOI>::parse();
+State* SpecState<StateID::DQT>::parse_header() const;
 
 template<>
-State* SpecState<StateID::EXIT_OK>::parse();
+State* SpecState<StateID::EOI>::parse_header() const;
 
 template<>
-State* SpecState<StateID::ERROR>::parse();
+State* SpecState<StateID::EXIT_OK>::parse_header() const;
+
+template<>
+State* SpecState<StateID::ERROR_PEOB>::parse_header() const;
+
+template<>
+State* SpecState<StateID::ERROR_UUM>::parse_header() const;

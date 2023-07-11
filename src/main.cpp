@@ -56,19 +56,21 @@ int main(int argc, char** argv) {
     for (size_t i = 0; i < 4; ++i) {
         auto file_path = input_paths[i];
 
-        std::cout << "processing image: " << file_path << "\n";
+        std::cout << "\nprocessing image: " << file_path << "\n";
 
         auto [raw_jpeg, size] = read_raw_jpeg_from_file(file_path);
         uint8_t* buff = raw_jpeg;
 
-        // for (size_t j = 0; j < 10; ++j) {
-        //     std::cout << std::hex << static_cast<uint>(read_uint8(buff)) << " ";
-        // }
-        // std::cout << std::endl;
-
         Jpeg jpeg(buff, size);
-        jpeg.parse_header();
-        std::cout << "\n";
+        StateID final_state_ID = jpeg.parse_header();
+        
+        const char *final_states[] = {
+            "EXIT_OK",
+            "ERROR_PEOB",
+            "ERROR_UUM"
+        };
+
+        std::cout << "Final state: " << final_states[static_cast<size_t>(final_state_ID)] << "\n";
 
         delete[] raw_jpeg;
     }

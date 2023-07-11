@@ -1,144 +1,201 @@
 #include "mdjpeg.h"
 
 
+////////////////
+// Jpeg private:
+size_t Jpeg::size_remaining() const noexcept {
+    return m_buff_end - m_buff_current;
+}
+
+bool Jpeg::seek(size_t rel_pos) noexcept {
+    if (rel_pos < size_remaining()) {
+        m_buff_current += rel_pos;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+std::optional<uint8_t> Jpeg::peek(size_t rel_pos) const noexcept {
+    if (rel_pos < size_remaining()) {
+        return *(m_buff_current + rel_pos);
+    }
+    else {
+        return {};
+    }
+}
+
+std::optional<uint8_t> Jpeg::read_uint8() noexcept {
+    if (size_remaining() > 0) {
+        return *(m_buff_current++);
+    }
+    else {
+        return {};
+    }
+}
+
+std::optional<uint16_t> Jpeg::read_uint16() noexcept {
+    if (size_remaining() >= 2) {
+        uint16_t result = *m_buff_current << 8 | *(m_buff_current + 1);
+        m_buff_current += 2;
+        return result;
+    }
+    else {
+        return {};
+    }
+}
+
 // Jpeg public:
-Jpeg::Jpeg(uint8_t *buff, size_t size) :
+Jpeg::Jpeg(uint8_t *buff, size_t size) noexcept :
     m_state(SpecState<StateID::ENTRY>::get(this)),
     m_buff_start(buff),
     m_buff_current(buff),
     m_buff_end(buff + size)
     {}
 
-size_t Jpeg::size_remaining() {
-    return m_buff_end - m_buff_current;
-}
-
-uint8_t Jpeg::read_uint8() {
-    return *(m_buff_current++);
-}
-
-uint16_t Jpeg::read_uint16() {
-    return read_uint8() << 8 | read_uint8();
-}
-
-void Jpeg::parse_header() {
-    while (m_state->getID() != StateID::EXIT_OK && m_state->getID() != StateID::ERROR) {
-        m_state = m_state->parse();
+StateID Jpeg::parse_header() {
+    while (!m_state->is_final()) {
+        m_state = m_state->parse_header();
     }
-    if (m_state->getID() == StateID::EXIT_OK) {
-        std::cout << "Finished in EXIT_OK state\n";
-    }
-    else {
-        std::cout << "Finished in ERROR state\n";
-    }
+
+    return m_state->getID();
 }
 
 
+
+
+////////////////
 // State public:
-State::State(Jpeg* context) :
+State::State(Jpeg* context) noexcept :
     m_context(context)
     {}
+
+bool State::is_final() const noexcept {
+    return getID() < StateID::ENTRY;
+}
 
 State::~State() {}
 
 
-// SpecState dependent behaviour:
+
+
+////////////////////
+// SpecState public:
 template<>
-State* SpecState<StateID::ENTRY>::parse() {
+State* SpecState<StateID::ENTRY>::parse_header() const {
     std::cout << "Entered state ENTRY\n";
-    uint16_t next;
 
-    if (m_context->size_remaining() >= 2) {
-        next = m_context->read_uint16();
-    }
-    else {
-        std::cout << "Premature end of buffer\n";
+    auto next_marker = m_context->read_uint16();
 
-        return SpecState<StateID::ERROR>::get(m_context);
+    if (!next_marker) {
+        return SpecState<StateID::ERROR_PEOB>::get(m_context);
     }
 
-    if (next == static_cast<uint16_t>(StateID::SOI)) {
-        std::cout << "Found marker: SOI\n";
+    switch (static_cast<StateID>(*next_marker)) {
+        case StateID::SOI:
+            std::cout << "Found marker: SOI\n";
+            return SpecState<StateID::SOI>::get(m_context);
 
-        return SpecState<StateID::SOI>::get(m_context);
-    }
-    else {
-        std::cout << "Unsupported/unrecognized marker: " << std::hex << next << "\n";
-
-        return SpecState<StateID::ERROR>::get(m_context);
+        default:
+            std::cout << "Unexpected or unrecognized marker: " << std::hex << *next_marker << "\n";
+            return SpecState<StateID::ERROR_UUM>::get(m_context);
     }
 }
 
 template<>
-State* SpecState<StateID::SOI>::parse(){
+State* SpecState<StateID::SOI>::parse_header() const {
     std::cout << "Entered state SOI\n";
-    uint16_t next;
 
-    if (m_context->size_remaining() >= 2) {
-        next = m_context->read_uint16();
-    }
-    else {
-        std::cout << "Premature end of buffer\n";
+    auto next_marker = m_context->read_uint16();
 
-        return SpecState<StateID::ERROR>::get(m_context);
-    }
+    switch (static_cast<StateID>(*next_marker)) {
+        case StateID::APP0:
+            std::cout << "Found marker: APP0\n";
+            return SpecState<StateID::APP0>::get(m_context);
 
-    if (next == static_cast<uint16_t>(StateID::APP0)) {
-        std::cout << "Found marker: APP0\n";
-
-        return SpecState<StateID::APP0>::get(m_context);
-    }
-    else {
-        std::cout << "Unsupported/unrecognized marker: " << std::hex << next << "\n";
-
-        return SpecState<StateID::ERROR>::get(m_context);
+        default:
+            std::cout << "Unexpected or unrecognized marker: " << std::hex << *next_marker << "\n";
+            return SpecState<StateID::ERROR_UUM>::get(m_context);
     }
 }
 
 template<>
-State* SpecState<StateID::APP0>::parse() {
+State* SpecState<StateID::APP0>::parse_header() const {
     std::cout << "Entered state APP0\n";
-    uint16_t next;
 
-    if (m_context->size_remaining() >= 2) {
-        next = m_context->read_uint16();
-    }
-    else {
-        std::cout << "Premature end of buffer\n";
+    auto size = m_context->read_uint16();
 
-        return SpecState<StateID::ERROR>::get(m_context);
+    if (!size || !m_context->seek(*size - 2)) {
+        return SpecState<StateID::ERROR_PEOB>::get(m_context);
     }
 
-    if (next == 0x10) {
-        std::cout << "Found: 0x10\n";
+    auto next_marker = m_context->read_uint16();
 
-        return SpecState<StateID::EOI>::get(m_context);
+    if (!next_marker) {
+        return SpecState<StateID::ERROR_PEOB>::get(m_context);
     }
-    else {
-        std::cout << "Unsupported marker: 0x" << std::hex << next << "\n";
 
-        return SpecState<StateID::ERROR>::get(m_context);
+    switch (static_cast<StateID>(*next_marker)) {
+        case StateID::DQT:
+            std::cout << "Found marker: DQT\n";
+            return SpecState<StateID::DQT>::get(m_context);
+
+        default:
+            std::cout << "Unexpected or unrecognized marker: " << std::hex << *next_marker << "\n";
+            return SpecState<StateID::ERROR_UUM>::get(m_context);
     }
 }
 
 template<>
-State* SpecState<StateID::EOI>::parse() {
+State* SpecState<StateID::DQT>::parse_header() const {
+    std::cout << "Entered state DQT\n";
+
+    auto size = m_context->read_uint16();
+
+    if (!size || !m_context->seek(*size - 2)) {
+        return SpecState<StateID::ERROR_PEOB>::get(m_context);
+    }
+
+    auto next_marker = m_context->read_uint16();
+
+    if (!next_marker) {
+        return SpecState<StateID::ERROR_PEOB>::get(m_context);
+    }
+
+    switch (static_cast<StateID>(*next_marker)) {
+        case StateID::DQT:
+            std::cout << "Found marker: DQT\n";
+            return SpecState<StateID::DQT>::get(m_context);
+
+        case StateID::DHT:
+            std::cout << "Found marker: DHT\n";
+            return SpecState<StateID::EXIT_OK>::get(m_context);
+
+        default:
+            std::cout << "Unexpected or unrecognized marker: " << std::hex << *next_marker << "\n";
+            return SpecState<StateID::ERROR_UUM>::get(m_context);
+    }
+}
+
+template<>
+State* SpecState<StateID::EOI>::parse_header() const {
     std::cout << "Entered state EOI\n";
-    std::cout << "Nothing to do here\n";
 
     return SpecState<StateID::EXIT_OK>::get(m_context);
 }
 
 template<>
-State* SpecState<StateID::EXIT_OK>::parse() {
-    // sentinel valid final state
-
-    return this;
+State* SpecState<StateID::EXIT_OK>::parse_header() const {
+    return SpecState<StateID::EXIT_OK>::get(m_context);
 }
 
 template<>
-State* SpecState<StateID::ERROR>::parse() {
-    // sentinel invalid final state
+State* SpecState<StateID::ERROR_PEOB>::parse_header() const {
+    return SpecState<StateID::ERROR_PEOB>::get(m_context);
+}
 
-    return this;
+template<>
+State* SpecState<StateID::ERROR_UUM>::parse_header() const {
+    return SpecState<StateID::ERROR_UUM>::get(m_context);
 }
