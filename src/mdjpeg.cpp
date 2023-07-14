@@ -48,14 +48,14 @@ std::optional<uint16_t> Jpeg::read_uint16() noexcept {
 
 // Jpeg public:
 Jpeg::Jpeg(uint8_t *buff, size_t size) noexcept :
-    m_state(SpecState<StateID::ENTRY>::get(this)),
+    m_state(State<StateID::ENTRY>::instance(this)),
     m_buff_start(buff),
     m_buff_current(buff),
     m_buff_end(buff + size)
     {}
 
 StateID Jpeg::parse_header() {
-    while (!m_state->is_final()) {
+    while (!m_state->is_final_state()) {
         m_state = m_state->parse_header();
     }
 
@@ -66,136 +66,137 @@ StateID Jpeg::parse_header() {
 
 
 ////////////////
-// State public:
-State::State(Jpeg* context) noexcept :
-    m_context(context)
+// IState public:
+IState::IState(Jpeg* context) noexcept :
+    m_jpeg(context)
     {}
 
-bool State::is_final() const noexcept {
+IState::~IState() {}
+
+bool IState::is_final_state() const noexcept {
     return getID() < StateID::ENTRY;
 }
 
-State::~State() {}
 
 
 
 
 ////////////////////
-// SpecState public:
+// State public:
 template<>
-State* SpecState<StateID::ENTRY>::parse_header() const {
+IState* State<StateID::ENTRY>::parse_header() const {
     std::cout << "Entered state ENTRY\n";
 
-    auto next_marker = m_context->read_uint16();
+    auto next_marker = m_jpeg->read_uint16();
 
     if (!next_marker) {
-        return SpecState<StateID::ERROR_PEOB>::get(m_context);
+        return State<StateID::ERROR_PEOB>::instance(m_jpeg);
     }
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::SOI:
             std::cout << "Found marker: SOI\n";
-            return SpecState<StateID::SOI>::get(m_context);
+            return State<StateID::SOI>::instance(m_jpeg);
 
         default:
             std::cout << "Unexpected or unrecognized marker: " << std::hex << *next_marker << "\n";
-            return SpecState<StateID::ERROR_UUM>::get(m_context);
+            return State<StateID::ERROR_UUM>::instance(m_jpeg);
     }
 }
 
 template<>
-State* SpecState<StateID::SOI>::parse_header() const {
+IState* State<StateID::SOI>::parse_header() const {
     std::cout << "Entered state SOI\n";
 
-    auto next_marker = m_context->read_uint16();
+    auto next_marker = m_jpeg->read_uint16();
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::APP0:
             std::cout << "Found marker: APP0\n";
-            return SpecState<StateID::APP0>::get(m_context);
+            return State<StateID::APP0>::instance(m_jpeg);
 
         default:
             std::cout << "Unexpected or unrecognized marker: " << std::hex << *next_marker << "\n";
-            return SpecState<StateID::ERROR_UUM>::get(m_context);
+            return State<StateID::ERROR_UUM>::instance(m_jpeg);
     }
 }
 
 template<>
-State* SpecState<StateID::APP0>::parse_header() const {
+IState* State<StateID::APP0>::parse_header() const {
     std::cout << "Entered state APP0\n";
 
-    auto size = m_context->read_uint16();
+    auto size = m_jpeg->read_uint16();
 
-    if (!size || !m_context->seek(*size - 2)) {
-        return SpecState<StateID::ERROR_PEOB>::get(m_context);
+    if (!size || !m_jpeg->seek(*size - 2)) {
+        return State<StateID::ERROR_PEOB>::instance(m_jpeg);
     }
 
-    auto next_marker = m_context->read_uint16();
+    auto next_marker = m_jpeg->read_uint16();
 
     if (!next_marker) {
-        return SpecState<StateID::ERROR_PEOB>::get(m_context);
+        return State<StateID::ERROR_PEOB>::instance(m_jpeg);
     }
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::DQT:
             std::cout << "Found marker: DQT\n";
-            return SpecState<StateID::DQT>::get(m_context);
+            return State<StateID::DQT>::instance(m_jpeg);
 
         default:
             std::cout << "Unexpected or unrecognized marker: " << std::hex << *next_marker << "\n";
-            return SpecState<StateID::ERROR_UUM>::get(m_context);
+            return State<StateID::ERROR_UUM>::instance(m_jpeg);
     }
 }
 
 template<>
-State* SpecState<StateID::DQT>::parse_header() const {
+IState* State<StateID::DQT>::parse_header() const {
     std::cout << "Entered state DQT\n";
 
-    auto size = m_context->read_uint16();
+    auto size = m_jpeg->read_uint16();
 
-    if (!size || !m_context->seek(*size - 2)) {
-        return SpecState<StateID::ERROR_PEOB>::get(m_context);
+    if (!size || !m_jpeg->seek(*size - 2)) {
+        return State<StateID::ERROR_PEOB>::instance(m_jpeg);
     }
 
-    auto next_marker = m_context->read_uint16();
+    auto next_marker = m_jpeg->read_uint16();
 
     if (!next_marker) {
-        return SpecState<StateID::ERROR_PEOB>::get(m_context);
+        return State<StateID::ERROR_PEOB>::instance(m_jpeg);
     }
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::DQT:
             std::cout << "Found marker: DQT\n";
-            return SpecState<StateID::DQT>::get(m_context);
+            return State<StateID::DQT>::instance(m_jpeg);
 
         case StateID::DHT:
             std::cout << "Found marker: DHT\n";
-            return SpecState<StateID::EXIT_OK>::get(m_context);
+            return State<StateID::EXIT_OK>::instance(m_jpeg);
 
         default:
             std::cout << "Unexpected or unrecognized marker: " << std::hex << *next_marker << "\n";
-            return SpecState<StateID::ERROR_UUM>::get(m_context);
+            return State<StateID::ERROR_UUM>::instance(m_jpeg);
     }
 }
 
 template<>
-State* SpecState<StateID::EOI>::parse_header() const {
+IState* State<StateID::EOI>::parse_header() const {
     std::cout << "Entered state EOI\n";
 
-    return SpecState<StateID::EXIT_OK>::get(m_context);
+    return State<StateID::EXIT_OK>::instance(m_jpeg);
 }
 
 template<>
-State* SpecState<StateID::EXIT_OK>::parse_header() const {
-    return SpecState<StateID::EXIT_OK>::get(m_context);
+IState* State<StateID::EXIT_OK>::parse_header() const {
+    return State<StateID::EXIT_OK>::instance(m_jpeg);
 }
 
 template<>
-State* SpecState<StateID::ERROR_PEOB>::parse_header() const {
-    return SpecState<StateID::ERROR_PEOB>::get(m_context);
+IState* State<StateID::ERROR_PEOB>::parse_header() const {
+    return State<StateID::ERROR_PEOB>::instance(m_jpeg);
 }
 
 template<>
-State* SpecState<StateID::ERROR_UUM>::parse_header() const {
-    return SpecState<StateID::ERROR_UUM>::get(m_context);
+IState* State<StateID::ERROR_UUM>::parse_header() const {
+    return State<StateID::ERROR_UUM>::instance(m_jpeg);
 }
