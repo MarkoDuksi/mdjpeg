@@ -95,11 +95,11 @@ IState* State<StateID::ENTRY>::parse_header() const {
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::SOI:
-            std::cout << "Found marker: SOI\n";
+            std::cout << "Found marker: SOI (0x" << std::hex << *next_marker << ")\n";
             return State<StateID::SOI>::instance(m_jpeg);
 
         default:
-            std::cout << "Unexpected or unrecognized marker: " << std::hex << *next_marker << "\n";
+            std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
             return State<StateID::ERROR_UUM>::instance(m_jpeg);
     }
 }
@@ -110,13 +110,13 @@ IState* State<StateID::SOI>::parse_header() const {
 
     auto next_marker = m_jpeg->read_uint16();
 
-    switch (static_cast<StateID>(*next_marker)) {
-        case StateID::APP0:
-            std::cout << "Found marker: APP0\n";
-            return State<StateID::APP0>::instance(m_jpeg);
-
-        default:
-            std::cout << "Unexpected or unrecognized marker: " << std::hex << *next_marker << "\n";
+    if (static_cast<StateID>(*next_marker) >= StateID::APP0 &&
+        static_cast<StateID>(*next_marker) <= StateID::APP15) {
+        std::cout << "Found marker: APPN (0x" << std::hex << *next_marker << ")\n";
+        return State<StateID::APP0>::instance(m_jpeg);
+    }
+    else {
+            std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
             return State<StateID::ERROR_UUM>::instance(m_jpeg);
     }
 }
@@ -139,11 +139,11 @@ IState* State<StateID::APP0>::parse_header() const {
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::DQT:
-            std::cout << "Found marker: DQT\n";
+            std::cout << "Found marker: DQT (0x" << std::hex << *next_marker << ")\n";
             return State<StateID::DQT>::instance(m_jpeg);
 
         default:
-            std::cout << "Unexpected or unrecognized marker: " << std::hex << *next_marker << "\n";
+            std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
             return State<StateID::ERROR_UUM>::instance(m_jpeg);
     }
 }
@@ -166,15 +166,15 @@ IState* State<StateID::DQT>::parse_header() const {
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::DQT:
-            std::cout << "Found marker: DQT\n";
+            std::cout << "Found marker: DQT (0x" << std::hex << *next_marker << ")\n";
             return State<StateID::DQT>::instance(m_jpeg);
 
         case StateID::DHT:
-            std::cout << "Found marker: DHT\n";
+            std::cout << "Found marker: DHT (0x" << std::hex << *next_marker << ")\n";
             return State<StateID::EXIT_OK>::instance(m_jpeg);
 
         default:
-            std::cout << "Unexpected or unrecognized marker: " << std::hex << *next_marker << "\n";
+            std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
             return State<StateID::ERROR_UUM>::instance(m_jpeg);
     }
 }
