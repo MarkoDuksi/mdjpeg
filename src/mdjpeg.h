@@ -5,101 +5,107 @@
 #include <iostream>
 #include <optional>
 
-// marker values from: https://github.com/dannye/jed/blob/master/src/jpg.h
-enum class StateID : uint16_t {
-    // custom final states
-    EXIT_OK = 0, // Valid final state
-    ERROR_PEOB = 1, // Premature End of Buffer
-    ERROR_UUM = 2, // Unexpected or Unrecognized Marker
+// marker values from:
+// - https://github.com/dannye/jed/blob/master/src/jpg.h
+// - https://webdocs.cs.ualberta.ca/~jag/courses/ImProc/lectures2001/lec26/Lec26jpegCompr.PDF
 
-    // custom transient states
+enum class StateID : uint16_t {
+    // Custom final states
+    EXIT_OK    = 0, // Valid final state
+    ERROR_PEOB = 1, // Premature End of Buffer
+    ERROR_UUM  = 2, // Unexpected or Unrecognized Marker
+
+    // Custom transient states
     ENTRY = 10, // Inital state
 
-    // Start of Frame, non-differential, Huffman coding
-    SOF0 = 0xffc0, // Baseline DCT
-    SOF1 = 0xffc1, // Extended sequential DCT
-    SOF2 = 0xffc2, // Progressive DCT
-    SOF3 = 0xffc3, // Lossless (sequential)
+    // Temporary, arithmetic coding
+    TEM = 0xff01,
 
-    // Start of Frame, differential, Huffman coding
-    SOF5 = 0xffc5, // Differential sequential DCT
-    SOF6 = 0xffc6, // Differential progressive DCT
-    SOF7 = 0xffc7, // Differential lossless (sequential)
+    // Reserved from 0xff02 to 0xffbf
 
-    // Start of Frame, non-differential, arithmetic coding
-    SOF9 = 0xffc9, // Extended sequential DCT
-    SOF10 = 0xffca, // Progressive DCT
-    SOF11 = 0xffcb, // Lossless (sequential)
+    // Start of Frame
+    SOF0 = 0xffc0, // Baseline
+    SOF1 = 0xffc1, // Extended sequential
+    SOF2 = 0xffc2, // Progressive
+    SOF3 = 0xffc3, // Lossless
 
-    // Start of Frame, differential, arithmetic coding
-    SOF13 = 0xffcd, // Differential sequential DCT
-    SOF14 = 0xffce, // Differential progressive DCT
-    SOF15 = 0xffcf, // Differential lossless (sequential)
-
-    // Define Huffman Table(s)
+    // Define Huffman Tables
     DHT = 0xffc4,
 
-    // JPEG extensions
+    // Start of Frame
+    SOF5 = 0xffc5, // Sequential, differential
+    SOF6 = 0xffc6, // Progressive, differential
+    SOF7 = 0xffc7, // Lossless, differential
+
+    // Reserved
     JPG = 0xffc8,
 
-    // Define Arithmetic Coding Conditioning(s)
+    // Start of Frame
+    SOF9  = 0xffc9, // Extended sequential, arithmetic coding
+    SOF10 = 0xffca, // Progressive, arithmetic coding
+    SOF11 = 0xffcb, // Lossless, arithmetic coding
+
+    // Define Arithmetic Conditions
     DAC = 0xffcc,
 
-    // Restart Interval
-    RST0 = 0xffd0,
-    RST1 = 0xffd1,
-    RST2 = 0xffd2,
-    RST3 = 0xffd3,
-    RST4 = 0xffd4,
-    RST5 = 0xffd5,
-    RST6 = 0xffd6,
-    RST7 = 0xffd7,
+    // Start of Frame
+    SOF13 = 0xffcd, // Sequential, differential, arithmetic coding
+    SOF14 = 0xffce, // Progressive, differential, arithmetic coding
+    SOF15 = 0xffcf, // Lossless, differential, arithmetic coding
 
-    // other
+    // Resets
+    RST0 = 0xffd0, // Reset
+    RST1 = 0xffd1, // Reset
+    RST2 = 0xffd2, // Reset
+    RST3 = 0xffd3, // Reset
+    RST4 = 0xffd4, // Reset
+    RST5 = 0xffd5, // Reset
+    RST6 = 0xffd6, // Reset
+    RST7 = 0xffd7, // Reset
+
+    // Misc
     SOI = 0xffd8, // Start of Image
     EOI = 0xffd9, // End of Image
     SOS = 0xffda, // Start of Scan
-    DQT = 0xffdb, // Define Quantization Table(s)
+    DQT = 0xffdb, // Define Quantization Tables
     DNL = 0xffdc, // Define Number of Lines
     DRI = 0xffdd, // Define Restart Interval
     DHP = 0xffde, // Define Hierarchical Progression
-    EXP = 0xffdf, // Expand Reference Component(s)
+    EXP = 0xffdf, // Expand Reference Components
 
-    // APPN
-    APP0 = 0xffe0,
-    APP1 = 0xffe1,
-    APP2 = 0xffe2,
-    APP3 = 0xffe3,
-    APP4 = 0xffe4,
-    APP5 = 0xffe5,
-    APP6 = 0xffe6,
-    APP7 = 0xffe7,
-    APP8 = 0xffe8,
-    APP9 = 0xffe9,
-    APP10 = 0xffea,
-    APP11 = 0xffeb,
-    APP12 = 0xffec,
-    APP13 = 0xffed,
-    APP14 = 0xffee,
-    APP15 = 0xffef,
+    APP0  = 0xffe0, // Aplication Specific Data
+    APP1  = 0xffe1, // Aplication Specific Data
+    APP2  = 0xffe2, // Aplication Specific Data
+    APP3  = 0xffe3, // Aplication Specific Data
+    APP4  = 0xffe4, // Aplication Specific Data
+    APP5  = 0xffe5, // Aplication Specific Data
+    APP6  = 0xffe6, // Aplication Specific Data
+    APP7  = 0xffe7, // Aplication Specific Data
+    APP8  = 0xffe8, // Aplication Specific Data
+    APP9  = 0xffe9, // Aplication Specific Data
+    APP10 = 0xffea, // Aplication Specific Data
+    APP11 = 0xffeb, // Aplication Specific Data
+    APP12 = 0xffec, // Aplication Specific Data
+    APP13 = 0xffed, // Aplication Specific Data
+    APP14 = 0xffee, // Aplication Specific Data
+    APP15 = 0xffef, // Aplication Specific Data
 
-    // misc
-    JPG0 = 0xfff0,
-    JPG1 = 0xfff1,
-    JPG2 = 0xfff2,
-    JPG3 = 0xfff3,
-    JPG4 = 0xfff4,
-    JPG5 = 0xfff5,
-    JPG6 = 0xfff6,
-    JPG7 = 0xfff7,
-    JPG8 = 0xfff8,
-    JPG9 = 0xfff9,
-    JPG10 = 0xfffa,
-    JPG11 = 0xfffb,
-    JPG12 = 0xfffc,
-    JPG13 = 0xfffd,
-    COM = 0xfffe,
-    TEM = 0xff01
+    JPG0  = 0xfff0, // Reserved
+    JPG1  = 0xfff1, // Reserved
+    JPG2  = 0xfff2, // Reserved
+    JPG3  = 0xfff3, // Reserved
+    JPG4  = 0xfff4, // Reserved
+    JPG5  = 0xfff5, // Reserved
+    JPG6  = 0xfff6, // Reserved
+    JPG7  = 0xfff7, // Reserved
+    JPG8  = 0xfff8, // Reserved
+    JPG9  = 0xfff9, // Reserved
+    JPG10 = 0xfffa, // Reserved
+    JPG11 = 0xfffb, // Reserved
+    JPG12 = 0xfffc, // Reserved
+    JPG13 = 0xfffd, // Reserved
+
+    COM = 0xfffe // Comment
 };
 
 
