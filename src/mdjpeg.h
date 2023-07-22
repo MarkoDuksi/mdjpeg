@@ -112,13 +112,13 @@ enum class StateID : uint16_t {
 class Jpeg;
 
 
-class IState {
+class State {
     protected:
         Jpeg* m_jpeg;
 
     public:
-        IState(Jpeg* context) noexcept;
-        virtual ~IState();
+        State(Jpeg* context) noexcept;
+        virtual ~State();
 
         bool is_final_state() const noexcept;
         virtual StateID getID() const noexcept = 0;
@@ -127,13 +127,13 @@ class IState {
 
 
 template <StateID state_id>
-class State final : public IState {
+class ConcreteState final : public State {
     private:
         StateID m_state_id;
 
     public:
-        State(Jpeg* context) noexcept :
-            IState(context),
+        ConcreteState(Jpeg* context) noexcept :
+            State(context),
             m_state_id(state_id)
             {}
 
@@ -147,8 +147,8 @@ class State final : public IState {
 
 class Jpeg {
     private:
-        State<StateID::ENTRY> m_internal_state;
-        IState* m_state;
+        ConcreteState<StateID::ENTRY> m_state;
+        State* m_state_ptr;
         uint8_t* m_buff_start;
         uint8_t* m_buff_current;
         uint8_t* m_buff_end;
@@ -165,21 +165,21 @@ class Jpeg {
         StateID parse_header();
 
         template <StateID ANY>
-        friend class State;
+        friend class ConcreteState;
 };
 
 
 template<>
-void State<StateID::ENTRY>::parse_header() const;
+void ConcreteState<StateID::ENTRY>::parse_header() const;
 
 template<>
-void State<StateID::SOI>::parse_header() const;
+void ConcreteState<StateID::SOI>::parse_header() const;
 
 template<>
-void State<StateID::APP0>::parse_header() const;
+void ConcreteState<StateID::APP0>::parse_header() const;
 
 template<>
-void State<StateID::DQT>::parse_header() const;
+void ConcreteState<StateID::DQT>::parse_header() const;
 
 template<>
-void State<StateID::EOI>::parse_header() const;
+void ConcreteState<StateID::EOI>::parse_header() const;
