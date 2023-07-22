@@ -48,7 +48,8 @@ std::optional<uint16_t> Jpeg::read_uint16() noexcept {
 
 // Jpeg public:
 Jpeg::Jpeg(uint8_t *buff, size_t size) noexcept :
-    m_state(State<StateID::ENTRY>::instance(this)),
+    m_internal_state(State<StateID::ENTRY>(this)),
+    m_state(&m_internal_state),
     m_buff_start(buff),
     m_buff_current(buff),
     m_buff_end(buff + size)
@@ -56,7 +57,7 @@ Jpeg::Jpeg(uint8_t *buff, size_t size) noexcept :
 
 StateID Jpeg::parse_header() {
     while (!m_state->is_final_state()) {
-        m_state = m_state->parse_header();
+        m_state->parse_header();
     }
 
     return m_state->getID();
@@ -80,32 +81,33 @@ bool IState::is_final_state() const noexcept {
 
 
 
-
 ////////////////////
 // State public:
 template<>
-IState* State<StateID::ENTRY>::parse_header() const {
+void State<StateID::ENTRY>::parse_header() const {
     std::cout << "Entered state ENTRY\n";
 
     auto next_marker = m_jpeg->read_uint16();
 
     if (!next_marker) {
-        return State<StateID::ERROR_PEOB>::instance(m_jpeg);
+        m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::ERROR_PEOB>(m_jpeg);
+        return;
     }
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::SOI:
             std::cout << "Found marker: SOI (0x" << std::hex << *next_marker << ")\n";
-            return State<StateID::SOI>::instance(m_jpeg);
+            m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::SOI>(m_jpeg);
+            break;
 
         default:
             std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
-            return State<StateID::ERROR_UUM>::instance(m_jpeg);
+            m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::ERROR_UUM>(m_jpeg);
     }
 }
 
 template<>
-IState* State<StateID::SOI>::parse_header() const {
+void State<StateID::SOI>::parse_header() const {
     std::cout << "Entered state SOI\n";
 
     auto next_marker = m_jpeg->read_uint16();
@@ -113,90 +115,82 @@ IState* State<StateID::SOI>::parse_header() const {
     if (static_cast<StateID>(*next_marker) >= StateID::APP0 &&
         static_cast<StateID>(*next_marker) <= StateID::APP15) {
         std::cout << "Found marker: APPN (0x" << std::hex << *next_marker << ")\n";
-        return State<StateID::APP0>::instance(m_jpeg);
+        m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::APP0>(m_jpeg);
     }
     else {
             std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
-            return State<StateID::ERROR_UUM>::instance(m_jpeg);
+            m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::ERROR_UUM>(m_jpeg);
     }
 }
 
 template<>
-IState* State<StateID::APP0>::parse_header() const {
+void State<StateID::APP0>::parse_header() const {
     std::cout << "Entered state APP0\n";
 
     auto size = m_jpeg->read_uint16();
 
     if (!size || !m_jpeg->seek(*size - 2)) {
-        return State<StateID::ERROR_PEOB>::instance(m_jpeg);
+        m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::ERROR_PEOB>(m_jpeg);
+        return;
     }
 
     auto next_marker = m_jpeg->read_uint16();
 
     if (!next_marker) {
-        return State<StateID::ERROR_PEOB>::instance(m_jpeg);
+        m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::ERROR_PEOB>(m_jpeg);
+        return;
     }
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::DQT:
             std::cout << "Found marker: DQT (0x" << std::hex << *next_marker << ")\n";
-            return State<StateID::DQT>::instance(m_jpeg);
+            m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::DQT>(m_jpeg);
+            break;
 
         default:
             std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
-            return State<StateID::ERROR_UUM>::instance(m_jpeg);
+            m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::ERROR_UUM>(m_jpeg);
     }
 }
 
 template<>
-IState* State<StateID::DQT>::parse_header() const {
+void State<StateID::DQT>::parse_header() const {
     std::cout << "Entered state DQT\n";
 
     auto size = m_jpeg->read_uint16();
 
     if (!size || !m_jpeg->seek(*size - 2)) {
-        return State<StateID::ERROR_PEOB>::instance(m_jpeg);
+        m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::ERROR_PEOB>(m_jpeg);
+        return;
     }
 
     auto next_marker = m_jpeg->read_uint16();
 
     if (!next_marker) {
-        return State<StateID::ERROR_PEOB>::instance(m_jpeg);
+        m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::ERROR_PEOB>(m_jpeg);
+        return;
     }
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::DQT:
             std::cout << "Found marker: DQT (0x" << std::hex << *next_marker << ")\n";
-            return State<StateID::DQT>::instance(m_jpeg);
+            m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::DQT>(m_jpeg);
+            break;
 
         case StateID::DHT:
             std::cout << "Found marker: DHT (0x" << std::hex << *next_marker << ")\n";
-            return State<StateID::EXIT_OK>::instance(m_jpeg);
+            m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::EXIT_OK>(m_jpeg);
+            break;
 
         default:
             std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
-            return State<StateID::ERROR_UUM>::instance(m_jpeg);
+            m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::ERROR_UUM>(m_jpeg);
     }
 }
 
 template<>
-IState* State<StateID::EOI>::parse_header() const {
+void State<StateID::EOI>::parse_header() const {
     std::cout << "Entered state EOI\n";
 
-    return State<StateID::EXIT_OK>::instance(m_jpeg);
-}
-
-template<>
-IState* State<StateID::EXIT_OK>::parse_header() const {
-    return State<StateID::EXIT_OK>::instance(m_jpeg);
-}
-
-template<>
-IState* State<StateID::ERROR_PEOB>::parse_header() const {
-    return State<StateID::ERROR_PEOB>::instance(m_jpeg);
-}
-
-template<>
-IState* State<StateID::ERROR_UUM>::parse_header() const {
-    return State<StateID::ERROR_UUM>::instance(m_jpeg);
+    m_jpeg->m_state = new (m_jpeg->m_state) State<StateID::EXIT_OK>(m_jpeg);
 }

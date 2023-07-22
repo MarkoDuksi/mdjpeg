@@ -109,10 +109,45 @@ enum class StateID : uint16_t {
 };
 
 
-class IState;
+class Jpeg;
+
+
+class IState {
+    protected:
+        Jpeg* m_jpeg;
+
+    public:
+        IState(Jpeg* context) noexcept;
+        virtual ~IState();
+
+        bool is_final_state() const noexcept;
+        virtual StateID getID() const noexcept = 0;
+        virtual void parse_header() const = 0;
+};
+
+
+template <StateID state_id>
+class State final : public IState {
+    private:
+        StateID m_state_id;
+
+    public:
+        State(Jpeg* context) noexcept :
+            IState(context),
+            m_state_id(state_id)
+            {}
+
+        StateID getID() const noexcept override {
+            return m_state_id;
+        }
+        
+        void parse_header() const override {};
+};
+
 
 class Jpeg {
     private:
+        State<StateID::ENTRY> m_internal_state;
         IState* m_state;
         uint8_t* m_buff_start;
         uint8_t* m_buff_current;
@@ -134,76 +169,17 @@ class Jpeg {
 };
 
 
-class IState {
-    protected:
-        Jpeg* m_jpeg;
-
-    public:
-        IState(Jpeg* context) noexcept;
-        virtual ~IState();
-
-        IState(const IState& other) = delete;
-        IState& operator=(const IState& other) = delete;
-        IState(IState&& other) = delete;
-        IState& operator=(IState&& other) = delete;
-
-        bool is_final_state() const noexcept;
-
-        virtual IState* parse_header() const = 0;
-        virtual StateID getID() const noexcept = 0;
-};
-
-
-template <StateID state_id>
-class State final : public IState {
-    private:
-        StateID m_state_id;
-
-        State(Jpeg* context) noexcept :
-            IState(context),
-            m_state_id(state_id)
-            {}
-        ~State() = default;
-
-    public:
-        State(const State& other) = delete;
-        State& operator=(const State& other) = delete;
-        State(State&& other) = delete;
-        State& operator=(State&& other) = delete;
-
-        static State* instance(Jpeg* context) noexcept {
-            static State<state_id> instance(context);
-
-            return &instance;
-        }
-
-        StateID getID() const noexcept override {
-            return m_state_id;
-        }
-        IState* parse_header() const override;
-};
-
+template<>
+void State<StateID::ENTRY>::parse_header() const;
 
 template<>
-IState* State<StateID::ENTRY>::parse_header() const;
+void State<StateID::SOI>::parse_header() const;
 
 template<>
-IState* State<StateID::SOI>::parse_header() const;
+void State<StateID::APP0>::parse_header() const;
 
 template<>
-IState* State<StateID::APP0>::parse_header() const;
+void State<StateID::DQT>::parse_header() const;
 
 template<>
-IState* State<StateID::DQT>::parse_header() const;
-
-template<>
-IState* State<StateID::EOI>::parse_header() const;
-
-template<>
-IState* State<StateID::EXIT_OK>::parse_header() const;
-
-template<>
-IState* State<StateID::ERROR_PEOB>::parse_header() const;
-
-template<>
-IState* State<StateID::ERROR_UUM>::parse_header() const;
+void State<StateID::EOI>::parse_header() const;
