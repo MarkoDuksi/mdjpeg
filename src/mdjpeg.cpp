@@ -46,6 +46,7 @@ std::optional<uint16_t> Jpeg::read_uint16() noexcept {
     }
 }
 
+///////////////
 // Jpeg public:
 Jpeg::Jpeg(uint8_t *buff, size_t size) noexcept :
     m_state(ConcreteState<StateID::ENTRY>(this)),
@@ -83,6 +84,9 @@ bool State::is_final_state() const noexcept {
 
 ////////////////////
 // ConcreteState public:
+
+#define SET_NEXT_STATE(state_id) m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<state_id>(m_jpeg)
+
 template<>
 void ConcreteState<StateID::ENTRY>::parse_header() const {
     std::cout << "Entered state ENTRY\n";
@@ -90,19 +94,19 @@ void ConcreteState<StateID::ENTRY>::parse_header() const {
     auto next_marker = m_jpeg->read_uint16();
 
     if (!next_marker) {
-        m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::ERROR_PEOB>(m_jpeg);
+        SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::SOI:
             std::cout << "Found marker: SOI (0x" << std::hex << *next_marker << ")\n";
-            m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::SOI>(m_jpeg);
+            SET_NEXT_STATE(StateID::SOI);
             break;
 
         default:
             std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
-            m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::ERROR_UUM>(m_jpeg);
+            SET_NEXT_STATE(StateID::ERROR_UUM);
     }
 }
 
@@ -115,11 +119,11 @@ void ConcreteState<StateID::SOI>::parse_header() const {
     if (static_cast<StateID>(*next_marker) >= StateID::APP0 &&
         static_cast<StateID>(*next_marker) <= StateID::APP15) {
         std::cout << "Found marker: APPN (0x" << std::hex << *next_marker << ")\n";
-        m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::APP0>(m_jpeg);
+        SET_NEXT_STATE(StateID::APP0);
     }
     else {
-            std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
-            m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::ERROR_UUM>(m_jpeg);
+        std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+        SET_NEXT_STATE(StateID::ERROR_UUM);
     }
 }
 
@@ -130,26 +134,26 @@ void ConcreteState<StateID::APP0>::parse_header() const {
     auto size = m_jpeg->read_uint16();
 
     if (!size || !m_jpeg->seek(*size - 2)) {
-        m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::ERROR_PEOB>(m_jpeg);
+        SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
     auto next_marker = m_jpeg->read_uint16();
 
     if (!next_marker) {
-        m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::ERROR_PEOB>(m_jpeg);
+        SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::DQT:
             std::cout << "Found marker: DQT (0x" << std::hex << *next_marker << ")\n";
-            m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::DQT>(m_jpeg);
+            SET_NEXT_STATE(StateID::DQT);
             break;
 
         default:
             std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
-            m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::ERROR_UUM>(m_jpeg);
+            SET_NEXT_STATE(StateID::ERROR_UUM);
     }
 }
 
@@ -160,31 +164,31 @@ void ConcreteState<StateID::DQT>::parse_header() const {
     auto size = m_jpeg->read_uint16();
 
     if (!size || !m_jpeg->seek(*size - 2)) {
-        m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::ERROR_PEOB>(m_jpeg);
+        SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
     auto next_marker = m_jpeg->read_uint16();
 
     if (!next_marker) {
-        m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::ERROR_PEOB>(m_jpeg);
+        SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::DQT:
             std::cout << "Found marker: DQT (0x" << std::hex << *next_marker << ")\n";
-            m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::DQT>(m_jpeg);
+            SET_NEXT_STATE(StateID::DQT);
             break;
 
         case StateID::DHT:
             std::cout << "Found marker: DHT (0x" << std::hex << *next_marker << ")\n";
-            m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::EXIT_OK>(m_jpeg);
+            SET_NEXT_STATE(StateID::EXIT_OK);
             break;
 
         default:
             std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
-            m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::ERROR_UUM>(m_jpeg);
+            SET_NEXT_STATE(StateID::ERROR_UUM);
     }
 }
 
@@ -192,5 +196,5 @@ template<>
 void ConcreteState<StateID::EOI>::parse_header() const {
     std::cout << "Entered state EOI\n";
 
-    m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<StateID::EXIT_OK>(m_jpeg);
+    SET_NEXT_STATE(StateID::EXIT_OK);
 }
