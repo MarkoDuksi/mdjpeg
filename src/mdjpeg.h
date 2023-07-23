@@ -158,6 +158,7 @@ class Jpeg {
         std::optional<uint8_t> peek(size_t rel_pos = 0) const noexcept;
         std::optional<uint8_t> read_uint8() noexcept;
         std::optional<uint16_t> read_uint16() noexcept;
+        std::optional<uint16_t> read_marker() noexcept;
 
     public:
         Jpeg(uint8_t* buff, size_t size) noexcept;

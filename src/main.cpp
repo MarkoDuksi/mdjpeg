@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
     auto input_paths = getInputImgPaths(argv[1]);
 
     // for (const auto& input_path : input_paths) {
-    for (size_t i = 0; i < 4; ++i) {
+    for (size_t i = 0; i < 1; ++i) {
         auto file_path = input_paths[i];
 
         std::cout << "\nprocessing image: " << file_path << "\n";

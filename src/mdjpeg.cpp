@@ -46,6 +46,21 @@ std::optional<uint16_t> Jpeg::read_uint16() noexcept {
     }
 }
 
+std::optional<uint16_t> Jpeg::read_marker() noexcept {
+    auto result = read_uint16();
+
+    while (result && *result == 0xffff) {
+        if (auto next_byte = read_uint8(); next_byte) {
+            *result = (*result & 0xff00) | *next_byte;
+        }
+        else {
+            result = std::nullopt;
+        }
+    }
+
+    return result;
+}
+
 ///////////////
 // Jpeg public:
 Jpeg::Jpeg(uint8_t *buff, size_t size) noexcept :
@@ -91,7 +106,7 @@ template<>
 void ConcreteState<StateID::ENTRY>::parse_header() const {
     std::cout << "Entered state ENTRY\n";
 
-    auto next_marker = m_jpeg->read_uint16();
+    auto next_marker = m_jpeg->read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -114,7 +129,7 @@ template<>
 void ConcreteState<StateID::SOI>::parse_header() const {
     std::cout << "Entered state SOI\n";
 
-    auto next_marker = m_jpeg->read_uint16();
+    auto next_marker = m_jpeg->read_marker();
 
     if (static_cast<StateID>(*next_marker) >= StateID::APP0 &&
         static_cast<StateID>(*next_marker) <= StateID::APP15) {
@@ -138,7 +153,7 @@ void ConcreteState<StateID::APP0>::parse_header() const {
         return;
     }
 
-    auto next_marker = m_jpeg->read_uint16();
+    auto next_marker = m_jpeg->read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -168,7 +183,7 @@ void ConcreteState<StateID::DQT>::parse_header() const {
         return;
     }
 
-    auto next_marker = m_jpeg->read_uint16();
+    auto next_marker = m_jpeg->read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
