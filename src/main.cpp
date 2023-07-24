@@ -61,8 +61,8 @@ int main(int argc, char** argv) {
         auto [raw_jpeg, size] = read_raw_jpeg_from_file(file_path);
         uint8_t* buff = raw_jpeg;
 
-        Jpeg jpeg(buff, size);
-        StateID final_state_ID = jpeg.parse_header();
+        JpegDecoder decoder(buff, size);
+        StateID final_state_ID = decoder.parse_header();
         
         const char *final_states[] = {
             "EXIT_OK",

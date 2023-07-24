@@ -109,10 +109,10 @@ enum class StateID : uint16_t {
 };
 
 
-class Jpeg;
+class JpegDecoder;
 
 
-struct Data {
+struct CompressedData {
     uint8_t* m_buff_start;
     uint8_t* m_buff_current;
     uint8_t* m_buff_end;
@@ -121,8 +121,8 @@ struct Data {
 
 class State {
     protected:
-        Data m_data;
-        Jpeg* m_jpeg;
+        CompressedData m_data;
+        JpegDecoder* m_decoder;
 
         size_t size_remaining() const noexcept;
         bool seek(size_t rel_pos) noexcept;
@@ -132,7 +132,7 @@ class State {
         std::optional<uint16_t> read_marker() noexcept;
 
     public:
-        State(Jpeg* context, Data& data) noexcept;
+        State(JpegDecoder* decoder, CompressedData& data) noexcept;
         virtual ~State();
 
         bool is_final_state() const noexcept;
@@ -147,8 +147,8 @@ class ConcreteState final : public State {
         StateID m_state_id;
 
     public:
-        ConcreteState(Jpeg* context, Data& data) noexcept :
-            State(context, data),
+        ConcreteState(JpegDecoder* decoder, CompressedData& data) noexcept :
+            State(decoder, data),
             m_state_id(state_id)
             {}
 
@@ -160,14 +160,14 @@ class ConcreteState final : public State {
 };
 
 
-class Jpeg {
+class JpegDecoder {
     private:
-        Data m_data;
+        CompressedData m_data;
         ConcreteState<StateID::ENTRY> m_state;
         State* m_state_ptr;
 
     public:
-        Jpeg(uint8_t* buff, size_t size) noexcept;
+        JpegDecoder(uint8_t* buff, size_t size) noexcept;
 
         StateID parse_header();
 

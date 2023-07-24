@@ -2,15 +2,15 @@
 
 
 ////////////////
-// Jpeg public:
+// JpegDecoder public:
 
-Jpeg::Jpeg(uint8_t *buff, size_t size) noexcept :
+JpegDecoder::JpegDecoder(uint8_t *buff, size_t size) noexcept :
     m_data{buff, buff, buff + size},
     m_state(ConcreteState<StateID::ENTRY>(this, m_data)),
     m_state_ptr(&m_state)
     {}
 
-StateID Jpeg::parse_header() {
+StateID JpegDecoder::parse_header() {
     while (!m_state_ptr->is_final_state()) {
         m_state_ptr->parse_header();
     }
@@ -24,9 +24,9 @@ StateID Jpeg::parse_header() {
 ////////////////
 // State public:
 
-State::State(Jpeg* context, Data& data) noexcept :
+State::State(JpegDecoder* decoder, CompressedData& data) noexcept :
     m_data(data),
-    m_jpeg(context)
+    m_decoder(decoder)
     {}
 
 State::~State() {}
@@ -101,7 +101,7 @@ std::optional<uint16_t> State::read_marker() noexcept {
 ////////////////////////
 // ConcreteState public:
 
-#define SET_NEXT_STATE(state_id) m_jpeg->m_state_ptr = new (m_jpeg->m_state_ptr) ConcreteState<state_id>(m_jpeg, m_data)
+#define SET_NEXT_STATE(state_id) m_decoder->m_state_ptr = new (m_decoder->m_state_ptr) ConcreteState<state_id>(m_decoder, m_data)
 
 template<>
 void ConcreteState<StateID::ENTRY>::parse_header() {
