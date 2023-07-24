@@ -112,17 +112,32 @@ enum class StateID : uint16_t {
 class Jpeg;
 
 
+struct Data {
+    uint8_t* m_buff_start;
+    uint8_t* m_buff_current;
+    uint8_t* m_buff_end;
+};
+
+
 class State {
     protected:
+        Data m_data;
         Jpeg* m_jpeg;
 
+        size_t size_remaining() const noexcept;
+        bool seek(size_t rel_pos) noexcept;
+        std::optional<uint8_t> peek(size_t rel_pos = 0) const noexcept;
+        std::optional<uint8_t> read_uint8() noexcept;
+        std::optional<uint16_t> read_uint16() noexcept;
+        std::optional<uint16_t> read_marker() noexcept;
+
     public:
-        State(Jpeg* context) noexcept;
+        State(Jpeg* context, Data& data) noexcept;
         virtual ~State();
 
         bool is_final_state() const noexcept;
         virtual StateID getID() const noexcept = 0;
-        virtual void parse_header() const = 0;
+        virtual void parse_header() = 0;
 };
 
 
@@ -132,8 +147,8 @@ class ConcreteState final : public State {
         StateID m_state_id;
 
     public:
-        ConcreteState(Jpeg* context) noexcept :
-            State(context),
+        ConcreteState(Jpeg* context, Data& data) noexcept :
+            State(context, data),
             m_state_id(state_id)
             {}
 
@@ -141,24 +156,15 @@ class ConcreteState final : public State {
             return m_state_id;
         }
         
-        void parse_header() const override {};
+        void parse_header() override {};
 };
 
 
 class Jpeg {
     private:
+        Data m_data;
         ConcreteState<StateID::ENTRY> m_state;
         State* m_state_ptr;
-        uint8_t* m_buff_start;
-        uint8_t* m_buff_current;
-        uint8_t* m_buff_end;
-
-        size_t size_remaining() const noexcept;
-        bool seek(size_t rel_pos) noexcept;
-        std::optional<uint8_t> peek(size_t rel_pos = 0) const noexcept;
-        std::optional<uint8_t> read_uint8() noexcept;
-        std::optional<uint16_t> read_uint16() noexcept;
-        std::optional<uint16_t> read_marker() noexcept;
 
     public:
         Jpeg(uint8_t* buff, size_t size) noexcept;
@@ -171,16 +177,16 @@ class Jpeg {
 
 
 template<>
-void ConcreteState<StateID::ENTRY>::parse_header() const;
+void ConcreteState<StateID::ENTRY>::parse_header();
 
 template<>
-void ConcreteState<StateID::SOI>::parse_header() const;
+void ConcreteState<StateID::SOI>::parse_header();
 
 template<>
-void ConcreteState<StateID::APP0>::parse_header() const;
+void ConcreteState<StateID::APP0>::parse_header();
 
 template<>
-void ConcreteState<StateID::DQT>::parse_header() const;
+void ConcreteState<StateID::DQT>::parse_header();
 
 template<>
-void ConcreteState<StateID::EOI>::parse_header() const;
+void ConcreteState<StateID::EOI>::parse_header();
