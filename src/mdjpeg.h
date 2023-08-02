@@ -114,18 +114,35 @@ class JpegDecoder;
 
 
 struct CompressedData {
-    uint8_t* m_buff_start;
-    uint8_t* m_buff_current;
-    uint8_t* m_buff_end;
+    private:
+        uint8_t* m_buff_start;
+        uint8_t* m_buff_current;
+        uint8_t* m_buff_end;
+        uint8_t m_luma_qtable_buff[64] {0};
+        uint8_t* m_luma_qtable {nullptr};
+        
+        uint8_t m_zig_zag_map[64] {
+             0,  1,  8, 16,  9,  2,  3, 10,
+            17, 24, 32, 25, 18, 11,  4,  5,
+            12, 19, 26, 33, 40, 48, 41, 34,
+            27, 20, 13,  6,  7, 14, 21, 28,
+            35, 42, 49, 56, 57, 50, 43, 36,
+            29, 22, 15, 23, 30, 37, 44, 51,
+            58, 59, 52, 45, 38, 31, 39, 46,
+            53, 60, 61, 54, 47, 55, 62, 63
+        };
 
-    CompressedData(uint8_t* buff, size_t size) noexcept;
+    public:
+        CompressedData(uint8_t* buff, size_t size) noexcept;
 
-    size_t size_remaining() const noexcept;
-    bool seek(size_t rel_pos) noexcept;
-    std::optional<uint8_t> peek(size_t rel_pos = 0) const noexcept;
-    std::optional<uint8_t> read_uint8() noexcept;
-    std::optional<uint16_t> read_uint16() noexcept;
-    std::optional<uint16_t> read_marker() noexcept;
+        size_t size_remaining() const noexcept;
+        bool seek(const size_t rel_pos) noexcept;
+        std::optional<uint8_t> peek(const size_t rel_pos = 0) const noexcept;
+        std::optional<uint8_t> read_uint8() noexcept;
+        std::optional<uint16_t> read_uint16() noexcept;
+        std::optional<uint16_t> read_marker() noexcept;
+        std::optional<uint16_t> read_size() noexcept;
+        void populate_luma_qtable() noexcept;
 };
 
 

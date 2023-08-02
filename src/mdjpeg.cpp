@@ -14,7 +14,7 @@ size_t CompressedData::size_remaining() const noexcept {
     return m_buff_end - m_buff_current;
 }
 
-bool CompressedData::seek(size_t rel_pos) noexcept {
+bool CompressedData::seek(const size_t rel_pos) noexcept {
     if (rel_pos < size_remaining()) {
         m_buff_current += rel_pos;
         return true;
@@ -24,9 +24,9 @@ bool CompressedData::seek(size_t rel_pos) noexcept {
     }
 }
 
-std::optional<uint8_t> CompressedData::peek(size_t rel_pos) const noexcept {
+std::optional<uint8_t> CompressedData::peek(const size_t rel_pos) const noexcept {
     if (rel_pos < size_remaining()) {
-        return *(m_buff_current + rel_pos);
+        return m_buff_current[rel_pos];
     }
     else {
         return {};
@@ -44,7 +44,7 @@ std::optional<uint8_t> CompressedData::read_uint8() noexcept {
 
 std::optional<uint16_t> CompressedData::read_uint16() noexcept {
     if (size_remaining() >= 2) {
-        uint16_t result = *m_buff_current << 8 | *(m_buff_current + 1);
+        uint16_t result = m_buff_current[0] << 8 | m_buff_current[1];
         m_buff_current += 2;
         return result;
     }
@@ -68,8 +68,22 @@ std::optional<uint16_t> CompressedData::read_marker() noexcept {
     return result;
 }
 
+std::optional<uint16_t> CompressedData::read_size() noexcept {
+    auto result = read_uint16();
 
+    if (!result || *result < 2) {
+        result = std::nullopt;
+        }
 
+    return *result - 2;
+}
+
+void CompressedData::populate_luma_qtable() noexcept {
+    for (size_t i = 0; i < 64; ++i) {
+        m_luma_qtable_buff[m_zig_zag_map[i]] = m_buff_current[i];
+    }
+    m_luma_qtable = &m_luma_qtable_buff[0];
+}
 
 ////////////////
 // JpegDecoder public:
@@ -118,7 +132,7 @@ template<>
 void ConcreteState<StateID::ENTRY>::parse_header() {
     std::cout << "Entered state ENTRY\n";
 
-    auto next_marker = m_data.read_marker();
+    const auto next_marker = m_data.read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -141,7 +155,7 @@ template<>
 void ConcreteState<StateID::SOI>::parse_header() {
     std::cout << "Entered state SOI\n";
 
-    auto next_marker = m_data.read_marker();
+    const auto next_marker = m_data.read_marker();
 
     if (static_cast<StateID>(*next_marker) >= StateID::APP0 &&
         static_cast<StateID>(*next_marker) <= StateID::APP15) {
@@ -158,14 +172,14 @@ template<>
 void ConcreteState<StateID::APP0>::parse_header() {
     std::cout << "Entered state APP0\n";
 
-    auto size = m_data.read_uint16();
+    const auto size = m_data.read_size();
 
-    if (!size || !m_data.seek(*size - 2)) {
+    if (!size || !m_data.seek(*size)) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
-    auto next_marker = m_data.read_marker();
+    const auto next_marker = m_data.read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -188,14 +202,34 @@ template<>
 void ConcreteState<StateID::DQT>::parse_header() {
     std::cout << "Entered state DQT\n";
 
-    auto size = m_data.read_uint16();
+    auto segment_size = m_data.read_size();
 
-    if (!size || !m_data.seek(*size - 2)) {
+    if (!segment_size || *segment_size > m_data.size_remaining()) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
-    auto next_marker = m_data.read_marker();
+    while (*segment_size) {
+        const auto next_byte = m_data.read_uint8();
+        --*segment_size;
+
+        const uint8_t precision = 1 + static_cast<bool>(*next_byte >> 4);
+        const uint8_t table_id  = *next_byte && 0xf;
+
+        if (const uint8_t table_size = 64 * precision; table_size <= *segment_size) {
+            if (table_id == 0 && precision == 1) {
+                m_data.populate_luma_qtable();
+            }
+            m_data.seek(table_size);
+            *segment_size -= table_size;
+        }
+        else {
+            SET_NEXT_STATE(StateID::ERROR_PEOB);
+            return;
+        }
+    }
+
+    const auto next_marker = m_data.read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -223,14 +257,14 @@ template<>
 void ConcreteState<StateID::DHT>::parse_header() {
     std::cout << "Entered state DHT\n";
 
-    auto size = m_data.read_uint16();
+    const auto size = m_data.read_size();
 
-    if (!size || !m_data.seek(*size - 2)) {
+    if (!size || !m_data.seek(*size)) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
-    auto next_marker = m_data.read_marker();
+    const auto next_marker = m_data.read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -263,14 +297,14 @@ template<>
 void ConcreteState<StateID::SOF0>::parse_header() {
     std::cout << "Entered state SOF0\n";
 
-    auto size = m_data.read_uint16();
+    const auto size = m_data.read_size();
 
-    if (!size || !m_data.seek(*size - 2)) {
+    if (!size || !m_data.seek(*size)) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
-    auto next_marker = m_data.read_marker();
+    const auto next_marker = m_data.read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -303,9 +337,9 @@ template<>
 void ConcreteState<StateID::SOS>::parse_header() {
     std::cout << "Entered state SOS\n";
 
-    auto size = m_data.read_uint16();
+    const auto size = m_data.read_size();
 
-    if (!size || !m_data.seek(*size - 2)) {
+    if (!size || !m_data.seek(*size)) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
     }
     else {
@@ -317,7 +351,7 @@ template<>
 void ConcreteState<StateID::STREAM>::parse_header() {
     // std::cout << "Entered state STREAM\n";
 
-    auto current_byte = m_data.peek();
+    const auto current_byte = m_data.peek();
 
     if (!current_byte) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -325,7 +359,7 @@ void ConcreteState<StateID::STREAM>::parse_header() {
     }
 
     if (*current_byte == 0xff) {
-        auto next_marker = m_data.read_marker();
+        const auto next_marker = m_data.read_marker();
 
         if (!next_marker) {
             SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -358,7 +392,7 @@ void ConcreteState<StateID::STREAM>::parse_header() {
     else {
         m_data.seek(1);
         // process the now validated byte current_byte
-        std::cout << "Processing byte from stream: 0x" << std::hex << static_cast<uint>(*current_byte) << "\n";
+        // std::cout << "Processing byte from stream: 0x" << std::hex << static_cast<uint>(*current_byte) << "\n";
     }
 }
 
