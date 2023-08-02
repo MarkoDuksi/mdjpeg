@@ -117,20 +117,22 @@ struct CompressedData {
     uint8_t* m_buff_start;
     uint8_t* m_buff_current;
     uint8_t* m_buff_end;
+
+    CompressedData(uint8_t* buff, size_t size) noexcept;
+
+    size_t size_remaining() const noexcept;
+    bool seek(size_t rel_pos) noexcept;
+    std::optional<uint8_t> peek(size_t rel_pos = 0) const noexcept;
+    std::optional<uint8_t> read_uint8() noexcept;
+    std::optional<uint16_t> read_uint16() noexcept;
+    std::optional<uint16_t> read_marker() noexcept;
 };
 
 
 class State {
     protected:
-        CompressedData m_data;
         JpegDecoder* m_decoder;
-
-        size_t size_remaining() const noexcept;
-        bool seek(size_t rel_pos) noexcept;
-        std::optional<uint8_t> peek(size_t rel_pos = 0) const noexcept;
-        std::optional<uint8_t> read_uint8() noexcept;
-        std::optional<uint16_t> read_uint16() noexcept;
-        std::optional<uint16_t> read_marker() noexcept;
+        CompressedData m_data;
 
     public:
         State(JpegDecoder* decoder, CompressedData& data) noexcept;
