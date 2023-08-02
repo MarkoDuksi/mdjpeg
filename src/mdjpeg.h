@@ -146,17 +146,13 @@ class State {
 
 template <StateID state_id>
 class ConcreteState final : public State {
-    private:
-        StateID m_state_id;
-
     public:
         ConcreteState(JpegDecoder* decoder, CompressedData& data) noexcept :
-            State(decoder, data),
-            m_state_id(state_id)
+            State(decoder, data)
             {}
 
         StateID getID() const noexcept override {
-            return m_state_id;
+            return state_id;
         }
         
         void parse_header() override {};
