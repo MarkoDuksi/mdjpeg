@@ -16,7 +16,8 @@ enum class StateID : uint16_t {
     ERROR_UUM  = 2, // Unexpected or Unrecognized Marker
 
     // Custom transient states
-    ENTRY = 100, // Inital state
+    ENTRY  = 100, // Inital state
+    STREAM = 101, // Compressed stream processing state
 
     // Temporary, arithmetic coding
     TEM = 0xff01,

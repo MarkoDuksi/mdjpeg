@@ -199,12 +199,155 @@ void ConcreteState<StateID::DQT>::parse_header() {
 
         case StateID::DHT:
             std::cout << "Found marker: DHT (0x" << std::hex << *next_marker << ")\n";
-            SET_NEXT_STATE(StateID::EXIT_OK);
+            SET_NEXT_STATE(StateID::DHT);
             break;
 
         default:
             std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
             SET_NEXT_STATE(StateID::ERROR_UUM);
+    }
+}
+
+template<>
+void ConcreteState<StateID::DHT>::parse_header() {
+    std::cout << "Entered state DHT\n";
+
+    auto size = read_uint16();
+
+    if (!size || !seek(*size - 2)) {
+        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        return;
+    }
+
+    auto next_marker = read_marker();
+
+    if (!next_marker) {
+        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        return;
+    }
+
+    switch (static_cast<StateID>(*next_marker)) {
+        case StateID::DQT:
+            std::cout << "Found marker: DQT (0x" << std::hex << *next_marker << ")\n";
+            SET_NEXT_STATE(StateID::DQT);
+            break;
+
+        case StateID::DHT:
+            std::cout << "Found marker: DHT (0x" << std::hex << *next_marker << ")\n";
+            SET_NEXT_STATE(StateID::DHT);
+            break;
+
+        case StateID::SOF0:
+            std::cout << "Found marker: SOF0 (0x" << std::hex << *next_marker << ")\n";
+            SET_NEXT_STATE(StateID::SOF0);
+            break;
+
+        default:
+            std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+            SET_NEXT_STATE(StateID::ERROR_UUM);
+    }
+}
+
+template<>
+void ConcreteState<StateID::SOF0>::parse_header() {
+    std::cout << "Entered state SOF0\n";
+
+    auto size = read_uint16();
+
+    if (!size || !seek(*size - 2)) {
+        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        return;
+    }
+
+    auto next_marker = read_marker();
+
+    if (!next_marker) {
+        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        return;
+    }
+
+    switch (static_cast<StateID>(*next_marker)) {
+        case StateID::DQT:
+            std::cout << "Found marker: DQT (0x" << std::hex << *next_marker << ")\n";
+            SET_NEXT_STATE(StateID::DQT);
+            break;
+
+        case StateID::DHT:
+            std::cout << "Found marker: DHT (0x" << std::hex << *next_marker << ")\n";
+            SET_NEXT_STATE(StateID::DHT);
+            break;
+
+        case StateID::SOS:
+            std::cout << "Found marker: SOS (0x" << std::hex << *next_marker << ")\n";
+            SET_NEXT_STATE(StateID::SOS);
+            break;
+
+        default:
+            std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+            SET_NEXT_STATE(StateID::ERROR_UUM);
+    }
+}
+
+template<>
+void ConcreteState<StateID::SOS>::parse_header() {
+    std::cout << "Entered state SOS\n";
+
+    auto size = read_uint16();
+
+    if (!size || !seek(*size - 2)) {
+        SET_NEXT_STATE(StateID::ERROR_PEOB);
+    }
+    else {
+        SET_NEXT_STATE(StateID::STREAM);
+    }
+}
+
+template<>
+void ConcreteState<StateID::STREAM>::parse_header() {
+    // std::cout << "Entered state STREAM\n";
+
+    auto current_byte = peek();
+
+    if (!current_byte) {
+        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        return;
+    }
+
+    if (*current_byte == 0xff) {
+        auto next_marker = read_marker();
+
+        if (!next_marker) {
+            SET_NEXT_STATE(StateID::ERROR_PEOB);
+            return;
+        }
+        else if (*next_marker > 0xff00) {
+            switch (static_cast<StateID>(*next_marker)) {
+                case StateID::DQT:
+                    std::cout << "Found marker: DQT (0x" << std::hex << *next_marker << ")\n";
+                    SET_NEXT_STATE(StateID::DQT);
+                    break;
+
+                case StateID::DHT:
+                    std::cout << "Found marker: DHT (0x" << std::hex << *next_marker << ")\n";
+                    SET_NEXT_STATE(StateID::DHT);
+                    break;
+
+                case StateID::SOS:
+                    std::cout << "Found marker: SOS (0x" << std::hex << *next_marker << ")\n";
+                    SET_NEXT_STATE(StateID::SOS);
+                    break;
+
+                default:
+                    std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+                    SET_NEXT_STATE(StateID::ERROR_UUM);
+            }
+            return;
+        }
+    }
+    else {
+        seek(1);
+        // process the now validated byte current_byte
+        std::cout << "Processing byte from stream: 0x" << std::hex << static_cast<uint>(*current_byte) << "\n";
     }
 }
 
