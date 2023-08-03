@@ -145,7 +145,7 @@ struct CompressedData {
         std::optional<uint16_t> read_uint16() noexcept;
         std::optional<uint16_t> read_marker() noexcept;
         std::optional<uint16_t> read_size() noexcept;
-        void populate_luma_qtable() noexcept;
+        uint16_t set_qtable(uint16_t segment_size) noexcept;
         uint16_t set_htable(uint16_t segment_size) noexcept;
 };
 

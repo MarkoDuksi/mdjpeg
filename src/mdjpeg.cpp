@@ -78,11 +78,25 @@ std::optional<uint16_t> CompressedData::read_size() noexcept {
     return *result - 2;
 }
 
-void CompressedData::populate_luma_qtable() noexcept {
-    for (size_t i = 0; i < 64; ++i) {
-        m_luma_qtable_buff[m_zig_zag_map[i]] = m_buff_current[i];
+uint16_t CompressedData::set_qtable(uint16_t segment_size) noexcept {
+    const uint next_byte = *m_buff_current;
+    --segment_size;
+
+    const uint8_t precision = 1 + static_cast<bool>(next_byte >> 4);
+    const uint8_t table_id  = next_byte & 0xf;
+
+    if (const uint8_t table_size = 64 * precision; table_size <= segment_size) {
+        if (table_id == 0 && precision == 1) {
+            for (size_t i = 0; i < 64; ++i) {
+                m_luma_qtable_buff[m_zig_zag_map[i]] = m_buff_current[i];
+            }
+            m_luma_qtable = &m_luma_qtable_buff[0];
+        }
+        return 1 + table_size;
     }
-    m_luma_qtable = &m_luma_qtable_buff[0];
+    else {
+        return 0;
+    }
 }
 
 uint16_t CompressedData::set_htable(uint16_t segment_size) noexcept {
@@ -98,20 +112,20 @@ uint16_t CompressedData::set_htable(uint16_t segment_size) noexcept {
         symbols_count += m_buff_current[i];
     }
 
-    if (!segment_size || !symbols_count || symbols_count > segment_size) {
+    if (segment_size && symbols_count && symbols_count <= segment_size) {
+        if (table_id == 0) {
+            if (is_dc) {
+                m_luma_dc_htable = m_buff_current + 1;
+            }
+            else {
+                m_luma_ac_htable = m_buff_current + 1;
+            }
+        }
+        return 1 + 16 + symbols_count;
+    }
+    else {
         return 0;
     }
-
-    if (table_id == 0) {
-        if (is_dc) {
-            m_luma_dc_htable = m_buff_current + 1;
-        }
-        else {
-            m_luma_ac_htable = m_buff_current + 1;
-        }
-    }
-
-    return 1 + 16 + symbols_count;
 }
 
 ////////////////
@@ -239,23 +253,15 @@ void ConcreteState<StateID::DQT>::parse_header() {
     }
 
     while (*segment_size) {
-        const auto next_byte = m_data.read_uint8();
-        --*segment_size;
+        uint16_t&& qtable_size = m_data.set_qtable(*segment_size);
 
-        const uint8_t precision = 1 + static_cast<bool>(*next_byte >> 4);
-        const uint8_t table_id  = *next_byte && 0xf;
-
-        if (const uint8_t table_size = 64 * precision; table_size <= *segment_size) {
-            if (table_id == 0 && precision == 1) {
-                m_data.populate_luma_qtable();
-            }
-            m_data.seek(table_size);
-            *segment_size -= table_size;
-        }
-        else {
+        if (!qtable_size) {
             SET_NEXT_STATE(StateID::ERROR_PEOB);
             return;
         }
+
+        m_data.seek(qtable_size);
+        *segment_size -= qtable_size;
     }
 
     const auto next_marker = m_data.read_marker();
