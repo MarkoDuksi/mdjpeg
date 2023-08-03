@@ -14,6 +14,7 @@ enum class StateID : uint16_t {
     EXIT_OK    = 0, // Valid final state
     ERROR_PEOB = 1, // Premature End of Buffer
     ERROR_UUM  = 2, // Unexpected or Unrecognized Marker
+    ERROR_SEGO = 3, // Variable length data segment overflow
 
     // Custom transient states
     ENTRY  = 100, // Inital state
@@ -120,7 +121,9 @@ struct CompressedData {
         uint8_t* m_buff_end;
         uint8_t m_luma_qtable_buff[64] {0};
         uint8_t* m_luma_qtable {nullptr};
-        
+        uint8_t* m_luma_dc_htable {nullptr};
+        uint8_t* m_luma_ac_htable {nullptr};
+
         uint8_t m_zig_zag_map[64] {
              0,  1,  8, 16,  9,  2,  3, 10,
             17, 24, 32, 25, 18, 11,  4,  5,
@@ -143,6 +146,7 @@ struct CompressedData {
         std::optional<uint16_t> read_marker() noexcept;
         std::optional<uint16_t> read_size() noexcept;
         void populate_luma_qtable() noexcept;
+        uint16_t set_htable(uint16_t segment_size) noexcept;
 };
 
 

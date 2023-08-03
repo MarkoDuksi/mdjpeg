@@ -85,6 +85,35 @@ void CompressedData::populate_luma_qtable() noexcept {
     m_luma_qtable = &m_luma_qtable_buff[0];
 }
 
+uint16_t CompressedData::set_htable(uint16_t segment_size) noexcept {
+    const uint next_byte = *m_buff_current;
+    --segment_size;
+
+    const uint8_t is_dc = !static_cast<bool>(next_byte >> 4);
+    const uint8_t table_id  = next_byte & 0xf;
+
+    uint16_t symbols_count = 0;
+
+    for (size_t i = 1; i < 17 && segment_size; ++i, --segment_size) {
+        symbols_count += m_buff_current[i];
+    }
+
+    if (!segment_size || !symbols_count || symbols_count > segment_size) {
+        return 0;
+    }
+
+    if (table_id == 0) {
+        if (is_dc) {
+            m_luma_dc_htable = m_buff_current + 1;
+        }
+        else {
+            m_luma_ac_htable = m_buff_current + 1;
+        }
+    }
+
+    return 1 + 16 + symbols_count;
+}
+
 ////////////////
 // JpegDecoder public:
 
@@ -257,11 +286,23 @@ template<>
 void ConcreteState<StateID::DHT>::parse_header() {
     std::cout << "Entered state DHT\n";
 
-    const auto size = m_data.read_size();
+    auto segment_size = m_data.read_size();
 
-    if (!size || !m_data.seek(*size)) {
+    if (!segment_size || *segment_size > m_data.size_remaining()) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
+    }
+
+    while (*segment_size) {
+        uint16_t&& htable_size = m_data.set_htable(*segment_size);
+
+        if (!htable_size) {
+            SET_NEXT_STATE(StateID::ERROR_SEGO);
+            return;
+        }
+
+        m_data.seek(htable_size);
+        *segment_size -= htable_size;
     }
 
     const auto next_marker = m_data.read_marker();
