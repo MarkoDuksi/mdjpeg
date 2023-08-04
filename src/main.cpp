@@ -67,7 +67,9 @@ int main(int argc, char** argv) {
         const char *final_states[] = {
             "EXIT_OK",
             "ERROR_PEOB",
-            "ERROR_UUM"
+            "ERROR_UUM",
+            "ERROR_SEGO",
+            "ERROR_UPAR"
         };
 
         std::cout << "Final state: " << final_states[static_cast<size_t>(final_state_ID)] << "\n";

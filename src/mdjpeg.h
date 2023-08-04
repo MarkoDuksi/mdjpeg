@@ -13,8 +13,9 @@ enum class StateID : uint16_t {
     // Custom final states
     EXIT_OK    = 0, // Valid final state
     ERROR_PEOB = 1, // Premature End of Buffer
-    ERROR_UUM  = 2, // Unexpected or Unrecognized Marker
-    ERROR_SEGO = 3, // Variable length data segment overflow
+    ERROR_UUM  = 2, // Unsuported or Unrecognized Marker
+    ERROR_SEGO = 3, // SEGment Overflow
+    ERROR_UPAR = 4, // Unsuported PARameter
 
     // Custom transient states
     ENTRY  = 100, // Inital state
@@ -135,7 +136,11 @@ struct CompressedData {
             53, 60, 61, 54, 47, 55, 62, 63
         };
 
+
     public:
+        uint16_t m_height {0};
+        uint16_t m_width {0};
+
         CompressedData(uint8_t* buff, size_t size) noexcept;
 
         size_t size_remaining() const noexcept;

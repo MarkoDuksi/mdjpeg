@@ -215,9 +215,9 @@ template<>
 void ConcreteState<StateID::APP0>::parse_header() {
     std::cout << "Entered state APP0\n";
 
-    const auto size = m_data.read_size();
+    const auto segment_size = m_data.read_size();
 
-    if (!size || !m_data.seek(*size)) {
+    if (!segment_size || !m_data.seek(*segment_size)) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
@@ -344,11 +344,49 @@ template<>
 void ConcreteState<StateID::SOF0>::parse_header() {
     std::cout << "Entered state SOF0\n";
 
-    const auto size = m_data.read_size();
+    auto segment_size = m_data.read_size();
 
-    if (!size || !m_data.seek(*size)) {
+    if (!segment_size || *segment_size > m_data.size_remaining()) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
+    }
+
+    if (*segment_size != 9 && *segment_size != 15) {
+        SET_NEXT_STATE(StateID::ERROR_UPAR);
+        return;
+    }
+
+    const auto precision = m_data.read_uint8();
+    const auto height = m_data.read_uint16();
+    const auto width = m_data.read_uint16();
+    auto components_count = m_data.read_uint8();
+
+    *segment_size -= 6;
+
+    if (*precision != 8 || !*height
+                        || !*width
+                        || !(*components_count == 3 || *components_count == 1)
+                        || 3 * *components_count != *segment_size) {
+        SET_NEXT_STATE(StateID::ERROR_UPAR);
+        return;
+    }
+
+    m_data.m_height = *height;
+    m_data.m_width = *width;
+
+    while ((*components_count)--) {
+        const auto component_id = m_data.read_uint8();
+        m_data.seek(1);
+        const auto qtable_id = m_data.read_uint8();
+
+        if (*component_id == 0 || *component_id > 3 ) {
+            SET_NEXT_STATE(StateID::ERROR_UPAR);
+            return;
+        }
+        if (*component_id == 1 && (*qtable_id != 0)) {
+            SET_NEXT_STATE(StateID::ERROR_UPAR);
+            return;
+        }
     }
 
     const auto next_marker = m_data.read_marker();
@@ -384,9 +422,9 @@ template<>
 void ConcreteState<StateID::SOS>::parse_header() {
     std::cout << "Entered state SOS\n";
 
-    const auto size = m_data.read_size();
+    const auto segment_size = m_data.read_size();
 
-    if (!size || !m_data.seek(*size)) {
+    if (!segment_size || !m_data.seek(*segment_size)) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
     }
     else {
