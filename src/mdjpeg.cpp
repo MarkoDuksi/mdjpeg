@@ -93,9 +93,9 @@ uint8_t CompressedData::set_qtable(uint16_t segment_size) noexcept {
 
     if (table_id == 0 && precision == 1) {
         for (size_t i = 0; i < 64; ++i) {
-            m_luma_qtable_buff[m_zig_zag_map[i]] = m_buff_current[i];
+            m_qtable_buff[m_zig_zag_map[i]] = m_buff_current[i];
         }
-        m_luma_qtable = &m_luma_qtable_buff[0];
+        m_qtable = &m_qtable_buff[0];
     }
 
     return 1 + table_size;
@@ -120,10 +120,12 @@ uint16_t CompressedData::set_htable(uint16_t segment_size) noexcept {
 
     if (table_id == 0) {
         if (is_dc) {
-            m_luma_dc_htable = m_buff_current + 1;
+            m_dc_htable_histogram = m_buff_current + 1;
+            m_dc_htable_symbols = m_buff_current + 1 + 16;
         }
         else {
-            m_luma_ac_htable = m_buff_current + 1;
+            m_ac_htable_histogram = m_buff_current + 1;
+            m_ac_htable_symbols = m_buff_current + 1 + 16;
         }
     }
 
