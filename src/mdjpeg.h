@@ -120,9 +120,14 @@ struct CompressedData {
         uint8_t* m_buff_start;
         uint8_t* m_buff_current;
         uint8_t* m_buff_end;
+
         uint8_t m_luma_qtable_buff[64] {0};
         uint8_t* m_luma_qtable {nullptr};
+        
+        uint16_t m_luma_dc_htable_buff[12] {0};
         uint8_t* m_luma_dc_htable {nullptr};
+
+        uint16_t m_luma_dc_htable_buff[162] {0};
         uint8_t* m_luma_ac_htable {nullptr};
 
         uint8_t m_zig_zag_map[64] {
@@ -150,7 +155,7 @@ struct CompressedData {
         std::optional<uint16_t> read_uint16() noexcept;
         std::optional<uint16_t> read_marker() noexcept;
         std::optional<uint16_t> read_size() noexcept;
-        uint16_t set_qtable(uint16_t segment_size) noexcept;
+        uint8_t set_qtable(uint16_t segment_size) noexcept;
         uint16_t set_htable(uint16_t segment_size) noexcept;
 };
 
