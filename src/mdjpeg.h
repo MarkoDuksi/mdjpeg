@@ -11,7 +11,7 @@
 
 enum class StateID : uint16_t {
     // Custom final states
-    EXIT_OK    = 0, // Valid final state
+    HEADER_OK  = 0, // Valid final state
     ERROR_PEOB = 1, // Premature End of Buffer
     ERROR_UUM  = 2, // Unsuported or Unrecognized Marker
     ERROR_SEGO = 3, // SEGment Overflow
@@ -118,12 +118,16 @@ class JpegDecoder;
 
 struct CompressedData {
     private:
-        uint8_t* m_buff_start;
-        uint8_t* m_buff_current;
-        uint8_t* m_buff_end;
+        uint8_t* m_buff_start {nullptr};
+        uint8_t* m_buff_current {nullptr};
+        uint8_t* m_buff_end {nullptr};
+        uint8_t* m_start_of_stream {nullptr};
 
         uint8_t m_qtable_buff[64] {0};
         uint8_t* m_qtable {nullptr};
+
+        uint16_t m_height {0};
+        uint16_t m_width {0};
         
         uint8_t* m_dc_htable_histogram {nullptr};
         uint8_t* m_dc_htable_symbols {nullptr};
@@ -148,20 +152,23 @@ struct CompressedData {
 
 
     public:
-        uint16_t m_height {0};
-        uint16_t m_width {0};
-
         CompressedData(uint8_t* buff, size_t size) noexcept;
 
         size_t size_remaining() const noexcept;
         bool seek(const size_t rel_pos) noexcept;
         std::optional<uint8_t> peek(const size_t rel_pos = 0) const noexcept;
+
         std::optional<uint8_t> read_uint8() noexcept;
         std::optional<uint16_t> read_uint16() noexcept;
         std::optional<uint16_t> read_marker() noexcept;
         std::optional<uint16_t> read_size() noexcept;
+
         uint8_t set_qtable(uint16_t segment_size) noexcept;
         uint16_t set_htable(uint16_t segment_size) noexcept;
+
+        void set_height(uint16_t height) noexcept;
+        void set_width(uint16_t width) noexcept;
+        void set_start_of_stream() noexcept;
 };
 
 

@@ -167,6 +167,21 @@ uint16_t CompressedData::set_htable(uint16_t segment_size) noexcept {
     return 1 + 16 + symbols_count;
 }
 
+void CompressedData::set_height(uint16_t height) noexcept {
+    m_height = height;
+}
+
+void CompressedData::set_width(uint16_t width) noexcept {
+    m_width = width;
+}
+
+void CompressedData::set_start_of_stream() noexcept {
+    m_start_of_stream = m_buff_current;
+}
+
+
+
+
 ////////////////
 // JpegDecoder public:
 
@@ -200,7 +215,6 @@ State::~State() {}
 bool State::is_final_state() const noexcept {
     return getID() < StateID::ENTRY;
 }
-
 
 
 
@@ -415,8 +429,8 @@ void ConcreteState<StateID::SOF0>::parse_header() {
         return;
     }
 
-    m_data.m_height = *height;
-    m_data.m_width = *width;
+    m_data.set_height(*height);
+    m_data.set_width(*width);
 
     while ((*components_count)--) {
         const auto component_id = m_data.read_uint8();
@@ -473,14 +487,44 @@ template<>
 void ConcreteState<StateID::SOS>::parse_header() {
     std::cout << "Entered state SOS\n";
 
-    const auto segment_size = m_data.read_size();
+    auto segment_size = m_data.read_size();
 
-    if (!segment_size || !m_data.seek(*segment_size)) {
+    if (!segment_size || *segment_size > m_data.size_remaining()) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
+        return;
     }
-    else {
-        SET_NEXT_STATE(StateID::STREAM);
+
+    // only the 3-component YUV color mode is supported
+    if (*segment_size != 10) {
+        SET_NEXT_STATE(StateID::ERROR_UPAR);
+        return;
     }
+
+    auto components_count = m_data.read_uint8();
+
+    if (*components_count != 3) {
+        SET_NEXT_STATE(StateID::ERROR_UPAR);
+        return;
+    }
+
+    while ((*components_count)--) {
+        const auto component_id = m_data.read_uint8();
+        const auto dc_ac_table_ids = m_data.read_uint8();
+
+        // component 1 must use htables 0 (DC) and 0 (AC)
+        if (*component_id == 1 && *dc_ac_table_ids != 0 ) {
+            SET_NEXT_STATE(StateID::ERROR_UPAR);
+            return;
+        }
+    }
+
+    // only baseline JPEG is supported, skip the rest of SOS segment
+    m_data.seek(3);
+
+    // and mark the begining of Huffman-coded bitstream
+    m_data.set_start_of_stream();
+
+    SET_NEXT_STATE(StateID::STREAM);
 }
 
 template<>
@@ -530,11 +574,4 @@ void ConcreteState<StateID::STREAM>::parse_header() {
         // process the now validated byte current_byte
         // std::cout << "Processing byte from stream: 0x" << std::hex << static_cast<uint>(*current_byte) << "\n";
     }
-}
-
-template<>
-void ConcreteState<StateID::EOI>::parse_header() {
-    std::cout << "Entered state EOI\n";
-
-    SET_NEXT_STATE(StateID::EXIT_OK);
 }

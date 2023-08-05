@@ -58,14 +58,13 @@ int main(int argc, char** argv) {
 
         std::cout << "\nprocessing image: " << file_path << "\n";
 
-        auto [raw_jpeg, size] = read_raw_jpeg_from_file(file_path);
-        uint8_t* buff = raw_jpeg;
+        auto [buff, size] = read_raw_jpeg_from_file(file_path);
 
         JpegDecoder decoder(buff, size);
         StateID final_state_ID = decoder.parse_header();
         
         const char *final_states[] = {
-            "EXIT_OK",
+            "HEADER_OK",
             "ERROR_PEOB",
             "ERROR_UUM",
             "ERROR_SEGO",
@@ -75,7 +74,7 @@ int main(int argc, char** argv) {
 
         std::cout << "Final state: " << final_states[static_cast<size_t>(final_state_ID)] << "\n";
 
-        delete[] raw_jpeg;
+        delete[] buff;
     }
 
     return 0;
