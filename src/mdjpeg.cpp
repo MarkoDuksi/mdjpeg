@@ -129,10 +129,38 @@ uint16_t CompressedData::set_htable(uint16_t segment_size) noexcept {
         if (is_dc) {
             m_dc_htable_histogram = m_buff_current + 1;
             m_dc_htable_symbols = m_buff_current + 1 + 16;
+
+            // generate Huffman codes for DC coeff symbols
+            uint16_t curr_huff_code = 0;
+            uint8_t position = 0;
+            for (size_t i = 0; i < 16; ++i) {
+                // std::cout << "\nDC codes of length " << std::dec << i + 1 << ": ";
+                for (size_t j = 0; j < m_dc_htable_histogram[i]; ++j) {
+                    // std::cout << std::hex << curr_huff_code << " ";
+                    m_dc_huff_codes_buff[position++] = curr_huff_code++;
+                }
+                curr_huff_code <<= 1;
+            }
+            // std::cout << "\n";
+            m_dc_huff_codes = &m_dc_huff_codes_buff[0];
         }
         else {
             m_ac_htable_histogram = m_buff_current + 1;
             m_ac_htable_symbols = m_buff_current + 1 + 16;
+
+            // generate Huffman codes for AC coeff symbols
+            uint16_t curr_huff_code = 0;
+            uint8_t position = 0;
+            for (size_t i = 0; i < 16; ++i) {
+                // std::cout << "\nAC codes of length " << std::dec << i + 1 << ": ";
+                for (size_t j = 0; j < m_ac_htable_histogram[i]; ++j) {
+                    // std::cout << std::hex << curr_huff_code << " ";
+                    m_ac_huff_codes_buff[position++] = curr_huff_code++;
+                }
+                curr_huff_code <<= 1;
+            }
+            // std::cout << "\n";
+            m_ac_huff_codes = &m_ac_huff_codes_buff[0];
         }
     }
 

@@ -127,13 +127,13 @@ struct CompressedData {
         
         uint8_t* m_dc_htable_histogram {nullptr};
         uint8_t* m_dc_htable_symbols {nullptr};
-        uint16_t m_dc_htable_codes_buff[12] {0};
-        uint16_t* m_dc_htable_codes {nullptr};
+        uint16_t m_dc_huff_codes_buff[12] {0};
+        uint16_t* m_dc_huff_codes {nullptr};
 
         uint8_t* m_ac_htable_histogram {nullptr};
         uint8_t* m_ac_htable_symbols {nullptr};
-        uint16_t m_ac_htable_codes_buff[162] {0};
-        uint16_t* m_ac_htable_codes {nullptr};
+        uint16_t m_ac_huff_codes_buff[162] {0};
+        uint16_t* m_ac_huff_codes {nullptr};
 
         uint8_t m_zig_zag_map[64] {
              0,  1,  8, 16,  9,  2,  3, 10,
