@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
     }
     auto input_paths = getInputImgPaths(argv[1]);
 
-    // for (const auto& input_path : input_paths) {
+    // for (const auto& file_path : input_paths) {
     for (size_t i = 0; i < 1; ++i) {
         auto file_path = input_paths[i];
 
@@ -69,7 +69,8 @@ int main(int argc, char** argv) {
             "ERROR_PEOB",
             "ERROR_UUM",
             "ERROR_SEGO",
-            "ERROR_UPAR"
+            "ERROR_UPAR",
+            "ERROR_CORR"
         };
 
         std::cout << "Final state: " << final_states[static_cast<size_t>(final_state_ID)] << "\n";

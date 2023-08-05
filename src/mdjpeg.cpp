@@ -82,6 +82,7 @@ uint8_t CompressedData::set_qtable(uint16_t segment_size) noexcept {
     const uint next_byte = *m_buff_current;
     --segment_size;
 
+    // precision in bytes, not bits
     const uint8_t precision = 1 + static_cast<bool>(next_byte >> 4);
     const uint8_t table_id  = next_byte & 0xf;
 
@@ -111,10 +112,16 @@ uint16_t CompressedData::set_htable(uint16_t segment_size) noexcept {
     uint16_t symbols_count = 0;
 
     for (size_t i = 1; i < 17 && segment_size; ++i, --segment_size) {
+        if (m_buff_current[i] > 1 << i) {
+            return 0;
+        }
         symbols_count += m_buff_current[i];
     }
 
-    if (!segment_size || !symbols_count || symbols_count > segment_size) {
+    if (!segment_size || !symbols_count
+                      || (is_dc && symbols_count > 12)
+                      || symbols_count > 162
+                      || symbols_count > segment_size) {
         return 0;
     }
 
@@ -221,6 +228,7 @@ void ConcreteState<StateID::APP0>::parse_header() {
 
     const auto segment_size = m_data.read_size();
 
+    // seek to the end of segment
     if (!segment_size || !m_data.seek(*segment_size)) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
@@ -259,11 +267,14 @@ void ConcreteState<StateID::DQT>::parse_header() {
     while (*segment_size) {
         const uint8_t qtable_size = m_data.set_qtable(*segment_size);
 
+        // any invalid qtable_size gets returned as 0
         if (!qtable_size) {
-            SET_NEXT_STATE(StateID::ERROR_PEOB);
+            SET_NEXT_STATE(StateID::ERROR_CORR);
             return;
         }
 
+        // note that a valid qtable_size is *always* lte *segment_size
+        // (no integer overflow possible)
         m_data.seek(qtable_size);
         *segment_size -= qtable_size;
     }
@@ -306,11 +317,14 @@ void ConcreteState<StateID::DHT>::parse_header() {
     while (*segment_size) {
         const uint16_t htable_size = m_data.set_htable(*segment_size);
 
+        // any invalid htable_size gets returned as 0
         if (!htable_size) {
-            SET_NEXT_STATE(StateID::ERROR_SEGO);
+            SET_NEXT_STATE(StateID::ERROR_CORR);
             return;
         }
 
+        // note that a valid htable_size is *always* lte *segment_size
+        // (no integer overflow possible)
         m_data.seek(htable_size);
         *segment_size -= htable_size;
     }
@@ -355,7 +369,8 @@ void ConcreteState<StateID::SOF0>::parse_header() {
         return;
     }
 
-    if (*segment_size != 9 && *segment_size != 15) {
+    // only the 3-component YUV color mode is supported
+    if (*segment_size != 15) {
         SET_NEXT_STATE(StateID::ERROR_UPAR);
         return;
     }
@@ -365,12 +380,9 @@ void ConcreteState<StateID::SOF0>::parse_header() {
     const auto width = m_data.read_uint16();
     auto components_count = m_data.read_uint8();
 
-    *segment_size -= 6;
-
     if (*precision != 8 || !*height
                         || !*width
-                        || !(*components_count == 3 || *components_count == 1)
-                        || 3 * *components_count != *segment_size) {
+                        || *components_count != 3) {
         SET_NEXT_STATE(StateID::ERROR_UPAR);
         return;
     }
@@ -380,14 +392,21 @@ void ConcreteState<StateID::SOF0>::parse_header() {
 
     while ((*components_count)--) {
         const auto component_id = m_data.read_uint8();
-        m_data.seek(1);
+        const auto sampling_factor = m_data.read_uint8();
         const auto qtable_id = m_data.read_uint8();
 
+        // supported component IDs: 1, 2 and 3 (Y, U and V channel, respectively)
         if (*component_id == 0 || *component_id > 3 ) {
             SET_NEXT_STATE(StateID::ERROR_UPAR);
             return;
         }
-        if (*component_id == 1 && (*qtable_id != 0)) {
+        // component 1 must use qtable 0 and sampling factor 0x21
+        if (*component_id == 1 && (*qtable_id != 0 || *sampling_factor != 0x21)) {
+            SET_NEXT_STATE(StateID::ERROR_UPAR);
+            return;
+        }
+        // components 2 and 3 must use sampling factor 0x11
+        if (*component_id > 1 && *sampling_factor != 0x11) {
             SET_NEXT_STATE(StateID::ERROR_UPAR);
             return;
         }

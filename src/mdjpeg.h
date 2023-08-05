@@ -16,6 +16,7 @@ enum class StateID : uint16_t {
     ERROR_UUM  = 2, // Unsuported or Unrecognized Marker
     ERROR_SEGO = 3, // SEGment Overflow
     ERROR_UPAR = 4, // Unsuported PARameter
+    ERROR_CORR = 5, // CORRupted data
 
     // Custom transient states
     ENTRY  = 100, // Inital state

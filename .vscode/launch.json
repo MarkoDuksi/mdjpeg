@@ -10,7 +10,7 @@
         "request": "launch",
         "program": "${workspaceFolder}/bin/debug/main.out",
         "args": [
-            "${workspaceFolder}/input/label_TURNED_OVER/1"
+            "${workspaceFolder}/input/test"
         ],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",
