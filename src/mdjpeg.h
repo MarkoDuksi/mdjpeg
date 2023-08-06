@@ -126,9 +126,6 @@ struct CompressedData {
         uint8_t m_qtable_buff[64] {0};
         uint8_t* m_qtable {nullptr};
 
-        uint16_t m_height {0};
-        uint16_t m_width {0};
-        
         uint8_t* m_dc_htable_histogram {nullptr};
         uint8_t* m_dc_htable_symbols {nullptr};
         uint16_t m_dc_huff_codes_buff[12] {0};
@@ -154,6 +151,9 @@ struct CompressedData {
     public:
         CompressedData(uint8_t* buff, size_t size) noexcept;
 
+        uint16_t img_height {0};
+        uint16_t img_width {0};
+        
         size_t size_remaining() const noexcept;
         bool seek(const size_t rel_pos) noexcept;
         std::optional<uint8_t> peek(const size_t rel_pos = 0) const noexcept;
@@ -166,8 +166,6 @@ struct CompressedData {
         uint8_t set_qtable(uint16_t segment_size) noexcept;
         uint16_t set_htable(uint16_t segment_size) noexcept;
 
-        void set_height(uint16_t height) noexcept;
-        void set_width(uint16_t width) noexcept;
         void set_start_of_stream() noexcept;
 };
 
@@ -175,10 +173,10 @@ struct CompressedData {
 class State {
     protected:
         JpegDecoder* m_decoder;
-        CompressedData m_data;
+        CompressedData* m_data;
 
     public:
-        State(JpegDecoder* decoder, CompressedData& data) noexcept;
+        State(JpegDecoder* decoder, CompressedData* data) noexcept;
         virtual ~State();
 
         bool is_final_state() const noexcept;
@@ -190,7 +188,7 @@ class State {
 template <StateID state_id>
 class ConcreteState final : public State {
     public:
-        ConcreteState(JpegDecoder* decoder, CompressedData& data) noexcept :
+        ConcreteState(JpegDecoder* decoder, CompressedData* data) noexcept :
             State(decoder, data)
             {}
 
@@ -208,10 +206,15 @@ class JpegDecoder {
         ConcreteState<StateID::ENTRY> m_state;
         State* m_state_ptr;
 
+        std::optional<uint8_t> get_huff_symbol() noexcept;
+        int16_t get_dct_coeff(uint8_t length) noexcept;
+        bool decode_block(int* dst_block) noexcept;
+
     public:
         JpegDecoder(uint8_t* buff, size_t size) noexcept;
 
         StateID parse_header();
+        bool decode(int* dst, uint16_t x = 0, uint16_t y = 0, uint16_t width = 0, uint16_t height = 0) noexcept;
 
         template <StateID ANY>
         friend class ConcreteState;

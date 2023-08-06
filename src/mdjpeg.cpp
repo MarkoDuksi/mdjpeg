@@ -167,14 +167,6 @@ uint16_t CompressedData::set_htable(uint16_t segment_size) noexcept {
     return 1 + 16 + symbols_count;
 }
 
-void CompressedData::set_height(uint16_t height) noexcept {
-    m_height = height;
-}
-
-void CompressedData::set_width(uint16_t width) noexcept {
-    m_width = width;
-}
-
 void CompressedData::set_start_of_stream() noexcept {
     m_start_of_stream = m_buff_current;
 }
@@ -187,7 +179,7 @@ void CompressedData::set_start_of_stream() noexcept {
 
 JpegDecoder::JpegDecoder(uint8_t *buff, size_t size) noexcept :
     m_data(buff, size),
-    m_state(ConcreteState<StateID::ENTRY>(this, m_data)),
+    m_state(ConcreteState<StateID::ENTRY>(this, &m_data)),
     m_state_ptr(&m_state)
     {}
 
@@ -199,13 +191,116 @@ StateID JpegDecoder::parse_header() {
     return m_state_ptr->getID();
 }
 
+std::optional<uint8_t> JpegDecoder::get_huff_symbol() noexcept {
+    // const auto next_byte = m_data.peek();
+
+    // if (!next_byte) {
+    //     return {};
+    // }
+
+    return m_data.read_uint8();
+}
+
+int16_t JpegDecoder::get_dct_coeff(uint8_t length) noexcept {
+    std::cout << length;
+    return 0;
+}
+
+bool JpegDecoder::decode_block(int* dst_block) noexcept {
+    uint8_t position = 0;
+
+    while (position < 64) {
+        const auto huff_symbol = get_huff_symbol();
+        if (!huff_symbol) {
+            return false;
+        }
+        dst_block[position] = *huff_symbol;
+        ++position;
+    }
+
+    return true;
+}
+
+bool JpegDecoder::decode(int* dst, uint16_t x, uint16_t y, uint16_t width, uint16_t height) noexcept {
+    // decode the whole image area by default
+    if (!width) {
+        width = m_data.img_width;
+    }
+    if (!height) {
+        height = m_data.img_height;
+    }
+
+    int block_8x8[64] {0};
+
+    if (!decode_block(block_8x8)) {
+        return false;
+    }
+
+    for (size_t i = 0; i < 64; ++i) {
+        dst[i] = block_8x8[i];
+    }
+
+
+    // const auto current_byte = m_data.peek();
+
+    // if (!current_byte) {
+    //     SET_STATE(StateID::ERROR_PEOB);
+    //     return false;
+    // }
+
+    // if (*current_byte == 0xff) {
+    //     const auto next_marker = m_data.read_marker();
+
+    //     if (!next_marker) {
+    //         SET_STATE(StateID::ERROR_PEOB);
+    //         return false;
+    //     }
+
+    //     if (*next_marker > 0xff00) {
+    //         if (static_cast<StateID>(*next_marker) >= StateID::RST0
+    //             && static_cast<StateID>(*next_marker) <= StateID::RST7)
+    //         {
+
+    //         }
+    //         switch (static_cast<StateID>(*next_marker)) {
+    //             case StateID::DQT:
+    //                 std::cout << "Found marker: DQT (0x" << std::hex << *next_marker << ")\n";
+    //                 SET_STATE(StateID::DQT);
+    //                 break;
+
+    //             case StateID::DHT:
+    //                 std::cout << "Found marker: DHT (0x" << std::hex << *next_marker << ")\n";
+    //                 SET_STATE(StateID::DHT);
+    //                 break;
+
+    //             case StateID::SOS:
+    //                 std::cout << "Found marker: SOS (0x" << std::hex << *next_marker << ")\n";
+    //                 SET_STATE(StateID::SOS);
+    //                 break;
+
+    //             default:
+    //                 std::cout << "Unexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+    //                 SET_STATE(StateID::ERROR_UUM);
+    //         }
+    //         return;
+    //     }
+    // }
+    // else {
+    //     m_data.seek(1);
+    //     // process the now validated byte current_byte
+    //     // std::cout << "Processing byte from stream: 0x" << std::hex << static_cast<uint>(*current_byte) << "\n";
+    // }
+
+    return true;
+}
+
 
 
 
 ////////////////
 // State public:
 
-State::State(JpegDecoder* decoder, CompressedData& data) noexcept :
+State::State(JpegDecoder* decoder, CompressedData* data) noexcept :
     m_decoder(decoder),
     m_data(data)
     {}
@@ -228,7 +323,7 @@ template<>
 void ConcreteState<StateID::ENTRY>::parse_header() {
     std::cout << "Entered state ENTRY\n";
 
-    const auto next_marker = m_data.read_marker();
+    const auto next_marker = m_data->read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -251,7 +346,7 @@ template<>
 void ConcreteState<StateID::SOI>::parse_header() {
     std::cout << "Entered state SOI\n";
 
-    const auto next_marker = m_data.read_marker();
+    const auto next_marker = m_data->read_marker();
 
     if (static_cast<StateID>(*next_marker) >= StateID::APP0 &&
         static_cast<StateID>(*next_marker) <= StateID::APP15) {
@@ -268,15 +363,15 @@ template<>
 void ConcreteState<StateID::APP0>::parse_header() {
     std::cout << "Entered state APP0\n";
 
-    const auto segment_size = m_data.read_size();
+    const auto segment_size = m_data->read_size();
 
     // seek to the end of segment
-    if (!segment_size || !m_data.seek(*segment_size)) {
+    if (!segment_size || !m_data->seek(*segment_size)) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
-    const auto next_marker = m_data.read_marker();
+    const auto next_marker = m_data->read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -299,15 +394,15 @@ template<>
 void ConcreteState<StateID::DQT>::parse_header() {
     std::cout << "Entered state DQT\n";
 
-    auto segment_size = m_data.read_size();
+    auto segment_size = m_data->read_size();
 
-    if (!segment_size || *segment_size > m_data.size_remaining()) {
+    if (!segment_size || *segment_size > m_data->size_remaining()) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
     while (*segment_size) {
-        const uint8_t qtable_size = m_data.set_qtable(*segment_size);
+        const uint8_t qtable_size = m_data->set_qtable(*segment_size);
 
         // any invalid qtable_size gets returned as 0
         if (!qtable_size) {
@@ -317,11 +412,11 @@ void ConcreteState<StateID::DQT>::parse_header() {
 
         // note that a valid qtable_size is *always* lte *segment_size
         // (no integer overflow possible)
-        m_data.seek(qtable_size);
+        m_data->seek(qtable_size);
         *segment_size -= qtable_size;
     }
 
-    const auto next_marker = m_data.read_marker();
+    const auto next_marker = m_data->read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -349,15 +444,15 @@ template<>
 void ConcreteState<StateID::DHT>::parse_header() {
     std::cout << "Entered state DHT\n";
 
-    auto segment_size = m_data.read_size();
+    auto segment_size = m_data->read_size();
 
-    if (!segment_size || *segment_size > m_data.size_remaining()) {
+    if (!segment_size || *segment_size > m_data->size_remaining()) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
     while (*segment_size) {
-        const uint16_t htable_size = m_data.set_htable(*segment_size);
+        const uint16_t htable_size = m_data->set_htable(*segment_size);
 
         // any invalid htable_size gets returned as 0
         if (!htable_size) {
@@ -367,11 +462,11 @@ void ConcreteState<StateID::DHT>::parse_header() {
 
         // note that a valid htable_size is *always* lte *segment_size
         // (no integer overflow possible)
-        m_data.seek(htable_size);
+        m_data->seek(htable_size);
         *segment_size -= htable_size;
     }
 
-    const auto next_marker = m_data.read_marker();
+    const auto next_marker = m_data->read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -404,9 +499,9 @@ template<>
 void ConcreteState<StateID::SOF0>::parse_header() {
     std::cout << "Entered state SOF0\n";
 
-    auto segment_size = m_data.read_size();
+    auto segment_size = m_data->read_size();
 
-    if (!segment_size || *segment_size > m_data.size_remaining()) {
+    if (!segment_size || *segment_size > m_data->size_remaining()) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
@@ -417,10 +512,10 @@ void ConcreteState<StateID::SOF0>::parse_header() {
         return;
     }
 
-    const auto precision = m_data.read_uint8();
-    const auto height = m_data.read_uint16();
-    const auto width = m_data.read_uint16();
-    auto components_count = m_data.read_uint8();
+    const auto precision = m_data->read_uint8();
+    const auto height = m_data->read_uint16();
+    const auto width = m_data->read_uint16();
+    auto components_count = m_data->read_uint8();
 
     if (*precision != 8 || !*height
                         || !*width
@@ -429,13 +524,13 @@ void ConcreteState<StateID::SOF0>::parse_header() {
         return;
     }
 
-    m_data.set_height(*height);
-    m_data.set_width(*width);
+    m_data->img_height = *height;
+    m_data->img_width = *width;
 
     while ((*components_count)--) {
-        const auto component_id = m_data.read_uint8();
-        const auto sampling_factor = m_data.read_uint8();
-        const auto qtable_id = m_data.read_uint8();
+        const auto component_id = m_data->read_uint8();
+        const auto sampling_factor = m_data->read_uint8();
+        const auto qtable_id = m_data->read_uint8();
 
         // supported component IDs: 1, 2 and 3 (Y, U and V channel, respectively)
         if (*component_id == 0 || *component_id > 3 ) {
@@ -454,7 +549,7 @@ void ConcreteState<StateID::SOF0>::parse_header() {
         }
     }
 
-    const auto next_marker = m_data.read_marker();
+    const auto next_marker = m_data->read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -487,9 +582,9 @@ template<>
 void ConcreteState<StateID::SOS>::parse_header() {
     std::cout << "Entered state SOS\n";
 
-    auto segment_size = m_data.read_size();
+    auto segment_size = m_data->read_size();
 
-    if (!segment_size || *segment_size > m_data.size_remaining()) {
+    if (!segment_size || *segment_size > m_data->size_remaining()) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
@@ -500,7 +595,7 @@ void ConcreteState<StateID::SOS>::parse_header() {
         return;
     }
 
-    auto components_count = m_data.read_uint8();
+    auto components_count = m_data->read_uint8();
 
     if (*components_count != 3) {
         SET_NEXT_STATE(StateID::ERROR_UPAR);
@@ -508,8 +603,8 @@ void ConcreteState<StateID::SOS>::parse_header() {
     }
 
     while ((*components_count)--) {
-        const auto component_id = m_data.read_uint8();
-        const auto dc_ac_table_ids = m_data.read_uint8();
+        const auto component_id = m_data->read_uint8();
+        const auto dc_ac_table_ids = m_data->read_uint8();
 
         // component 1 must use htables 0 (DC) and 0 (AC)
         if (*component_id == 1 && *dc_ac_table_ids != 0 ) {
@@ -519,19 +614,19 @@ void ConcreteState<StateID::SOS>::parse_header() {
     }
 
     // only baseline JPEG is supported, skip the rest of SOS segment
-    m_data.seek(3);
+    m_data->seek(3);
 
     // and mark the begining of Huffman-coded bitstream
-    m_data.set_start_of_stream();
+    m_data->set_start_of_stream();
 
-    SET_NEXT_STATE(StateID::STREAM);
+    SET_NEXT_STATE(StateID::HEADER_OK);
 }
 
 template<>
 void ConcreteState<StateID::STREAM>::parse_header() {
     // std::cout << "Entered state STREAM\n";
 
-    const auto current_byte = m_data.peek();
+    const auto current_byte = m_data->peek();
 
     if (!current_byte) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -539,7 +634,7 @@ void ConcreteState<StateID::STREAM>::parse_header() {
     }
 
     if (*current_byte == 0xff) {
-        const auto next_marker = m_data.read_marker();
+        const auto next_marker = m_data->read_marker();
 
         if (!next_marker) {
             SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -570,7 +665,7 @@ void ConcreteState<StateID::STREAM>::parse_header() {
         }
     }
     else {
-        m_data.seek(1);
+        m_data->seek(1);
         // process the now validated byte current_byte
         // std::cout << "Processing byte from stream: 0x" << std::hex << static_cast<uint>(*current_byte) << "\n";
     }
