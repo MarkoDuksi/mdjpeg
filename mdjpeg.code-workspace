@@ -36,7 +36,7 @@
 				"cwd": "/home/dule/Wrk/C++/mdjpeg/",
 				"binaryPath": "/home/dule/Wrk/C++/mdjpeg/bin/debug/main.out",
 				"binaryArgs": [
-					"input/label_TURNED_OVER/1"
+					"input/test"
 				]
 			}
 		],

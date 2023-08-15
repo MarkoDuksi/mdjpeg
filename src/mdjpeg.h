@@ -20,7 +20,6 @@ enum class StateID : uint16_t {
 
     // Custom transient states
     ENTRY  = 100, // Inital state
-    STREAM = 101, // Compressed stream processing state
 
     // Temporary, arithmetic coding
     TEM = 0xff01,
@@ -116,25 +115,30 @@ enum class StateID : uint16_t {
 class JpegDecoder;
 
 
+template<size_t SIZE>
+struct HuffmanTable {
+    uint8_t* histogram {nullptr};
+    uint8_t* symbols {nullptr};
+    uint16_t codes[SIZE] {0};
+    bool is_set {false};
+};
+
+
+struct HuffmanTables {
+    HuffmanTable<12> dc;
+    HuffmanTable<162> ac;
+};
+
+
 struct CompressedData {
     private:
         uint8_t* m_buff_start {nullptr};
-        uint8_t* m_buff_current {nullptr};
+        uint8_t* m_buff_current_byte {nullptr};
         uint8_t* m_buff_end {nullptr};
-        uint8_t* m_start_of_stream {nullptr};
+        uint8_t* m_buff_start_of_ECS {nullptr};
 
-        uint8_t m_qtable_buff[64] {0};
         uint8_t* m_qtable {nullptr};
-
-        uint8_t* m_dc_htable_histogram {nullptr};
-        uint8_t* m_dc_htable_symbols {nullptr};
-        uint16_t m_dc_huff_codes_buff[12] {0};
-        uint16_t* m_dc_huff_codes {nullptr};
-
-        uint8_t* m_ac_htable_histogram {nullptr};
-        uint8_t* m_ac_htable_symbols {nullptr};
-        uint16_t m_ac_huff_codes_buff[162] {0};
-        uint16_t* m_ac_huff_codes {nullptr};
+        HuffmanTables m_htables[2];
 
         uint8_t m_zig_zag_map[64] {
              0,  1,  8, 16,  9,  2,  3, 10,
@@ -147,12 +151,14 @@ struct CompressedData {
             53, 60, 61, 54, 47, 55, 62, 63
         };
 
+        uint16_t img_height {0};
+        uint16_t img_width {0};
+        bool     m_horiz_subsampling {false};
+
+        size_t m_current_bit_pos {7};
 
     public:
         CompressedData(uint8_t* buff, size_t size) noexcept;
-
-        uint16_t img_height {0};
-        uint16_t img_width {0};
         
         size_t size_remaining() const noexcept;
         bool seek(const size_t rel_pos) noexcept;
@@ -162,11 +168,15 @@ struct CompressedData {
         std::optional<uint16_t> read_uint16() noexcept;
         std::optional<uint16_t> read_marker() noexcept;
         std::optional<uint16_t> read_size() noexcept;
+        int read_bit() noexcept;
 
-        uint8_t set_qtable(uint16_t segment_size) noexcept;
-        uint16_t set_htable(uint16_t segment_size) noexcept;
+        uint set_qtable(size_t max_read_length) noexcept;
+        uint set_htable(size_t max_read_length) noexcept;
 
-        void set_start_of_stream() noexcept;
+        friend class JpegDecoder;
+        
+        template <StateID ANY>
+        friend class ConcreteState;
 };
 
 
@@ -206,9 +216,10 @@ class JpegDecoder {
         ConcreteState<StateID::ENTRY> m_state;
         State* m_state_ptr;
 
-        std::optional<uint8_t> get_huff_symbol() noexcept;
-        int16_t get_dct_coeff(uint8_t length) noexcept;
-        bool decode_block(int* dst_block) noexcept;
+        uint8_t get_dc_huff_symbol(uint table_id) noexcept;
+        uint8_t get_ac_huff_symbol(uint table_id) noexcept;
+        int16_t get_dct_coeff(uint length) noexcept;
+        bool huff_decode_block(int* dst_block, int& previous_dc_coeff, uint table_id) noexcept;
 
     public:
         JpegDecoder(uint8_t* buff, size_t size) noexcept;

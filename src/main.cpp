@@ -72,18 +72,19 @@ int main(int argc, char** argv) {
             "ERROR_CORR"
         };
 
-        std::cout << "Final state after parse_header(): " << final_states[static_cast<size_t>(final_state_ID)] << "\n";
+        std::cout << "Final state after parse_header(): " << final_states[static_cast<size_t>(final_state_ID)] << "\n\n";
 
         int decoded_img[64] {0};
 
         decoder.decode(decoded_img);
+        std::cout << "processed image: " << file_path << "\n\n";
 
-        for (size_t i = 0; i < 8; ++i) {
-            for (size_t j = 0; j < 8; ++j) {
-                std::cout << std::dec << decoded_img[8 * i + j] << " ";
-            }
-            std::cout << "\n";
-        }
+        // for (uint i = 0; i < 8; ++i) {
+        //     for (uint j = 0; j < 8; ++j) {
+        //         std::cout << std::dec << decoded_img[8 * i + j] << " ";
+        //     }
+        //     std::cout << "\n";
+        // }
 
         delete[] buff;
     }

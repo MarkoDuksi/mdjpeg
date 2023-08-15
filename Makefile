@@ -13,7 +13,7 @@ CXX_RELEASE_FLAGS = -DNDEBUG -DRELEASE
 DEP_FLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$(*F).$(BUILD_TYPE).d.tmp
 LIB_INCLUDE_DIRS_FLAGS = $(addprefix -L, $(LIB_DIRS))
 HDR_INCLUDE_DIRS_FLAGS = $(addprefix -I, $(HDR_DIRS))
-LD_FLAGS = -lX11
+LD_FLAGS = -lX11 -lfmt
 
 POSTCOMPILE = @mv -f $(DEP_DIR)/$(*F).$(BUILD_TYPE).d.tmp $(DEP_DIR)/$(*F).$(BUILD_TYPE).d && touch $@
 
