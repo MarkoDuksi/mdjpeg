@@ -1,5 +1,7 @@
 #include "mdjpeg.h"
 
+#include <cmath>
+
 #include <fmt/core.h>
 
 
@@ -11,10 +13,10 @@
 /////////////////////////
 // CompressedData public:
 
-CompressedData::CompressedData(uint8_t* buff, size_t size) noexcept :
+CompressedData::CompressedData(const uint8_t* const buff, const size_t size) noexcept :
     m_buff_start(buff),
-    m_buff_current_byte(buff),
-    m_buff_end(m_buff_start + size)
+    m_buff_end(m_buff_start + size),
+    m_buff_current_byte(const_cast<const uint8_t*>(buff))
     {}
 
 size_t CompressedData::size_remaining() const noexcept {
@@ -134,8 +136,96 @@ int CompressedData::read_bit() noexcept {
     return ECS_ERROR;
 }
 
-uint CompressedData::set_qtable(size_t max_read_length) noexcept {
-    const uint next_byte = *m_buff_current_byte++;
+
+
+
+////////////////
+// JpegDecoder public:
+
+JpegDecoder::JpegDecoder(const uint8_t* const buff, const size_t size) noexcept :
+    m_data(buff, size),
+    m_state(ConcreteState<StateID::ENTRY>(this, &m_data)),
+    m_istate(&m_state)
+    {}
+
+StateID JpegDecoder::parse_header() {
+    while (!m_istate->is_final_state()) {
+        m_istate->parse_header();
+    }
+
+    return m_istate->getID();
+}
+
+uint8_t JpegDecoder::get_dc_huff_symbol(const uint table_id) noexcept {
+    uint curr_code = 0;
+    uint idx = 0;
+
+    for (uint i = 0; i < 16; ++i) {
+        const int next_bit = m_data.read_bit();
+        if (next_bit == ECS_ERROR) {
+            return SYMBOL_ERROR;
+        }
+
+        curr_code |= next_bit;
+        for (uint j = 0; j < m_htables[table_id].dc.histogram[i] && idx < 12; ++j) {
+            if (curr_code == m_htables[table_id].dc.codes[idx]) {
+                return m_htables[table_id].dc.symbols[idx];
+            }
+            ++idx;
+        }
+        curr_code <<= 1;
+    }
+
+    return 0xff;
+}
+
+uint8_t JpegDecoder::get_ac_huff_symbol(const uint table_id) noexcept {
+    uint curr_code = 0;
+    uint idx = 0;
+
+    for (uint i = 0; i < 16; ++i) {
+        const int next_bit = m_data.read_bit();
+        if (next_bit == ECS_ERROR) {
+            return SYMBOL_ERROR;
+        }
+
+        curr_code = curr_code << 1 | next_bit;
+        for (uint j = 0; j < m_htables[table_id].ac.histogram[i] && idx < 162; ++j) {
+            if (curr_code == m_htables[table_id].ac.codes[idx]) {
+                return m_htables[table_id].ac.symbols[idx];
+            }
+            ++idx;
+        }
+    }
+
+    return 0xff;
+}
+
+int16_t JpegDecoder::get_dct_coeff(const uint length) noexcept {
+    if (length > 16) {
+        return COEF_ERROR;
+    }
+
+    int dct_coeff = 0;
+
+    for (uint i = 0; i < length; ++i) {
+        const int next_bit = m_data.read_bit();
+        if (next_bit == ECS_ERROR) {
+            return COEF_ERROR;
+        }
+        dct_coeff = dct_coeff << 1 | next_bit;
+    }
+
+    // recover negative values
+    if (length && dct_coeff >> (length - 1) == 0) {
+        return dct_coeff - (1 << length) + 1;
+    }
+
+    return dct_coeff;
+}
+
+uint JpegDecoder::set_qtable(const size_t max_read_length) noexcept {
+    const uint next_byte = *m_data.m_buff_current_byte++;
 
     const uint precision = 1 + bool(next_byte >> 4);  // in bytes, not bits
     const uint table_id  = next_byte & 0xf;
@@ -148,20 +238,20 @@ uint CompressedData::set_qtable(size_t max_read_length) noexcept {
     // store only 8-bit luma quantization table pointer
     if (table_id == 0) {
         if (precision == 1) {
-            m_qtable = m_buff_current_byte;
+            m_qtable = m_data.m_buff_current_byte;
         }
         else {
             return 0;
         }
     }
 
-    m_buff_current_byte += table_size;
+    m_data.m_buff_current_byte += table_size;
 
     return 1 + table_size;
 }
 
-uint CompressedData::set_htable(size_t max_read_length) noexcept {
-    const uint next_byte = *m_buff_current_byte;
+uint JpegDecoder::set_htable(size_t max_read_length) noexcept {
+    const uint next_byte = *m_data.m_buff_current_byte;
     --max_read_length;
 
     const bool is_dc = !(next_byte >> 4);
@@ -170,10 +260,10 @@ uint CompressedData::set_htable(size_t max_read_length) noexcept {
     uint symbols_count = 0;
 
     for (uint i = 1; i < 17; ++i) {
-        if (!max_read_length || m_buff_current_byte[i] > 1 << i) {
+        if (!max_read_length || m_data.m_buff_current_byte[i] > 1 << i) {
             return 0;
         }
-        symbols_count += m_buff_current_byte[i];
+        symbols_count += m_data.m_buff_current_byte[i];
         --max_read_length;
     }
 
@@ -186,8 +276,8 @@ uint CompressedData::set_htable(size_t max_read_length) noexcept {
     }
 
     if (is_dc) {
-        m_htables[table_id].dc.histogram = m_buff_current_byte + 1;
-        m_htables[table_id].dc.symbols = m_buff_current_byte + 1 + 16;
+        m_htables[table_id].dc.histogram = m_data.m_buff_current_byte + 1;
+        m_htables[table_id].dc.symbols = m_data.m_buff_current_byte + 1 + 16;
         std::cout << "\nHuffman table id " << (int)table_id << " (DC):\n";
         std::cout << "(length: code -> symbol)\n";
 
@@ -207,8 +297,8 @@ uint CompressedData::set_htable(size_t max_read_length) noexcept {
         m_htables[table_id].dc.is_set = true;
     }
     else {
-        m_htables[table_id].ac.histogram = m_buff_current_byte + 1;
-        m_htables[table_id].ac.symbols = m_buff_current_byte + 1 + 16;
+        m_htables[table_id].ac.histogram = m_data.m_buff_current_byte + 1;
+        m_htables[table_id].ac.symbols = m_data.m_buff_current_byte + 1 + 16;
         std::cout << "\nHuffman table id " << (int)table_id << " (AC):\n";
         std::cout << "(length: code -> symbol)\n";
 
@@ -231,96 +321,8 @@ uint CompressedData::set_htable(size_t max_read_length) noexcept {
     return 1 + 16 + symbols_count;
 }
 
-
-
-
-////////////////
-// JpegDecoder public:
-
-JpegDecoder::JpegDecoder(uint8_t *buff, size_t size) noexcept :
-    m_data(buff, size),
-    m_state(ConcreteState<StateID::ENTRY>(this, &m_data)),
-    m_state_ptr(&m_state)
-    {}
-
-StateID JpegDecoder::parse_header() {
-    while (!m_state_ptr->is_final_state()) {
-        m_state_ptr->parse_header();
-    }
-
-    return m_state_ptr->getID();
-}
-
-uint8_t JpegDecoder::get_dc_huff_symbol(uint table_id) noexcept {
-    uint curr_code = 0;
-    uint idx = 0;
-
-    for (uint i = 0; i < 16; ++i) {
-        const int next_bit = m_data.read_bit();
-        if (next_bit == ECS_ERROR) {
-            return SYMBOL_ERROR;
-        }
-
-        curr_code |= next_bit;
-        for (uint j = 0; j < m_data.m_htables[table_id].dc.histogram[i] && idx < 12; ++j) {
-            if (curr_code == m_data.m_htables[table_id].dc.codes[idx]) {
-                return m_data.m_htables[table_id].dc.symbols[idx];
-            }
-            ++idx;
-        }
-        curr_code <<= 1;
-    }
-
-    return 0xff;
-}
-
-uint8_t JpegDecoder::get_ac_huff_symbol(uint table_id) noexcept {
-    uint curr_code = 0;
-    uint idx = 0;
-
-    for (uint i = 0; i < 16; ++i) {
-        const int next_bit = m_data.read_bit();
-        if (next_bit == ECS_ERROR) {
-            return SYMBOL_ERROR;
-        }
-
-        curr_code = curr_code << 1 | next_bit;
-        for (uint j = 0; j < m_data.m_htables[table_id].ac.histogram[i] && idx < 162; ++j) {
-            if (curr_code == m_data.m_htables[table_id].ac.codes[idx]) {
-                return m_data.m_htables[table_id].ac.symbols[idx];
-            }
-            ++idx;
-        }
-    }
-
-    return 0xff;
-}
-
-int16_t JpegDecoder::get_dct_coeff(uint length) noexcept {
-    if (length > 16) {
-        return COEF_ERROR;
-    }
-
-    int dct_coeff = 0;
-
-    for (uint i = 0; i < length; ++i) {
-        const int next_bit = m_data.read_bit();
-        if (next_bit == ECS_ERROR) {
-            return COEF_ERROR;
-        }
-        dct_coeff = dct_coeff << 1 | next_bit;
-    }
-
-    // recover negative values
-    if (dct_coeff && dct_coeff >> (length - 1) == 0) {
-        return dct_coeff - (1 << length) + 1;
-    }
-
-    return dct_coeff;
-}
-
-bool JpegDecoder::huff_decode_block(int* dst_block, int& previous_dc_coeff, uint table_id) noexcept {
-    if (m_state_ptr->getID() != StateID::HEADER_OK) {
+bool JpegDecoder::huff_decode(int* const dst_block, int& previous_dc_coeff, const uint table_id) noexcept {
+    if (m_istate->getID() != StateID::HEADER_OK) {
         return false;
     }
 
@@ -363,7 +365,7 @@ bool JpegDecoder::huff_decode_block(int* dst_block, int& previous_dc_coeff, uint
         }
 
         while (pre_zeros_count--) {
-            dst_block[m_data.m_zig_zag_map[idx++]] = 0;
+            dst_block[m_zig_zag_map[idx++]] = 0;
         }
 
         if (huff_symbol == 0xf0) {  // done with this symbol
@@ -380,27 +382,186 @@ bool JpegDecoder::huff_decode_block(int* dst_block, int& previous_dc_coeff, uint
             return false;
         }
 
-        dst_block[m_data.m_zig_zag_map[idx++]] = dct_coeff;
+        dst_block[m_zig_zag_map[idx++]] = dct_coeff;
     }
 
     while (idx < 64) {
-        dst_block[m_data.m_zig_zag_map[idx++]] = 0;
+        dst_block[m_zig_zag_map[idx++]] = 0;
     }
 
     return true;
 }
 
-bool JpegDecoder::decode(int* dst, uint16_t x, uint16_t y, uint16_t width, uint16_t height) noexcept {
-    if (m_state_ptr->getID() != StateID::HEADER_OK) {
+
+void JpegDecoder::dequantize(int* const block) noexcept {
+    for (uint i = 0; i < 64; ++i) {
+        block[m_zig_zag_map[i]] *= m_qtable[i];
+    }
+}
+
+
+// idct code from:
+// - https://github.com/dannye/jed/blob/master/src/jpg.h
+void JpegDecoder::idct(int* const block) noexcept {
+    for (uint i = 0; i < 8; ++i) {
+        const float g0 = block[0 * 8 + i] * s0;
+        const float g1 = block[4 * 8 + i] * s4;
+        const float g2 = block[2 * 8 + i] * s2;
+        const float g3 = block[6 * 8 + i] * s6;
+        const float g4 = block[5 * 8 + i] * s5;
+        const float g5 = block[1 * 8 + i] * s1;
+        const float g6 = block[7 * 8 + i] * s7;
+        const float g7 = block[3 * 8 + i] * s3;
+
+        const float f0 = g0;
+        const float f1 = g1;
+        const float f2 = g2;
+        const float f3 = g3;
+        const float f4 = g4 - g7;
+        const float f5 = g5 + g6;
+        const float f6 = g5 - g6;
+        const float f7 = g4 + g7;
+
+        const float e0 = f0;
+        const float e1 = f1;
+        const float e2 = f2 - f3;
+        const float e3 = f2 + f3;
+        const float e4 = f4;
+        const float e5 = f5 - f7;
+        const float e6 = f6;
+        const float e7 = f5 + f7;
+        const float e8 = f4 + f6;
+
+        const float d0 = e0;
+        const float d1 = e1;
+        const float d2 = e2 * m1;
+        const float d3 = e3;
+        const float d4 = e4 * m2;
+        const float d5 = e5 * m3;
+        const float d6 = e6 * m4;
+        const float d7 = e7;
+        const float d8 = e8 * m5;
+
+        const float c0 = d0 + d1;
+        const float c1 = d0 - d1;
+        const float c2 = d2 - d3;
+        const float c3 = d3;
+        const float c4 = d4 + d8;
+        const float c5 = d5 + d7;
+        const float c6 = d6 - d8;
+        const float c7 = d7;
+        const float c8 = c5 - c6;
+
+        const float b0 = c0 + c3;
+        const float b1 = c1 + c2;
+        const float b2 = c1 - c2;
+        const float b3 = c0 - c3;
+        const float b4 = c4 - c8;
+        const float b5 = c8;
+        const float b6 = c6 - c7;
+        const float b7 = c7;
+
+        block[0 * 8 + i] = b0 + b7;
+        block[1 * 8 + i] = b1 + b6;
+        block[2 * 8 + i] = b2 + b5;
+        block[3 * 8 + i] = b3 + b4;
+        block[4 * 8 + i] = b3 - b4;
+        block[5 * 8 + i] = b2 - b5;
+        block[6 * 8 + i] = b1 - b6;
+        block[7 * 8 + i] = b0 - b7;
+    }
+
+    for (uint i = 0; i < 8; ++i) {
+        const float g0 = block[i * 8 + 0] * s0;
+        const float g1 = block[i * 8 + 4] * s4;
+        const float g2 = block[i * 8 + 2] * s2;
+        const float g3 = block[i * 8 + 6] * s6;
+        const float g4 = block[i * 8 + 5] * s5;
+        const float g5 = block[i * 8 + 1] * s1;
+        const float g6 = block[i * 8 + 7] * s7;
+        const float g7 = block[i * 8 + 3] * s3;
+
+        const float f0 = g0;
+        const float f1 = g1;
+        const float f2 = g2;
+        const float f3 = g3;
+        const float f4 = g4 - g7;
+        const float f5 = g5 + g6;
+        const float f6 = g5 - g6;
+        const float f7 = g4 + g7;
+
+        const float e0 = f0;
+        const float e1 = f1;
+        const float e2 = f2 - f3;
+        const float e3 = f2 + f3;
+        const float e4 = f4;
+        const float e5 = f5 - f7;
+        const float e6 = f6;
+        const float e7 = f5 + f7;
+        const float e8 = f4 + f6;
+
+        const float d0 = e0;
+        const float d1 = e1;
+        const float d2 = e2 * m1;
+        const float d3 = e3;
+        const float d4 = e4 * m2;
+        const float d5 = e5 * m3;
+        const float d6 = e6 * m4;
+        const float d7 = e7;
+        const float d8 = e8 * m5;
+
+        const float c0 = d0 + d1;
+        const float c1 = d0 - d1;
+        const float c2 = d2 - d3;
+        const float c3 = d3;
+        const float c4 = d4 + d8;
+        const float c5 = d5 + d7;
+        const float c6 = d6 - d8;
+        const float c7 = d7;
+        const float c8 = c5 - c6;
+
+        const float b0 = c0 + c3;
+        const float b1 = c1 + c2;
+        const float b2 = c1 - c2;
+        const float b3 = c0 - c3;
+        const float b4 = c4 - c8;
+        const float b5 = c8;
+        const float b6 = c6 - c7;
+        const float b7 = c7;
+
+        block[i * 8 + 0] = b0 + b7;
+        block[i * 8 + 1] = b1 + b6;
+        block[i * 8 + 2] = b2 + b5;
+        block[i * 8 + 3] = b3 + b4;
+        block[i * 8 + 4] = b3 - b4;
+        block[i * 8 + 5] = b2 - b5;
+        block[i * 8 + 6] = b1 - b6;
+        block[i * 8 + 7] = b0 - b7;
+    }
+}
+
+
+void JpegDecoder::level_to_unsigned(int* const block) noexcept {
+    for (uint i = 0; i < 64; ++i) {
+        block[i] += 128;
+    }
+}
+
+
+bool JpegDecoder::decode(uint8_t* const dst, uint16_t x, uint16_t y, uint16_t width, uint16_t height) noexcept {
+    if (parse_header() == StateID::HEADER_OK) {
+        std::cout << "\nFinished in state HEADER_OK\n";
+    }
+    else {
         return false;
     }
     
     // decode the whole image area by default
     if (!width) {
-        width = m_data.img_width;
+        width = m_data.m_img_width;
     }
     if (!height) {
-        height = m_data.img_height;
+        height = m_data.m_img_height;
     }
 
     int block_8x8[64] {0};
@@ -408,77 +569,57 @@ bool JpegDecoder::decode(int* dst, uint16_t x, uint16_t y, uint16_t width, uint1
 
     const uint blocks_width = (width + 7) / 8;
     const uint blocks_height = (height + 7) / 8;
-    const uint subblocks_width = 2 * blocks_width;
+    const uint subblocks_width = blocks_width * (3 - m_data.m_horiz_subsampling);
     const uint subblocks_height = blocks_height;
     const uint subblocks_count = subblocks_width * subblocks_height;
 
+    std::cout << "\n";
     std::cout << "width:  " << std::dec << width << "\n";
     std::cout << "height: " << std::dec << height << "\n";
     std::cout << "subblocks_count: " << std::dec << subblocks_count << "\n";
     std::cout << "m_data.m_buff_start:           " << std::hex << (size_t)m_data.m_buff_start << "\n";
     std::cout << "m_data.m_buff_start_of_ECS:    " << std::hex << (size_t)m_data.m_buff_start_of_ECS << "\n";
-    std::cout << "m_data.m_buff_current_byte:    " << std::hex << (size_t)m_data.m_buff_current_byte << "\n";
     std::cout << "m_data.m_buff_end:             " << std::hex << (size_t)m_data.m_buff_end << "\n";
             
-    uint mcu_count = 1;
+    uint luma_count = 0;
     for (uint i = 0; i < subblocks_count; ++i) {
-        if ((i & 3) <= 1) {
-            std::cout << "\nY (MCU #" << std::dec << mcu_count << ")\n";
-            if (!huff_decode_block(block_8x8, previous_dc_coeffs[0], 0)) {
-                std::cout << "Huffman decoding FAILED!" << "\n";
-                std::cout << "width:  " << std::dec << width << "\n";
-                std::cout << "height: " << std::dec << height << "\n";
-                std::cout << "subblocks_count: " << std::dec << subblocks_count << "\n";
-                std::cout << "m_data.m_buff_start:           " << std::hex << (size_t)m_data.m_buff_start << "\n";
-                std::cout << "m_data.m_buff_start_of_ECS:    " << std::hex << (size_t)m_data.m_buff_start_of_ECS << "\n";
-                std::cout << "m_data.m_buff_current_byte:    " << std::hex << (size_t)m_data.m_buff_current_byte << "\n";
-                std::cout << "m_data.m_buff_end:             " << std::hex << (size_t)m_data.m_buff_end << "\n";
+        if ((i % (3 + m_data.m_horiz_subsampling)) <= m_data.m_horiz_subsampling) {  // LUMA component
+            if (!huff_decode(block_8x8, previous_dc_coeffs[0], 0)) {
+                std::cout << "\nHuffman decoding FAILED!" << "\n";
+                return false;
+            }
+
+            dequantize(block_8x8);
+            idct(block_8x8);
+            level_to_unsigned(block_8x8);
+
+            for (uint row = 0; row < blocks_height; ++row) {
+                for (uint col = 0; col < blocks_width; ++col) {
+                    for (uint y = 0; y < 8; ++y) {
+                        for (uint x = 0; x < 8; ++x) {
+                            dst[(8 * row + y) * m_data.m_img_width + 8 * col + x] = block_8x8[8 * y + x];
+                        }
+                    }
+                }
+            }
+
+            ++luma_count;
+        }
+        else if ((i % (3 + m_data.m_horiz_subsampling)) == 1u + m_data.m_horiz_subsampling) {  // Cr component
+            if (!huff_decode(block_8x8, previous_dc_coeffs[1], 1)) {
+                std::cout << "\nHuffman decoding FAILED!" << "\n";
                 return false;
             }
         }
-        else if ((i & 3) == 2) {
-            std::cout << "\nCb (MCU #" << std::dec << mcu_count << ")\n";
-            if (!huff_decode_block(block_8x8, previous_dc_coeffs[1], 1)) {
-                std::cout << "Huffman decoding FAILED!" << "\n";
-                std::cout << "width:  " << std::dec << width << "\n";
-                std::cout << "height: " << std::dec << height << "\n";
-                std::cout << "subblocks_count: " << std::dec << subblocks_count << "\n";
-                std::cout << "m_data.m_buff_start:           " << std::hex << (size_t)m_data.m_buff_start << "\n";
-                std::cout << "m_data.m_buff_start_of_ECS:    " << std::hex << (size_t)m_data.m_buff_start_of_ECS << "\n";
-                std::cout << "m_data.m_buff_current_byte:    " << std::hex << (size_t)m_data.m_buff_current_byte << "\n";
-                std::cout << "m_data.m_buff_end:             " << std::hex << (size_t)m_data.m_buff_end << "\n";
-                return false;
-            }
-        }
-        else {
-            std::cout << "\nCr (MCU #" << std::dec << mcu_count++ << ")\n";
-            if (!huff_decode_block(block_8x8, previous_dc_coeffs[2], 1)) {
+        else {  // Cb component
+            if (!huff_decode(block_8x8, previous_dc_coeffs[2], 1)) {
                 std::cout << "\nHuffman Decoding FAILED!\n";
-                std::cout << "width:  " << std::dec << width << "\n";
-                std::cout << "height: " << std::dec << height << "\n";
-                std::cout << "subblocks_count: " << std::dec << subblocks_count << "\n";
-                std::cout << "m_data.m_buff_start:           " << std::hex << (size_t)m_data.m_buff_start << "\n";
-                std::cout << "m_data.m_buff_start_of_ECS:    " << std::hex << (size_t)m_data.m_buff_start_of_ECS << "\n";
-                std::cout << "m_data.m_buff_current_byte:    " << std::hex << (size_t)m_data.m_buff_current_byte << "\n";
-                std::cout << "m_data.m_buff_end:             " << std::hex << (size_t)m_data.m_buff_end << "\n";
                 return false;
             }
         }
-
-        for (uint i = 0; i < 8; ++i) {
-            for (uint j = 0; j < 8; ++j) {
-                std::cout << std::dec << block_8x8[8 * i + j] << " ";
-            }
-            std::cout << "\n";
-        }
-
     }
 
     std::cout << "\nDecoding SUCCESSFUL.\n\n";
-
-    for (uint i = 0; i < 64; ++i) {
-        dst[i] = block_8x8[i];
-    }
 
     return true;
 }
@@ -489,7 +630,7 @@ bool JpegDecoder::decode(int* dst, uint16_t x, uint16_t y, uint16_t width, uint1
 ////////////////
 // State public:
 
-State::State(JpegDecoder* decoder, CompressedData* data) noexcept :
+State::State(JpegDecoder* const decoder, CompressedData* const data) noexcept :
     m_decoder(decoder),
     m_data(data)
     {}
@@ -506,7 +647,7 @@ bool State::is_final_state() const noexcept {
 ////////////////////////
 // ConcreteState public:
 
-#define SET_NEXT_STATE(state_id) m_decoder->m_state_ptr = new (m_decoder->m_state_ptr) ConcreteState<state_id>(m_decoder, m_data)
+#define SET_NEXT_STATE(state_id) m_decoder->m_istate = new (m_decoder->m_istate) ConcreteState<state_id>(m_decoder, m_data)
 
 template<>
 void ConcreteState<StateID::ENTRY>::parse_header() {
@@ -600,7 +741,7 @@ void ConcreteState<StateID::DQT>::parse_header() {
     }
 
     while (*segment_size) {
-        const uint qtable_size = m_data->set_qtable(*segment_size);
+        const uint qtable_size = m_decoder->set_qtable(*segment_size);
 
         // any invalid qtable_size gets returned as 0
         if (!qtable_size) {
@@ -659,7 +800,7 @@ void ConcreteState<StateID::DHT>::parse_header() {
     }
 
     while (*segment_size) {
-        const uint htable_size = m_data->set_htable(*segment_size);
+        const uint htable_size = m_decoder->set_htable(*segment_size);
 
         // any invalid htable_size gets returned as 0
         if (!htable_size) {
@@ -737,8 +878,8 @@ void ConcreteState<StateID::SOF0>::parse_header() {
         return;
     }
 
-    m_data->img_height = *height;
-    m_data->img_width = *width;
+    m_data->m_img_height = *height;
+    m_data->m_img_width = *width;
 
     while ((*components_count)--) {
         const auto component_id = m_data->read_uint8();

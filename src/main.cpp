@@ -61,30 +61,20 @@ int main(int argc, char** argv) {
         auto [buff, size] = read_raw_jpeg_from_file(file_path);
 
         JpegDecoder decoder(buff, size);
-        StateID final_state_ID = decoder.parse_header();
-        
-        const char *final_states[] = {
-            "HEADER_OK",
-            "ERROR_PEOB",
-            "ERROR_UUM",
-            "ERROR_SEGO",
-            "ERROR_UPAR",
-            "ERROR_CORR"
-        };
 
-        std::cout << "Final state after parse_header(): " << final_states[static_cast<size_t>(final_state_ID)] << "\n\n";
-
-        int decoded_img[64] {0};
+        uint8_t decoded_img[160*120] {0};
 
         decoder.decode(decoded_img);
+
         std::cout << "processed image: " << file_path << "\n\n";
 
-        // for (uint i = 0; i < 8; ++i) {
-        //     for (uint j = 0; j < 8; ++j) {
-        //         std::cout << std::dec << decoded_img[8 * i + j] << " ";
-        //     }
-        //     std::cout << "\n";
-        // }
+        for (uint i = 0; i < 120; ++i) {
+            for (uint j = 0; j < 160; ++j) {
+                std::cout << std::dec << (int)decoded_img[160 * i + j] << " ";
+            }
+            std::cout << "\n";
+        }
+        std::cout << "\n";
 
         delete[] buff;
     }
