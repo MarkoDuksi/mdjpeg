@@ -9,7 +9,8 @@
 
 #include <cstdio>
 
-#include "mdjpeg.h"
+#include "JpegDecoder.h"
+
 
 std::vector<std::filesystem::path> getInputImgPaths(const char* input_dir) {
     std::vector<std::filesystem::path> input_paths;
