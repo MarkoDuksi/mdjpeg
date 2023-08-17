@@ -947,6 +947,11 @@ template<>
 void ConcreteState<StateID::SOS>::parse_header() {
     std::cout << "Entered state SOS\n";
 
+    // if SOF0 not parsed already
+    if (!m_data->m_img_height) {
+        SET_NEXT_STATE(StateID::ERROR_UUM);
+        return;
+    }
     const auto segment_size = m_data->read_size();
 
     if (!segment_size || *segment_size > m_data->size_remaining()) {
