@@ -401,7 +401,7 @@ void JpegDecoder::dequantize(int* const block) noexcept {
 
 
 // idct code from:
-// - https://github.com/dannye/jed/blob/master/src/jpg.h
+//  https://github.com/dannye/jed/blob/master/src/decoder.cpp
 void JpegDecoder::idct(int* const block) noexcept {
     for (uint i = 0; i < 8; ++i) {
         const float g0 = block[0 * 8 + i] * s0;
@@ -997,10 +997,18 @@ void ConcreteState<StateID::SOS>::parse_header() {
         }
     }
 
-    // only baseline JPEG is supported, skip the rest of SOS segment
-    m_data->seek(3);  // todo: check instead of blindly skipping
+    const uint start_of_selection = *m_data->read_uint8();
+    const uint end_of_selection = *m_data->read_uint8();
+    const uint successive_approximation = *m_data->read_uint8();
 
-    // mark the begining of ECS
+    // only baseline JPEG is supported
+    if (start_of_selection != 0 || end_of_selection != 63
+                                || successive_approximation != 0) {
+            SET_NEXT_STATE(StateID::ERROR_UPAR);
+            return;
+    }
+
+    // set a mark for the begining of ECS
     m_data->m_buff_start_of_ECS = m_data->m_buff_current_byte;
 
     SET_NEXT_STATE(StateID::HEADER_OK);

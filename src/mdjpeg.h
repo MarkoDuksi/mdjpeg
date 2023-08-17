@@ -8,8 +8,8 @@
 
 
 // marker values from:
-// - https://github.com/dannye/jed/blob/master/src/jpg.h
-// - https://webdocs.cs.ualberta.ca/~jag/courses/ImProc/lectures2001/lec26/Lec26jpegCompr.PDF
+//  https://github.com/dannye/jed/blob/master/src/jpg.h
+//  https://webdocs.cs.ualberta.ca/~jag/courses/ImProc/lectures2001/lec26/Lec26jpegCompr.PDF
 
 enum class StateID : uint16_t {
     // Custom final states
