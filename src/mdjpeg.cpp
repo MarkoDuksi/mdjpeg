@@ -942,13 +942,20 @@ void ConcreteState<StateID::SOF0>::parse_header() {
     }
 }
 
-// todo: check that htables and qtables are set
 template<>
 void ConcreteState<StateID::SOS>::parse_header() {
     std::cout << "Entered state SOS\n";
 
-    // if DQT not parsed already
+    // if LUMA DQT not parsed already
     if (!m_decoder->m_qtable) {
+        SET_NEXT_STATE(StateID::ERROR_UUM);
+        return;
+    }
+
+    // if all four DHTs not parsed already
+    if (!m_decoder->m_htables[0].dc.is_set || !m_decoder->m_htables[0].ac.is_set
+                                           || !m_decoder->m_htables[1].dc.is_set
+                                           || !m_decoder->m_htables[1].ac.is_set) {
         SET_NEXT_STATE(StateID::ERROR_UUM);
         return;
     }
