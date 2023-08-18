@@ -59,6 +59,61 @@ bool JpegDecoder::decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t y1_mcu, u
     return true;
 }
 
+bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t y1_mcu, uint16_t x2_mcu, uint16_t y2_mcu) {
+    if (parse_header() == StateID::HEADER_OK) {
+        std::cout << "\nFinished in state HEADER_OK\n";
+    }
+    else {
+        return false;
+    }
+    
+    // decode from (x1_mcu, y2_mcu) to the bottom-right corner by default
+    if (!x2_mcu) {
+        x2_mcu = m_header.img_mcu_horiz_count;
+    }
+    if (!y2_mcu) {
+        y2_mcu = m_header.img_mcu_vert_count;
+    }
+
+    // check bounds
+    if (x1_mcu >= x2_mcu || y1_mcu >= y2_mcu
+                         || x2_mcu - x1_mcu > m_header.img_mcu_horiz_count
+                         || y2_mcu - y1_mcu > m_header.img_mcu_vert_count) {
+        return false;
+    }
+
+
+    int block_8x8[64] {0};
+
+    for (uint mcu_row = y1_mcu; mcu_row < y2_mcu; ++mcu_row) {
+        for (uint mcu_col = x1_mcu; mcu_col < x2_mcu; ++mcu_col) {
+            if (!huff_decode_luma(block_8x8, mcu_row, mcu_col)) {
+                std::cout << "\nHuffman decoding FAILED!" << "\n";
+                return false;
+            }
+
+            // dequantize only the DC coefficient
+            block_8x8[0] *= m_header.qtable[0];
+
+            // IDCT-III with all AC coefficients == 0
+            int low_pass_luma = block_8x8[0] * 0.125f;
+
+            // shift level from [-128, 127] to [0, 255]
+            low_pass_luma += 128;
+
+            for (uint y = 0; y < 8; ++y) {
+                for (uint x = 0; x < 8; ++x) {
+                    dst[mcu_row * m_header.img_mcu_horiz_count + mcu_col] = low_pass_luma;
+                }
+            }
+        }
+    }
+
+    std::cout << "\nDecoding SUCCESSFUL.\n\n";
+
+    return true;
+}
+
 StateID JpegDecoder::parse_header() {
     while (!m_istate->is_final_state()) {
         m_istate->parse_header();

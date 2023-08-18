@@ -12,7 +12,8 @@ class JpegDecoder {
     public:
         JpegDecoder(const uint8_t* const buff, const size_t size) noexcept;
 
-        bool decode(uint8_t* const dst, uint16_t x = 0, uint16_t y = 0, uint16_t width = 0, uint16_t height = 0);
+        bool decode(uint8_t* const dst, uint16_t x1_mcu = 0, uint16_t y1_mcu = 0, uint16_t x2_mcu = 0, uint16_t y2_mcu = 0);
+        bool low_pass_decode(uint8_t* const dst, uint16_t x1_mcu = 0, uint16_t y1_mcu = 0, uint16_t x2_mcu = 0, uint16_t y2_mcu = 0);
 
         template <StateID ANY>
         friend class ConcreteState;

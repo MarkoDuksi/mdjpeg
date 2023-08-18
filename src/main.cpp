@@ -64,18 +64,24 @@ int main(int argc, char** argv) {
         JpegDecoder decoder(buff, size);
 
         uint8_t decoded_img[160*120] {0};
-
         decoder.decode(decoded_img);
-
-        std::cout << "processed image: " << file_path << "\n\n";
-
         for (uint i = 0; i < 120; ++i) {
             for (uint j = 0; j < 160; ++j) {
                 std::cout << std::dec << (int)decoded_img[160 * i + j] << " ";
             }
             std::cout << "\n";
         }
-        std::cout << "\n";
+
+        uint8_t decoded_img2[20*15] {0};
+        decoder.low_pass_decode(decoded_img2);
+        for (uint i = 0; i < 15; ++i) {
+            for (uint j = 0; j < 20; ++j) {
+                std::cout << std::dec << (int)decoded_img2[20 * i + j] << " ";
+            }
+            std::cout << "\n";
+        }
+
+        std::cout << "\nprocessed image: " << file_path << "\n\n";
 
         delete[] buff;
     }
