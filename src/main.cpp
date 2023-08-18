@@ -63,22 +63,29 @@ int main(int argc, char** argv) {
 
         JpegDecoder decoder(buff, size);
 
-        uint8_t decoded_img[160*120] {0};
-        decoder.decode(decoded_img);
-        for (uint i = 0; i < 120; ++i) {
-            for (uint j = 0; j < 160; ++j) {
-                std::cout << std::dec << (int)decoded_img[160 * i + j] << " ";
+        constexpr uint     x1 = 0;  // in MCus
+        constexpr uint     y1 = 0;  // in MCus
+        constexpr uint  width = 20;  // in MCus
+        constexpr uint height = 15;  // in MCus
+
+        uint8_t decoded_img[8 * width * 8 * height] {0};
+        if (decoder.decode(decoded_img, x1, y1, x1 + width, y1 + height)) {
+            for (uint i = 0; i < 8 * height; ++i) {
+                for (uint j = 0; j < 8 * width; ++j) {
+                    std::cout << std::dec << (int)decoded_img[8 * width * i + j] << " ";
+                }
+                std::cout << "\n";
             }
-            std::cout << "\n";
         }
 
-        uint8_t decoded_img2[20*15] {0};
-        decoder.low_pass_decode(decoded_img2);
-        for (uint i = 0; i < 15; ++i) {
-            for (uint j = 0; j < 20; ++j) {
-                std::cout << std::dec << (int)decoded_img2[20 * i + j] << " ";
+        uint8_t decoded_img2[width * height] {0};
+        if (decoder.low_pass_decode(decoded_img2, x1, y1, x1 + width, y1 + height)) {
+            for (uint i = 0; i < height; ++i) {
+                for (uint j = 0; j < width; ++j) {
+                    std::cout << std::dec << (int)decoded_img2[width * i + j] << " ";
+                }
+                std::cout << "\n";
             }
-            std::cout << "\n";
         }
 
         std::cout << "\nprocessed image: " << file_path << "\n\n";

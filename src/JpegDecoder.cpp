@@ -32,7 +32,7 @@ bool JpegDecoder::decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t y1_mcu, u
         return false;
     }
 
-
+    uint dst_width = 8 * (x2_mcu - x1_mcu);
     int block_8x8[64] {0};
 
     for (uint mcu_row = y1_mcu; mcu_row < y2_mcu; ++mcu_row) {
@@ -48,13 +48,11 @@ bool JpegDecoder::decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t y1_mcu, u
 
             for (uint y = 0; y < 8; ++y) {
                 for (uint x = 0; x < 8; ++x) {
-                    dst[(8 * mcu_row + y) * m_header.img_width + 8 * mcu_col + x] = block_8x8[8 * y + x];
+                    dst[(8 * (mcu_row - y1_mcu) + y) * dst_width + 8 * (mcu_col - x1_mcu) + x] = block_8x8[8 * y + x];
                 }
             }
         }
     }
-
-    std::cout << "\nDecoding SUCCESSFUL.\n\n";
 
     return true;
 }
@@ -82,7 +80,7 @@ bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t 
         return false;
     }
 
-
+    uint dst_width = x2_mcu - x1_mcu;
     int block_8x8[64] {0};
 
     for (uint mcu_row = y1_mcu; mcu_row < y2_mcu; ++mcu_row) {
@@ -95,21 +93,12 @@ bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t 
             // dequantize only the DC coefficient
             block_8x8[0] *= m_header.qtable[0];
 
-            // IDCT-III with all AC coefficients == 0
-            int low_pass_luma = block_8x8[0] * 0.125f;
+            // recover block-averaged LUMA value
+            const int low_pass_luma = (block_8x8[0] + 1024) / 8;
 
-            // shift level from [-128, 127] to [0, 255]
-            low_pass_luma += 128;
-
-            for (uint y = 0; y < 8; ++y) {
-                for (uint x = 0; x < 8; ++x) {
-                    dst[mcu_row * m_header.img_mcu_horiz_count + mcu_col] = low_pass_luma;
-                }
-            }
+            dst[(mcu_row - y1_mcu) * dst_width + (mcu_col - x1_mcu)] = low_pass_luma;
         }
     }
-
-    std::cout << "\nDecoding SUCCESSFUL.\n\n";
 
     return true;
 }
@@ -221,10 +210,6 @@ bool JpegDecoder::huff_decode_luma(int (&dst_block)[64], const uint mcu_row, con
 }
 
 bool JpegDecoder::huff_decode_block(int (&dst_block)[64], const uint table_id) noexcept {
-    if (m_istate->getID() != StateID::HEADER_OK) {
-        return false;
-    }
-
     // DC DCT coefficient
     const uint huff_symbol = get_dc_huff_symbol(table_id);
     if (huff_symbol > 11) {  // DC coefficient length out of range
