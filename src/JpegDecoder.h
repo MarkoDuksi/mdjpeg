@@ -56,8 +56,9 @@ class JpegDecoder {
         uint8_t get_ac_huff_symbol(const uint table_id) noexcept;
         int16_t get_dct_coeff(const uint length) noexcept;
 
-        bool huff_decode(int* const dst_block, int& previous_dc_coeff, const uint table_id) noexcept;
-        void dequantize(int* const block) noexcept;
-        void idct(int* const block) noexcept;
-        void level_to_unsigned(int* const block) noexcept;
+        bool huff_decode_block(int (&dst_block)[64], const uint table_id) noexcept;
+        bool huff_decode_luma(int (&dst_block)[64], const uint mcu_row, const uint mcu_col) noexcept;
+        void dequantize(int (&block)[64]) noexcept;
+        void idct(int (&block)[64]) noexcept;
+        void level_to_unsigned(int (&block)[64]) noexcept;
 };

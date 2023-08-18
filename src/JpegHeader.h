@@ -26,6 +26,8 @@ struct HuffmanTables {
 struct JpegHeader {
     uint16_t img_height {0};
     uint16_t img_width {0};
+    uint16_t img_mcu_vert_count {0};
+    uint16_t img_mcu_horiz_count {0};
     bool     horiz_subsampling {false};
 
     const uint8_t* qtable {nullptr};

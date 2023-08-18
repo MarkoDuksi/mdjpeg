@@ -16,7 +16,7 @@ class JpegReader {
     public:
         JpegReader(const uint8_t* const buff, const size_t size) noexcept;
         
-        const uint8_t* get_current_ptr() const noexcept;
+        void restart_ecs();
         size_t size_remaining() const noexcept;
         bool seek(const size_t rel_pos) noexcept;
 
@@ -27,6 +27,7 @@ class JpegReader {
         std::optional<uint16_t> read_size() noexcept;
         int read_bit() noexcept;
 
+        friend class JpegHeader;
         friend class JpegDecoder;
         
         template <StateID ANY>
@@ -38,4 +39,7 @@ class JpegReader {
         const uint8_t* m_buff_start_of_ECS {nullptr};
         const uint8_t* m_buff_current_byte {nullptr};
         uint m_current_bit_pos {7};
+        uint m_block_idx {0};
+        uint m_mcu_idx {0};
+        int  m_previous_luma_dc_coeff {0};
 };

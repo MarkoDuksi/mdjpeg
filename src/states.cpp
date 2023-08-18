@@ -251,6 +251,8 @@ void ConcreteState<StateID::SOF0>::parse_header() {
 
     m_decoder->m_header.img_height = *height;
     m_decoder->m_header.img_width = *width;
+    m_decoder->m_header.img_mcu_horiz_count = (*width + 7) / 8;
+    m_decoder->m_header.img_mcu_vert_count = (*height + 7) / 8;
 
     while ((*components_count)--) {
         const auto component_id = m_reader->read_uint8();
