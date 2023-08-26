@@ -5,7 +5,7 @@
 
 JpegDecoder::JpegDecoder(const uint8_t* const buff, const size_t size) noexcept :
     m_reader(buff, size),
-    m_state(ConcreteState<StateID::ENTRY>(this, &m_reader)),
+    m_state(ConcreteState<StateID::ENTRY>(this)),
     m_istate(&m_state)
     {}
 
@@ -42,7 +42,8 @@ bool JpegDecoder::decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t y1_mcu, u
                 return false;
             }
 
-            dequantize(block_8x8);
+            m_dequantizer.transform(block_8x8);
+            m_zigzag.transform(block_8x8);
             idct(block_8x8);
             level_to_unsigned(block_8x8);
 
@@ -91,7 +92,7 @@ bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t 
             }
 
             // dequantize only the DC coefficient
-            block_8x8[0] *= m_header.qtable[0];
+            m_dequantizer.transform(block_8x8[0]);
 
             // recover block-averaged LUMA value
             const int low_pass_luma = (block_8x8[0] + 1024) / 8;
@@ -105,7 +106,7 @@ bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t 
 
 StateID JpegDecoder::parse_header() {
     while (!m_istate->is_final_state()) {
-        m_istate->parse_header();
+        m_istate->parse_header(m_reader);
     }
 
     return m_istate->getID();
@@ -247,7 +248,7 @@ bool JpegDecoder::huff_decode_block(int (&dst_block)[64], const uint table_id) n
         }
 
         while (pre_zeros_count--) {
-            dst_block[m_zig_zag_map[idx++]] = 0;
+            dst_block[idx++] = 0;
         }
 
         if (huff_symbol == 0xf0) {  // done with this symbol
@@ -264,20 +265,14 @@ bool JpegDecoder::huff_decode_block(int (&dst_block)[64], const uint table_id) n
             return false;
         }
 
-        dst_block[m_zig_zag_map[idx++]] = dct_coeff;
+        dst_block[idx++] = dct_coeff;
     }
 
     while (idx < 64) {
-        dst_block[m_zig_zag_map[idx++]] = 0;
+        dst_block[idx++] = 0;
     }
 
     return true;
-}
-
-void JpegDecoder::dequantize(int (&block)[64]) noexcept {
-    for (uint i = 0; i < 64; ++i) {
-        block[m_zig_zag_map[i]] *= m_header.qtable[i];
-    }
 }
 
 void JpegDecoder::idct(int (&block)[64]) noexcept {

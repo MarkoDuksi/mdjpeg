@@ -6,9 +6,8 @@
 #include "JpegDecoder.h"
 
 
-State::State(JpegDecoder* const decoder, JpegReader* const reader) noexcept :
-    m_decoder(decoder),
-    m_reader(reader)
+State::State(JpegDecoder* const decoder) noexcept :
+    m_decoder(decoder)
     {}
 
 State::~State() {}
@@ -18,13 +17,13 @@ bool State::is_final_state() const noexcept {
 }
 
 
-#define SET_NEXT_STATE(state_id) m_decoder->m_istate = new (m_decoder->m_istate) ConcreteState<state_id>(m_decoder, m_reader)
+#define SET_NEXT_STATE(state_id) m_decoder->m_istate = new (m_decoder->m_istate) ConcreteState<state_id>(m_decoder)
 
 template<>
-void ConcreteState<StateID::ENTRY>::parse_header() {
+void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) {
     std::cout << "Entered state ENTRY\n";
 
-    const auto next_marker = m_reader->read_marker();
+    const auto next_marker = reader.read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -44,10 +43,10 @@ void ConcreteState<StateID::ENTRY>::parse_header() {
 }
 
 template<>
-void ConcreteState<StateID::SOI>::parse_header() {
+void ConcreteState<StateID::SOI>::parse_header(JpegReader& reader) {
     std::cout << "Entered state SOI\n";
 
-    const auto next_marker = m_reader->read_marker();
+    const auto next_marker = reader.read_marker();
 
     if (static_cast<StateID>(*next_marker) >= StateID::APP0 && static_cast<StateID>(*next_marker) <= StateID::APP15) {
         std::cout << "\nFound marker: APPN (0x" << std::hex << *next_marker << ")\n";
@@ -60,18 +59,18 @@ void ConcreteState<StateID::SOI>::parse_header() {
 }
 
 template<>
-void ConcreteState<StateID::APP0>::parse_header() {
+void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) {
     std::cout << "Entered state APP0\n";
 
-    const auto segment_size = m_reader->read_size();
+    const auto segment_size = reader.read_segment_size();
 
     // seek to the end of segment
-    if (!segment_size || !m_reader->seek(*segment_size)) {
+    if (!segment_size || !reader.seek(*segment_size)) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
-    const auto next_marker = m_reader->read_marker();
+    const auto next_marker = reader.read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -101,18 +100,18 @@ void ConcreteState<StateID::APP0>::parse_header() {
 }
 
 template<>
-void ConcreteState<StateID::DQT>::parse_header() {
+void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) {
     std::cout << "Entered state DQT\n";
 
-    auto segment_size = m_reader->read_size();
+    auto segment_size = reader.read_segment_size();
 
-    if (!segment_size || *segment_size > m_reader->size_remaining()) {
+    if (!segment_size || *segment_size > reader.size_remaining()) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
     while (*segment_size) {
-        const uint qtable_size = m_decoder->m_header.set_qtable(m_decoder->m_reader, *segment_size);
+        const uint qtable_size = m_decoder->m_dequantizer.set_qtable(reader, *segment_size);
 
         // any invalid qtable_size gets returned as 0
         if (!qtable_size) {
@@ -125,7 +124,7 @@ void ConcreteState<StateID::DQT>::parse_header() {
         *segment_size -= qtable_size;
     }
 
-    const auto next_marker = m_reader->read_marker();
+    const auto next_marker = reader.read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -160,18 +159,18 @@ void ConcreteState<StateID::DQT>::parse_header() {
 }
 
 template<>
-void ConcreteState<StateID::DHT>::parse_header() {
+void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) {
     std::cout << "Entered state DHT\n";
 
-    auto segment_size = m_reader->read_size();
+    auto segment_size = reader.read_segment_size();
 
-    if (!segment_size || *segment_size > m_reader->size_remaining()) {
+    if (!segment_size || *segment_size > reader.size_remaining()) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
     while (*segment_size) {
-        const uint htable_size = m_decoder->m_header.set_htable(m_decoder->m_reader, *segment_size);
+        const uint htable_size = m_decoder->m_header.set_htable(reader, *segment_size);
 
         // any invalid htable_size gets returned as 0
         if (!htable_size) {
@@ -181,12 +180,12 @@ void ConcreteState<StateID::DHT>::parse_header() {
 
         // any valid htable_size is *always* lte *segment_size
         // no reading beyond buff + size - 1 (as provided to JpegDecoder constructor)
-        m_reader->seek(htable_size);
+        reader.seek(htable_size);
         // no integer overflow possible
         *segment_size -= htable_size;
     }
 
-    const auto next_marker = m_reader->read_marker();
+    const auto next_marker = reader.read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -221,12 +220,12 @@ void ConcreteState<StateID::DHT>::parse_header() {
 }
 
 template<>
-void ConcreteState<StateID::SOF0>::parse_header() {
+void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) {
     std::cout << "Entered state SOF0\n";
 
-    const auto segment_size = m_reader->read_size();
+    const auto segment_size = reader.read_segment_size();
 
-    if (!segment_size || *segment_size > m_reader->size_remaining()) {
+    if (!segment_size || *segment_size > reader.size_remaining()) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
@@ -237,10 +236,10 @@ void ConcreteState<StateID::SOF0>::parse_header() {
         return;
     }
 
-    const auto precision = m_reader->read_uint8();
-    const auto height = m_reader->read_uint16();
-    const auto width = m_reader->read_uint16();
-    auto components_count = m_reader->read_uint8();
+    const auto precision = reader.read_uint8();
+    const auto height = reader.read_uint16();
+    const auto width = reader.read_uint16();
+    auto components_count = reader.read_uint8();
 
     if (*precision != 8 || !*height
                         || !*width
@@ -255,9 +254,9 @@ void ConcreteState<StateID::SOF0>::parse_header() {
     m_decoder->m_header.img_mcu_vert_count = (*height + 7) / 8;
 
     while ((*components_count)--) {
-        const auto component_id = m_reader->read_uint8();
-        const auto sampling_factor = m_reader->read_uint8();
-        const auto qtable_id = m_reader->read_uint8();
+        const auto component_id = reader.read_uint8();
+        const auto sampling_factor = reader.read_uint8();
+        const auto qtable_id = reader.read_uint8();
 
         // supported component IDs: 1, 2 and 3 (Y, U and V channel, respectively)
         if (*component_id == 0 || *component_id > 3 ) {
@@ -286,7 +285,7 @@ void ConcreteState<StateID::SOF0>::parse_header() {
         }
     }
 
-    const auto next_marker = m_reader->read_marker();
+    const auto next_marker = reader.read_marker();
 
     if (!next_marker) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
@@ -316,7 +315,7 @@ void ConcreteState<StateID::SOF0>::parse_header() {
 }
 
 template<>
-void ConcreteState<StateID::SOS>::parse_header() {
+void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) {
     std::cout << "Entered state SOS\n";
 
     // before this point, DQT, DHT and SOF0 segments must have been parsed
@@ -325,9 +324,9 @@ void ConcreteState<StateID::SOS>::parse_header() {
         return;
     }
 
-    const auto segment_size = m_reader->read_size();
+    const auto segment_size = reader.read_segment_size();
 
-    if (!segment_size || *segment_size > m_reader->size_remaining()) {
+    if (!segment_size || *segment_size > reader.size_remaining()) {
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
@@ -338,7 +337,7 @@ void ConcreteState<StateID::SOS>::parse_header() {
         return;
     }
 
-    auto components_count = m_reader->read_uint8();
+    auto components_count = reader.read_uint8();
 
     if (*components_count != 3) {
         SET_NEXT_STATE(StateID::ERROR_UPAR);
@@ -346,8 +345,8 @@ void ConcreteState<StateID::SOS>::parse_header() {
     }
 
     while ((*components_count)--) {
-        const auto component_id = m_reader->read_uint8();
-        const auto dc_ac_table_ids = m_reader->read_uint8();
+        const auto component_id = reader.read_uint8();
+        const auto dc_ac_table_ids = reader.read_uint8();
 
         // component 1 must use htables 0 (DC) and 0 (AC)
         if (*component_id == 1 && *dc_ac_table_ids != 0 ) {
@@ -356,9 +355,9 @@ void ConcreteState<StateID::SOS>::parse_header() {
         }
     }
 
-    const uint start_of_selection = *m_reader->read_uint8();
-    const uint end_of_selection = *m_reader->read_uint8();
-    const uint successive_approximation = *m_reader->read_uint8();
+    const uint start_of_selection = *reader.read_uint8();
+    const uint end_of_selection = *reader.read_uint8();
+    const uint successive_approximation = *reader.read_uint8();
 
     // only baseline JPEG is supported
     if (start_of_selection != 0 || end_of_selection != 63
@@ -367,8 +366,7 @@ void ConcreteState<StateID::SOS>::parse_header() {
             return;
     }
 
-    // set a mark for the begining of ECS
-    m_reader->m_buff_start_of_ECS = m_reader->m_buff_current_byte;
+    reader.mark_start_of_ecs();
 
     SET_NEXT_STATE(StateID::HEADER_OK);
 }

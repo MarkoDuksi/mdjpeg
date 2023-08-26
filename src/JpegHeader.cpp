@@ -3,34 +3,8 @@
 #include <fmt/core.h>
 
 
-size_t JpegHeader::set_qtable(JpegReader& reader, const size_t max_read_length) noexcept {
-    const uint next_byte = *reader.m_buff_current_byte++;
-
-    const uint precision = 1 + bool(next_byte >> 4);  // in bytes, not bits
-    const uint table_id  = next_byte & 0xf;
-    const uint table_size = 64 * precision;
-
-    if (1 + table_size > max_read_length) {
-        return 0;
-    }
-
-    // store only 8-bit luma quantization table pointer
-    if (table_id == 0) {
-        if (precision == 1) {
-            qtable = reader.m_buff_current_byte;
-        }
-        else {
-            return 0;
-        }
-    }
-
-    reader.m_buff_current_byte += table_size;
-
-    return 1 + table_size;
-}
-
 size_t JpegHeader::set_htable(JpegReader& reader, size_t max_read_length) noexcept {
-    const uint next_byte = *reader.m_buff_current_byte;
+    const uint next_byte = *reader.peek();
     --max_read_length;
 
     const bool is_dc = !(next_byte >> 4);
@@ -39,10 +13,10 @@ size_t JpegHeader::set_htable(JpegReader& reader, size_t max_read_length) noexce
     uint symbols_count = 0;
 
     for (uint i = 1; i < 17; ++i) {
-        if (!max_read_length || reader.m_buff_current_byte[i] > 1 << i) {
+        if (!max_read_length || *reader.peek(i) > 1 << i) {
             return 0;
         }
-        symbols_count += reader.m_buff_current_byte[i];
+        symbols_count += *reader.peek(i);
         --max_read_length;
     }
 
@@ -55,8 +29,8 @@ size_t JpegHeader::set_htable(JpegReader& reader, size_t max_read_length) noexce
     }
 
     if (is_dc) {
-        htables[table_id].dc.histogram = reader.m_buff_current_byte + 1;
-        htables[table_id].dc.symbols = reader.m_buff_current_byte + 1 + 16;
+        htables[table_id].dc.histogram = reader.tell_ptr() + 1;
+        htables[table_id].dc.symbols = reader.tell_ptr() + 1 + 16;
         std::cout << "\nHuffman table id " << (int)table_id << " (DC):\n";
         std::cout << "(length: code -> symbol)\n";
 
@@ -76,8 +50,8 @@ size_t JpegHeader::set_htable(JpegReader& reader, size_t max_read_length) noexce
         htables[table_id].dc.is_set = true;
     }
     else {
-        htables[table_id].ac.histogram = reader.m_buff_current_byte + 1;
-        htables[table_id].ac.symbols = reader.m_buff_current_byte + 1 + 16;
+        htables[table_id].ac.histogram = reader.tell_ptr() + 1;
+        htables[table_id].ac.symbols = reader.tell_ptr() + 1 + 16;
         std::cout << "\nHuffman table id " << (int)table_id << " (AC):\n";
         std::cout << "(length: code -> symbol)\n";
 
@@ -101,9 +75,8 @@ size_t JpegHeader::set_htable(JpegReader& reader, size_t max_read_length) noexce
 }
 
 bool JpegHeader::is_set() const noexcept {
-    return (qtable && htables[0].dc.is_set
-                   && htables[0].ac.is_set
-                   && htables[1].dc.is_set
-                   && htables[1].ac.is_set
-                   && img_height);
+    return (img_height && htables[0].dc.is_set
+                       && htables[0].ac.is_set
+                       && htables[1].dc.is_set
+                       && htables[1].ac.is_set);
 }

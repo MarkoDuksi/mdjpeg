@@ -115,29 +115,28 @@ class JpegReader;
 
 class State {
     public:
-        State(JpegDecoder* const decoder, JpegReader* const reader) noexcept;
+        State(JpegDecoder* const decoder) noexcept;
         virtual ~State();
 
         bool is_final_state() const noexcept;
         virtual StateID getID() const noexcept = 0;
-        virtual void parse_header() = 0;
+        virtual void parse_header(JpegReader& reader) = 0;
 
     protected:
         JpegDecoder* const m_decoder;
-        JpegReader*  const m_reader;
 };
 
 
 template <StateID state_id>
 class ConcreteState final : public State {
     public:
-        ConcreteState(JpegDecoder* const decoder, JpegReader* const reader) noexcept :
-            State(decoder, reader)
+        ConcreteState(JpegDecoder* const decoder) noexcept :
+            State(decoder)
             {}
 
         StateID getID() const noexcept override {
             return state_id;
         }
         
-        void parse_header() override {};
+        void parse_header(JpegReader& reader) override {};
 };
