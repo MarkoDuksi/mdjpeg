@@ -27,8 +27,8 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uin
 
     // check bounds
     if (x1_blocks >= x2_blocks || y1_blocks >= y2_blocks
-                         || x2_blocks - x1_blocks > m_frame_info.width_blocks
-                         || y2_blocks - y1_blocks > m_frame_info.height_blocks) {
+                               || x2_blocks - x1_blocks > m_frame_info.width_blocks
+                               || y2_blocks - y1_blocks > m_frame_info.height_blocks) {
         return false;
     }
 
@@ -77,8 +77,8 @@ bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint x1_blocks, uint y1_bl
 
     // check bounds
     if (x1_blocks >= x2_blocks || y1_blocks >= y2_blocks
-                         || x2_blocks - x1_blocks > m_frame_info.width_blocks
-                         || y2_blocks - y1_blocks > m_frame_info.height_blocks) {
+                               || x2_blocks - x1_blocks > m_frame_info.width_blocks
+                               || y2_blocks - y1_blocks > m_frame_info.height_blocks) {
         return false;
     }
 

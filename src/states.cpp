@@ -120,7 +120,7 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) {
         }
 
         // any valid qtable_size is *always* lte *segment_size
-        // (no integer overflow possible)
+        // no integer overflow possible
         *segment_size -= qtable_size;
     }
 

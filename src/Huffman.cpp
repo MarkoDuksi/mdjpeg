@@ -77,8 +77,8 @@ size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept 
 
 bool Huffman::is_set() const noexcept {
     return (m_htables[0].dc.is_set && m_htables[0].ac.is_set
-                                 && m_htables[1].dc.is_set
-                                 && m_htables[1].ac.is_set);
+                                   && m_htables[1].dc.is_set
+                                   && m_htables[1].ac.is_set);
 }
 
 uint8_t Huffman::get_dc_symbol(JpegReader& reader, const uint table_id) noexcept {
