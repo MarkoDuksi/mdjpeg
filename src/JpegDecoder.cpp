@@ -4,12 +4,12 @@
 
 
 JpegDecoder::JpegDecoder(const uint8_t* const buff, const size_t size) noexcept :
-    m_reader(buff, size),
     m_state(ConcreteState<StateID::ENTRY>(this)),
-    m_istate(&m_state)
+    m_istate(&m_state),
+    m_reader(buff, size)
     {}
 
-bool JpegDecoder::decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t y1_mcu, uint16_t x2_mcu, uint16_t y2_mcu) {
+bool JpegDecoder::decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks) {
     if (parse_header() == StateID::HEADER_OK) {
         std::cout << "\nFinished in state HEADER_OK\n";
     }
@@ -17,27 +17,28 @@ bool JpegDecoder::decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t y1_mcu, u
         return false;
     }
     
-    // decode from (x1_mcu, y2_mcu) to the bottom-right corner by default
-    if (!x2_mcu) {
-        x2_mcu = m_header.img_mcu_horiz_count;
+    // decode from (x1_blocks, y2_blocks) to the bottom-right corner by default
+    if (!x2_blocks) {
+        x2_blocks = m_frame_info.width_blocks;
     }
-    if (!y2_mcu) {
-        y2_mcu = m_header.img_mcu_vert_count;
+    if (!y2_blocks) {
+        y2_blocks = m_frame_info.height_blocks;
     }
 
     // check bounds
-    if (x1_mcu >= x2_mcu || y1_mcu >= y2_mcu
-                         || x2_mcu - x1_mcu > m_header.img_mcu_horiz_count
-                         || y2_mcu - y1_mcu > m_header.img_mcu_vert_count) {
+    if (x1_blocks >= x2_blocks || y1_blocks >= y2_blocks
+                         || x2_blocks - x1_blocks > m_frame_info.width_blocks
+                         || y2_blocks - y1_blocks > m_frame_info.height_blocks) {
         return false;
     }
 
-    uint dst_width = 8 * (x2_mcu - x1_mcu);
+    uint dst_width = 8 * (x2_blocks - x1_blocks);
     int block_8x8[64] {0};
 
-    for (uint mcu_row = y1_mcu; mcu_row < y2_mcu; ++mcu_row) {
-        for (uint mcu_col = x1_mcu; mcu_col < x2_mcu; ++mcu_col) {
-            if (!huff_decode_luma(block_8x8, mcu_row, mcu_col)) {
+    for (uint row_blocks = y1_blocks; row_blocks < y2_blocks; ++row_blocks) {
+        uint luma_block_idx = row_blocks * m_frame_info.width_blocks + x1_blocks;
+        for (uint col_blocks = x1_blocks; col_blocks < x2_blocks; ++col_blocks, ++luma_block_idx) {
+            if (!m_huffman.decode_luma_block(m_reader, block_8x8, luma_block_idx, m_frame_info.horiz_chroma_subs_factor)) {
                 std::cout << "\nHuffman decoding FAILED!" << "\n";
                 return false;
             }
@@ -49,7 +50,7 @@ bool JpegDecoder::decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t y1_mcu, u
 
             for (uint y = 0; y < 8; ++y) {
                 for (uint x = 0; x < 8; ++x) {
-                    dst[(8 * (mcu_row - y1_mcu) + y) * dst_width + 8 * (mcu_col - x1_mcu) + x] = block_8x8[8 * y + x];
+                    dst[(8 * (row_blocks - y1_blocks) + y) * dst_width + 8 * (col_blocks - x1_blocks) + x] = block_8x8[8 * y + x];
                 }
             }
         }
@@ -58,7 +59,7 @@ bool JpegDecoder::decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t y1_mcu, u
     return true;
 }
 
-bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t y1_mcu, uint16_t x2_mcu, uint16_t y2_mcu) {
+bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks) {
     if (parse_header() == StateID::HEADER_OK) {
         std::cout << "\nFinished in state HEADER_OK\n";
     }
@@ -66,27 +67,28 @@ bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t 
         return false;
     }
     
-    // decode from (x1_mcu, y2_mcu) to the bottom-right corner by default
-    if (!x2_mcu) {
-        x2_mcu = m_header.img_mcu_horiz_count;
+    // decode from (x1_blocks, y2_blocks) to the bottom-right corner by default
+    if (!x2_blocks) {
+        x2_blocks = m_frame_info.width_blocks;
     }
-    if (!y2_mcu) {
-        y2_mcu = m_header.img_mcu_vert_count;
+    if (!y2_blocks) {
+        y2_blocks = m_frame_info.height_blocks;
     }
 
     // check bounds
-    if (x1_mcu >= x2_mcu || y1_mcu >= y2_mcu
-                         || x2_mcu - x1_mcu > m_header.img_mcu_horiz_count
-                         || y2_mcu - y1_mcu > m_header.img_mcu_vert_count) {
+    if (x1_blocks >= x2_blocks || y1_blocks >= y2_blocks
+                         || x2_blocks - x1_blocks > m_frame_info.width_blocks
+                         || y2_blocks - y1_blocks > m_frame_info.height_blocks) {
         return false;
     }
 
-    uint dst_width = x2_mcu - x1_mcu;
+    uint dst_width = x2_blocks - x1_blocks;
     int block_8x8[64] {0};
 
-    for (uint mcu_row = y1_mcu; mcu_row < y2_mcu; ++mcu_row) {
-        for (uint mcu_col = x1_mcu; mcu_col < x2_mcu; ++mcu_col) {
-            if (!huff_decode_luma(block_8x8, mcu_row, mcu_col)) {
+    for (uint row_blocks = y1_blocks; row_blocks < y2_blocks; ++row_blocks) {
+        uint luma_block_idx = row_blocks * m_frame_info.width_blocks + x1_blocks;
+        for (uint col_blocks = x1_blocks; col_blocks < x2_blocks; ++col_blocks, ++luma_block_idx) {
+            if (!m_huffman.decode_luma_block(m_reader, block_8x8, luma_block_idx, m_frame_info.horiz_chroma_subs_factor)) {
                 std::cout << "\nHuffman decoding FAILED!" << "\n";
                 return false;
             }
@@ -97,7 +99,7 @@ bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint16_t x1_mcu, uint16_t 
             // recover block-averaged LUMA value
             const int low_pass_luma = (block_8x8[0] + 1024) / 8;
 
-            dst[(mcu_row - y1_mcu) * dst_width + (mcu_col - x1_mcu)] = low_pass_luma;
+            dst[(row_blocks - y1_blocks) * dst_width + (col_blocks - x1_blocks)] = low_pass_luma;
         }
     }
 
@@ -110,169 +112,6 @@ StateID JpegDecoder::parse_header() {
     }
 
     return m_istate->getID();
-}
-
-uint8_t JpegDecoder::get_dc_huff_symbol(const uint table_id) noexcept {
-    uint curr_code = 0;
-    uint idx = 0;
-
-    for (uint i = 0; i < 16; ++i) {
-        const int next_bit = m_reader.read_bit();
-        if (next_bit == ECS_ERROR) {
-            return SYMBOL_ERROR;
-        }
-
-        curr_code |= next_bit;
-        for (uint j = 0; j < m_header.htables[table_id].dc.histogram[i] && idx < 12; ++j) {
-            if (curr_code == m_header.htables[table_id].dc.codes[idx]) {
-                return m_header.htables[table_id].dc.symbols[idx];
-            }
-            ++idx;
-        }
-        curr_code <<= 1;
-    }
-
-    return 0xff;
-}
-
-uint8_t JpegDecoder::get_ac_huff_symbol(const uint table_id) noexcept {
-    uint curr_code = 0;
-    uint idx = 0;
-
-    for (uint i = 0; i < 16; ++i) {
-        const int next_bit = m_reader.read_bit();
-        if (next_bit == ECS_ERROR) {
-            return SYMBOL_ERROR;
-        }
-
-        curr_code = curr_code << 1 | next_bit;
-        for (uint j = 0; j < m_header.htables[table_id].ac.histogram[i] && idx < 162; ++j) {
-            if (curr_code == m_header.htables[table_id].ac.codes[idx]) {
-                return m_header.htables[table_id].ac.symbols[idx];
-            }
-            ++idx;
-        }
-    }
-
-    return 0xff;
-}
-
-int16_t JpegDecoder::get_dct_coeff(const uint length) noexcept {
-    if (length > 16) {
-        return COEF_ERROR;
-    }
-
-    int dct_coeff = 0;
-
-    for (uint i = 0; i < length; ++i) {
-        const int next_bit = m_reader.read_bit();
-        if (next_bit == ECS_ERROR) {
-            return COEF_ERROR;
-        }
-        dct_coeff = dct_coeff << 1 | next_bit;
-    }
-
-    // recover negative values
-    if (length && dct_coeff >> (length - 1) == 0) {
-        return dct_coeff - (1 << length) + 1;
-    }
-
-    return dct_coeff;
-}
-
-bool JpegDecoder::huff_decode_luma(int (&dst_block)[64], const uint mcu_row, const uint mcu_col) noexcept {
-    const uint mcu_idx = mcu_row * m_header.img_mcu_horiz_count + mcu_col;
-
-    // if already beyond the requested mcu_idx
-    if (m_reader.m_mcu_idx > mcu_idx) {
-        m_reader.restart_ecs();
-    }
-
-    while (m_reader.m_mcu_idx <= mcu_idx) {
-        // following is true for any luma block in either 4:4:4 or 4:2:2 chroma subsampling modes
-        if (m_reader.m_block_idx % (3 + m_header.horiz_subsampling) <= m_header.horiz_subsampling) {
-            if (!huff_decode_block(dst_block, 0)) {
-                return false;
-            }
-            dst_block[0] += m_reader.m_previous_luma_dc_coeff;
-            m_reader.m_previous_luma_dc_coeff = dst_block[0];
-            ++m_reader.m_mcu_idx;
-        }
-        // otherwise chroma block, read through and skip over
-        else {
-            if (!huff_decode_block(dst_block, 1)) {
-                return false;
-            }
-        }
-        ++m_reader.m_block_idx;
-    }
-
-    return true;
-}
-
-bool JpegDecoder::huff_decode_block(int (&dst_block)[64], const uint table_id) noexcept {
-    // DC DCT coefficient
-    const uint huff_symbol = get_dc_huff_symbol(table_id);
-    if (huff_symbol > 11) {  // DC coefficient length out of range
-        return false;
-    }
-
-    const int dct_coeff = get_dct_coeff(huff_symbol);
-    if (dct_coeff == COEF_ERROR) {
-        return false;
-    }
-
-    dst_block[0] = dct_coeff;
-
-    // AC DCT coefficient
-    uint idx = 1;
-    while (idx < 64) {
-        uint pre_zeros_count;
-        const uint huff_symbol = get_ac_huff_symbol(table_id);
-
-        if (huff_symbol == COEF_ERROR) {
-            return false;
-        }
-        else if (huff_symbol == 0x00) {  // the rest of coefficients are 0
-            break;
-        }
-        else if (huff_symbol == 0xf0) {
-            pre_zeros_count = 16;
-        }
-        else {
-            pre_zeros_count = huff_symbol >> 4;
-        }
-
-        if (idx + pre_zeros_count >= 64) {  // prevent dst_block[64] overflow
-            return false;
-        }
-
-        while (pre_zeros_count--) {
-            dst_block[idx++] = 0;
-        }
-
-        if (huff_symbol == 0xf0) {  // done with this symbol
-            continue;
-        }
-
-        const uint dct_coeff_length = huff_symbol & 0xf;
-        if (dct_coeff_length > 10) {  // AC coefficient length out of range
-            return false;
-        }
-
-        const int dct_coeff = get_dct_coeff(dct_coeff_length);
-        if (dct_coeff == COEF_ERROR) {
-            return false;
-        }
-
-        dst_block[idx++] = dct_coeff;
-    }
-
-    while (idx < 64) {
-        dst_block[idx++] = 0;
-    }
-
-    return true;
 }
 
 void JpegDecoder::idct(int (&block)[64]) noexcept {

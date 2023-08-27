@@ -16,9 +16,6 @@ void JpegReader::mark_start_of_ecs() noexcept {
 void JpegReader::restart_ecs() {
     m_buff_current_byte = m_buff_start_of_ECS;
     m_current_bit_pos = 7;
-    m_block_idx = 0;
-    m_mcu_idx = 0;
-    m_previous_luma_dc_coeff = 0;
 }
 
 size_t JpegReader::size_remaining() const noexcept {

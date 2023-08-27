@@ -63,26 +63,26 @@ int main(int argc, char** argv) {
 
         JpegDecoder decoder(buff, size);
 
-        constexpr uint     x1 = 0;  // in MCus
-        constexpr uint     y1 = 0;  // in MCus
-        constexpr uint  width = 20;  // in MCus
-        constexpr uint height = 15;  // in MCus
+        constexpr uint     x1_blocks = 0;
+        constexpr uint     y1_blocks = 0;
+        constexpr uint  width_blocks = 20;
+        constexpr uint height_blocks = 15;
 
-        uint8_t decoded_img[8 * width * 8 * height] {0};
-        if (decoder.decode(decoded_img, x1, y1, x1 + width, y1 + height)) {
-            for (uint i = 0; i < 8 * height; ++i) {
-                for (uint j = 0; j < 8 * width; ++j) {
-                    std::cout << std::dec << (int)decoded_img[8 * width * i + j] << " ";
+        uint8_t decoded_img[8 * width_blocks * 8 * height_blocks] {0};
+        if (decoder.decode(decoded_img, x1_blocks, y1_blocks, x1_blocks + width_blocks, y1_blocks + height_blocks)) {
+            for (uint i = 0; i < 8 * height_blocks; ++i) {
+                for (uint j = 0; j < 8 * width_blocks; ++j) {
+                    std::cout << std::dec << (int)decoded_img[8 * width_blocks * i + j] << " ";
                 }
                 std::cout << "\n";
             }
         }
 
-        uint8_t decoded_img2[width * height] {0};
-        if (decoder.low_pass_decode(decoded_img2, x1, y1, x1 + width, y1 + height)) {
-            for (uint i = 0; i < height; ++i) {
-                for (uint j = 0; j < width; ++j) {
-                    std::cout << std::dec << (int)decoded_img2[width * i + j] << " ";
+        uint8_t decoded_img2[width_blocks * height_blocks] {0};
+        if (decoder.low_pass_decode(decoded_img2, x1_blocks, y1_blocks, x1_blocks + width_blocks, y1_blocks + height_blocks)) {
+            for (uint i = 0; i < height_blocks; ++i) {
+                for (uint j = 0; j < width_blocks; ++j) {
+                    std::cout << std::dec << (int)decoded_img2[width_blocks * i + j] << " ";
                 }
                 std::cout << "\n";
             }

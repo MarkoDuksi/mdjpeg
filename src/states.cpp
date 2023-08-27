@@ -170,7 +170,7 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) {
     }
 
     while (*segment_size) {
-        const uint htable_size = m_decoder->m_header.set_htable(reader, *segment_size);
+        const uint htable_size = m_decoder->m_huffman.set_htable(reader, *segment_size);
 
         // any invalid htable_size gets returned as 0
         if (!htable_size) {
@@ -237,21 +237,18 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) {
     }
 
     const auto precision = reader.read_uint8();
-    const auto height = reader.read_uint16();
-    const auto width = reader.read_uint16();
+    const auto height_px = reader.read_uint16();
+    const auto width_px = reader.read_uint16();
     auto components_count = reader.read_uint8();
 
-    if (*precision != 8 || !*height
-                        || !*width
+    if (*precision != 8 || !*height_px
+                        || !*width_px
                         || *components_count != 3) {
         SET_NEXT_STATE(StateID::ERROR_UPAR);
         return;
     }
 
-    m_decoder->m_header.img_height = *height;
-    m_decoder->m_header.img_width = *width;
-    m_decoder->m_header.img_mcu_horiz_count = (*width + 7) / 8;
-    m_decoder->m_header.img_mcu_vert_count = (*height + 7) / 8;
+    m_decoder->m_frame_info.set_dims(*height_px, *width_px);
 
     while ((*components_count)--) {
         const auto component_id = reader.read_uint8();
@@ -275,7 +272,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) {
                 return;
             }
             else {
-                m_decoder->m_header.horiz_subsampling = bool((*sampling_factor >> 4) - 1);
+                m_decoder->m_frame_info.horiz_chroma_subs_factor = *sampling_factor >> 4;
             }
         }
         // components 2 and 3 must use sampling factors 0x11
@@ -318,8 +315,9 @@ template<>
 void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) {
     std::cout << "Entered state SOS\n";
 
-    // before this point, DQT, DHT and SOF0 segments must have been parsed
-    if (!m_decoder->m_header.is_set()) {
+    // at this point, DQT, DHT and SOF0 segments must have been parsed
+    if (!m_decoder->m_dequantizer.is_set() || !m_decoder->m_huffman.is_set()
+                                           || !m_decoder->m_frame_info.is_set()) {
         SET_NEXT_STATE(StateID::ERROR_UUM);
         return;
     }
