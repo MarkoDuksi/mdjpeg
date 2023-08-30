@@ -49,10 +49,10 @@ class DirectBlockWriter : public BlockWriter {
 // template <uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
 // class ScalingBlockWriter : public BlockWriter {
 //     public:
-//         void write(uint8_t* dst, uint dst_x_blocks, uint dst_y_blocks, int (&src_block)[64], uint src_width_px, uint src_height_px) final {
+//         void write(uint8_t* dst, uint dst_x_blk, uint dst_y_blk, int (&src_block)[64], uint src_width_px, uint src_height_px) final {
 //             for (uint y = 0; y < 8; ++y) {
 //                 for (uint x = 0; x < 8; ++x) {
-//                     dst[(8 * dst_y_blocks + y) * DST_WIDTH_PX + 8 * dst_x_blocks + x] = src_block[8 * y + x];
+//                     dst[(8 * dst_y_blk + y) * DST_WIDTH_PX + 8 * dst_x_blk + x] = src_block[8 * y + x];
 //                 }
 //             }
 //         }

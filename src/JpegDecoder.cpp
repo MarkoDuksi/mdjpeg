@@ -9,12 +9,12 @@ JpegDecoder::JpegDecoder(const uint8_t* const buff, const size_t size) noexcept 
     m_reader(buff, size)
     {}
 
-bool JpegDecoder::decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks) {
+bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) {
     DirectBlockWriter writer;
-    return decode(dst, x1_blocks, y1_blocks, x2_blocks, y2_blocks, writer);
+    return decode(dst, x1_blk, y1_blk, x2_blk, y2_blk, writer);
 }
 
-bool JpegDecoder::decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks, BlockWriter& writer) {
+bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk, BlockWriter& writer) {
     if (parse_header() == StateID::HEADER_OK) {
         std::cout << "\nFinished in state HEADER_OK\n";
     }
@@ -23,20 +23,20 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uin
     }
     
     // check bounds
-    if (x1_blocks >= x2_blocks || y1_blocks >= y2_blocks
-                               || x2_blocks - x1_blocks > m_frame_info.width_blocks
-                               || y2_blocks - y1_blocks > m_frame_info.height_blocks) {
+    if (x1_blk >= x2_blk || y1_blk >= y2_blk
+                               || x2_blk - x1_blk > m_frame_info.width_blk
+                               || y2_blk - y1_blk > m_frame_info.height_blk) {
         return false;
     }
 
     int block_8x8[64] {0};
-    uint src_width_px = 8 * (x2_blocks - x1_blocks);
-    uint src_height_px = 8 * (y2_blocks - y1_blocks);
+    uint src_width_px = 8 * (x2_blk - x1_blk);
+    uint src_height_px = 8 * (y2_blk - y1_blk);
     writer.init_frame(dst, src_width_px, src_height_px);
 
-    for (uint row_blocks = y1_blocks; row_blocks < y2_blocks; ++row_blocks) {
-        uint luma_block_idx = row_blocks * m_frame_info.width_blocks + x1_blocks;
-        for (uint col_blocks = x1_blocks; col_blocks < x2_blocks; ++col_blocks, ++luma_block_idx) {
+    for (uint row_blk = y1_blk; row_blk < y2_blk; ++row_blk) {
+        uint luma_block_idx = row_blk * m_frame_info.width_blk + x1_blk;
+        for (uint col_blk = x1_blk; col_blk < x2_blk; ++col_blk, ++luma_block_idx) {
             if (!m_huffman.decode_luma_block(m_reader, block_8x8, luma_block_idx, m_frame_info.horiz_chroma_subs_factor)) {
                 std::cout << "\nHuffman decoding FAILED!" << "\n";
                 return false;
@@ -53,7 +53,7 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uin
     return true;
 }
 
-bool JpegDecoder::dc_decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks) {
+bool JpegDecoder::dc_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) {
     if (parse_header() == StateID::HEADER_OK) {
         std::cout << "\nFinished in state HEADER_OK\n";
     }
@@ -62,18 +62,18 @@ bool JpegDecoder::dc_decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, 
     }
     
     // check bounds
-    if (x1_blocks >= x2_blocks || y1_blocks >= y2_blocks
-                               || x2_blocks - x1_blocks > m_frame_info.width_blocks
-                               || y2_blocks - y1_blocks > m_frame_info.height_blocks) {
+    if (x1_blk >= x2_blk || y1_blk >= y2_blk
+                               || x2_blk - x1_blk > m_frame_info.width_blk
+                               || y2_blk - y1_blk > m_frame_info.height_blk) {
         return false;
     }
 
-    uint src_width_px = x2_blocks - x1_blocks;
+    uint src_width_px = x2_blk - x1_blk;
     int block_8x8[64] {0};
 
-    for (uint row_blocks = y1_blocks; row_blocks < y2_blocks; ++row_blocks) {
-        uint luma_block_idx = row_blocks * m_frame_info.width_blocks + x1_blocks;
-        for (uint col_blocks = x1_blocks; col_blocks < x2_blocks; ++col_blocks, ++luma_block_idx) {
+    for (uint row_blk = y1_blk; row_blk < y2_blk; ++row_blk) {
+        uint luma_block_idx = row_blk * m_frame_info.width_blk + x1_blk;
+        for (uint col_blk = x1_blk; col_blk < x2_blk; ++col_blk, ++luma_block_idx) {
             if (!m_huffman.decode_luma_block(m_reader, block_8x8, luma_block_idx, m_frame_info.horiz_chroma_subs_factor)) {
                 std::cout << "\nHuffman decoding FAILED!" << "\n";
                 return false;
@@ -85,7 +85,7 @@ bool JpegDecoder::dc_decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, 
             // recover block-averaged LUMA value
             const int dc_luma = (block_8x8[0] + 1024) / 8;
 
-            dst[(row_blocks - y1_blocks) * src_width_px + (col_blocks - x1_blocks)] = dc_luma;
+            dst[(row_blk - y1_blk) * src_width_px + (col_blk - x1_blk)] = dc_luma;
         }
     }
 

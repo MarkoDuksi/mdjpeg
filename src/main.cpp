@@ -87,16 +87,16 @@ int main(int argc, char** argv) {
         JpegDecoder decoder(buff, size);
         DirectBlockWriter writer;
 
-        constexpr uint     x1_blocks = 0;
-        constexpr uint     y1_blocks = 0;
-        constexpr uint  width_blocks = 20;
-        constexpr uint height_blocks = 15;
+        constexpr uint     x1_blk = 0;
+        constexpr uint     y1_blk = 0;
+        constexpr uint  width_blk = 20;
+        constexpr uint height_blk = 15;
 
-        uint8_t decoded_img[8 * width_blocks * 8 * height_blocks] {0};
-        if (decoder.decode(decoded_img, x1_blocks, y1_blocks, x1_blocks + width_blocks, y1_blocks + height_blocks, writer)) {
-            for (uint i = 0; i < 8 * height_blocks; ++i) {
-                for (uint j = 0; j < 8 * width_blocks; ++j) {
-                    std::cout << std::dec << (int)decoded_img[8 * width_blocks * i + j] << " ";
+        uint8_t decoded_img[8 * width_blk * 8 * height_blk] {0};
+        if (decoder.decode(decoded_img, x1_blk, y1_blk, x1_blk + width_blk, y1_blk + height_blk, writer)) {
+            for (uint i = 0; i < 8 * height_blk; ++i) {
+                for (uint j = 0; j < 8 * width_blk; ++j) {
+                    std::cout << std::dec << (int)decoded_img[8 * width_blk * i + j] << " ";
                 }
                 std::cout << "\n";
             }
@@ -104,11 +104,11 @@ int main(int argc, char** argv) {
 
         write_pgm("../output/test1.pgm", decoded_img, 160, 120);
 
-        uint8_t decoded_img2[width_blocks * height_blocks] {0};
-        if (decoder.dc_decode(decoded_img2, x1_blocks, y1_blocks, x1_blocks + width_blocks, y1_blocks + height_blocks)) {
-            for (uint i = 0; i < height_blocks; ++i) {
-                for (uint j = 0; j < width_blocks; ++j) {
-                    std::cout << std::dec << (int)decoded_img2[width_blocks * i + j] << " ";
+        uint8_t decoded_img2[width_blk * height_blk] {0};
+        if (decoder.dc_decode(decoded_img2, x1_blk, y1_blk, x1_blk + width_blk, y1_blk + height_blk)) {
+            for (uint i = 0; i < height_blk; ++i) {
+                for (uint j = 0; j < width_blk; ++j) {
+                    std::cout << std::dec << (int)decoded_img2[width_blk * i + j] << " ";
                 }
                 std::cout << "\n";
             }

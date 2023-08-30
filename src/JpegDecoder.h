@@ -16,9 +16,9 @@ class JpegDecoder {
     public:
         JpegDecoder(const uint8_t* const buff, const size_t size) noexcept;
 
-        bool decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks);
-        bool decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks, BlockWriter& writer);
-        bool dc_decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks);
+        bool decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk);
+        bool decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk, BlockWriter& writer);
+        bool dc_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk);
 
         template <StateID ANY>
         friend class ConcreteState;
@@ -36,15 +36,15 @@ class JpegDecoder {
         struct {
             uint height_px {0};
             uint width_px {0};
-            uint height_blocks {0};
-            uint width_blocks {0};
+            uint height_blk {0};
+            uint width_blk {0};
             uint horiz_chroma_subs_factor {false};
 
             void set_dims(uint height_px, uint width_px) {
                 this->height_px = height_px;
                 this->width_px = width_px;
-                height_blocks = (height_px + 7) / 8;
-                width_blocks = (width_px + 7) / 8;
+                height_blk = (height_px + 7) / 8;
+                width_blk = (width_px + 7) / 8;
             }
 
             bool is_set() const noexcept {
