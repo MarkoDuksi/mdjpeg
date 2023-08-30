@@ -91,7 +91,6 @@ std::optional<uint16_t> JpegReader::read_segment_size() noexcept {
     return *result - 2;
 }
 
-// todo: consider making read_bit() branchless
 int JpegReader::read_bit() noexcept {
     // current byte is always valid, read current bit if not last (lowest, at position 0)
     if (m_current_bit_pos) {

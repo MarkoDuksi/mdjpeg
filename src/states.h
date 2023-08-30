@@ -120,7 +120,7 @@ class State {
 
         bool is_final_state() const noexcept;
         virtual StateID getID() const noexcept = 0;
-        virtual void parse_header(JpegReader& reader) = 0;
+        virtual void parse_header([[maybe_unused]] JpegReader& reader) = 0;
 
     protected:
         JpegDecoder* const m_decoder;
@@ -138,5 +138,5 @@ class ConcreteState final : public State {
             return state_id;
         }
         
-        void parse_header(JpegReader& reader) override {};
+        void parse_header([[maybe_unused]] JpegReader& reader) override {};
 };

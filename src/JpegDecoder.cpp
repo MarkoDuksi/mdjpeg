@@ -10,6 +10,11 @@ JpegDecoder::JpegDecoder(const uint8_t* const buff, const size_t size) noexcept 
     {}
 
 bool JpegDecoder::decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks) {
+    DirectBlockWriter writer;
+    return decode(dst, x1_blocks, y1_blocks, x2_blocks, y2_blocks, writer);
+}
+
+bool JpegDecoder::decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks, BlockWriter& writer) {
     if (parse_header() == StateID::HEADER_OK) {
         std::cout << "\nFinished in state HEADER_OK\n";
     }
@@ -17,14 +22,6 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uin
         return false;
     }
     
-    // decode from (x1_blocks, y2_blocks) to the bottom-right corner by default
-    if (!x2_blocks) {
-        x2_blocks = m_frame_info.width_blocks;
-    }
-    if (!y2_blocks) {
-        y2_blocks = m_frame_info.height_blocks;
-    }
-
     // check bounds
     if (x1_blocks >= x2_blocks || y1_blocks >= y2_blocks
                                || x2_blocks - x1_blocks > m_frame_info.width_blocks
@@ -32,8 +29,10 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uin
         return false;
     }
 
-    uint dst_width = 8 * (x2_blocks - x1_blocks);
     int block_8x8[64] {0};
+    uint src_width_px = 8 * (x2_blocks - x1_blocks);
+    uint src_height_px = 8 * (y2_blocks - y1_blocks);
+    writer.init_frame(dst, src_width_px, src_height_px);
 
     for (uint row_blocks = y1_blocks; row_blocks < y2_blocks; ++row_blocks) {
         uint luma_block_idx = row_blocks * m_frame_info.width_blocks + x1_blocks;
@@ -47,19 +46,14 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uin
             m_zigzag.transform(block_8x8);
             m_idct.transform(block_8x8);
             level_transform(block_8x8);
-
-            for (uint y = 0; y < 8; ++y) {
-                for (uint x = 0; x < 8; ++x) {
-                    dst[(8 * (row_blocks - y1_blocks) + y) * dst_width + 8 * (col_blocks - x1_blocks) + x] = block_8x8[8 * y + x];
-                }
-            }
+            writer.write(block_8x8);
         }
     }
 
     return true;
 }
 
-bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks) {
+bool JpegDecoder::dc_decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks) {
     if (parse_header() == StateID::HEADER_OK) {
         std::cout << "\nFinished in state HEADER_OK\n";
     }
@@ -67,14 +61,6 @@ bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint x1_blocks, uint y1_bl
         return false;
     }
     
-    // decode from (x1_blocks, y2_blocks) to the bottom-right corner by default
-    if (!x2_blocks) {
-        x2_blocks = m_frame_info.width_blocks;
-    }
-    if (!y2_blocks) {
-        y2_blocks = m_frame_info.height_blocks;
-    }
-
     // check bounds
     if (x1_blocks >= x2_blocks || y1_blocks >= y2_blocks
                                || x2_blocks - x1_blocks > m_frame_info.width_blocks
@@ -82,7 +68,7 @@ bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint x1_blocks, uint y1_bl
         return false;
     }
 
-    uint dst_width = x2_blocks - x1_blocks;
+    uint src_width_px = x2_blocks - x1_blocks;
     int block_8x8[64] {0};
 
     for (uint row_blocks = y1_blocks; row_blocks < y2_blocks; ++row_blocks) {
@@ -97,9 +83,9 @@ bool JpegDecoder::low_pass_decode(uint8_t* const dst, uint x1_blocks, uint y1_bl
             m_dequantizer.transform(block_8x8[0]);
 
             // recover block-averaged LUMA value
-            const int low_pass_luma = (block_8x8[0] + 1024) / 8;
+            const int dc_luma = (block_8x8[0] + 1024) / 8;
 
-            dst[(row_blocks - y1_blocks) * dst_width + (col_blocks - x1_blocks)] = low_pass_luma;
+            dst[(row_blocks - y1_blocks) * src_width_px + (col_blocks - x1_blocks)] = dc_luma;
         }
     }
 

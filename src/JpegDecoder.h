@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <cmath>
+#include <sys/types.h>
 
 #include "states.h"
 #include "JpegReader.h"
@@ -9,14 +9,16 @@
 #include "Dequantizer.h"
 #include "ZigZag.h"
 #include "IDCT.h"
+#include "BlockWriter.h"
 
 
 class JpegDecoder {
     public:
         JpegDecoder(const uint8_t* const buff, const size_t size) noexcept;
 
-        bool decode(uint8_t* const dst, uint x1_blocks = 0, uint y1_blocks = 0, uint x2_blocks = 0, uint y2_blocks = 0);
-        bool low_pass_decode(uint8_t* const dst, uint x1_blocks = 0, uint y1_blocks = 0, uint x2_blocks = 0, uint y2_blocks = 0);
+        bool decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks);
+        bool decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks, BlockWriter& writer);
+        bool dc_decode(uint8_t* const dst, uint x1_blocks, uint y1_blocks, uint x2_blocks, uint y2_blocks);
 
         template <StateID ANY>
         friend class ConcreteState;

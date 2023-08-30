@@ -1,6 +1,7 @@
 #include "states.h"
 
 #include <iostream>
+#include <sys/types.h>
 
 #include "JpegReader.h"
 #include "JpegDecoder.h"
