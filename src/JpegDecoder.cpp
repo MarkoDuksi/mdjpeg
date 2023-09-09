@@ -16,7 +16,7 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_b
 
 bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk, BlockWriter& writer) {
     if (parse_header() == StateID::HEADER_OK) {
-        std::cout << "\nFinished in state HEADER_OK\n";
+        std::cout << "\nFinished in state HEADER_OK\n\n";
     }
     else {
         return false;
@@ -24,8 +24,8 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_b
     
     // check bounds
     if (x1_blk >= x2_blk || y1_blk >= y2_blk
-                               || x2_blk - x1_blk > m_frame_info.width_blk
-                               || y2_blk - y1_blk > m_frame_info.height_blk) {
+                         || x2_blk - x1_blk > m_frame_info.width_blk
+                         || y2_blk - y1_blk > m_frame_info.height_blk) {
         return false;
     }
 
@@ -55,7 +55,7 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_b
 
 bool JpegDecoder::dc_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) {
     if (parse_header() == StateID::HEADER_OK) {
-        std::cout << "\nFinished in state HEADER_OK\n";
+        std::cout << "\nFinished in state HEADER_OK\n\n";
     }
     else {
         return false;
@@ -63,8 +63,8 @@ bool JpegDecoder::dc_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x
     
     // check bounds
     if (x1_blk >= x2_blk || y1_blk >= y2_blk
-                               || x2_blk - x1_blk > m_frame_info.width_blk
-                               || y2_blk - y1_blk > m_frame_info.height_blk) {
+                         || x2_blk - x1_blk > m_frame_info.width_blk
+                         || y2_blk - y1_blk > m_frame_info.height_blk) {
         return false;
     }
 
