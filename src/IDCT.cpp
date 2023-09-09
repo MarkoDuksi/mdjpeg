@@ -5,6 +5,9 @@
 
 void IDCT::transform(int (&block)[64]) noexcept {
 // idct code from https://github.com/dannye/jed/blob/master/src/decoder.cpp
+
+    float intermediate[64];
+
     for (uint i = 0; i < 8; ++i) {
         const float g0 = block[0 * 8 + i] * s0;
         const float g1 = block[4 * 8 + i] * s4;
@@ -63,25 +66,25 @@ void IDCT::transform(int (&block)[64]) noexcept {
         const float b6 = c6 - c7;
         const float b7 = c7;
 
-        block[0 * 8 + i] = b0 + b7;
-        block[1 * 8 + i] = b1 + b6;
-        block[2 * 8 + i] = b2 + b5;
-        block[3 * 8 + i] = b3 + b4;
-        block[4 * 8 + i] = b3 - b4;
-        block[5 * 8 + i] = b2 - b5;
-        block[6 * 8 + i] = b1 - b6;
-        block[7 * 8 + i] = b0 - b7;
+        intermediate[0 * 8 + i] = b0 + b7;
+        intermediate[1 * 8 + i] = b1 + b6;
+        intermediate[2 * 8 + i] = b2 + b5;
+        intermediate[3 * 8 + i] = b3 + b4;
+        intermediate[4 * 8 + i] = b3 - b4;
+        intermediate[5 * 8 + i] = b2 - b5;
+        intermediate[6 * 8 + i] = b1 - b6;
+        intermediate[7 * 8 + i] = b0 - b7;
     }
 
     for (uint i = 0; i < 8; ++i) {
-        const float g0 = block[i * 8 + 0] * s0;
-        const float g1 = block[i * 8 + 4] * s4;
-        const float g2 = block[i * 8 + 2] * s2;
-        const float g3 = block[i * 8 + 6] * s6;
-        const float g4 = block[i * 8 + 5] * s5;
-        const float g5 = block[i * 8 + 1] * s1;
-        const float g6 = block[i * 8 + 7] * s7;
-        const float g7 = block[i * 8 + 3] * s3;
+        const float g0 = intermediate[i * 8 + 0] * s0;
+        const float g1 = intermediate[i * 8 + 4] * s4;
+        const float g2 = intermediate[i * 8 + 2] * s2;
+        const float g3 = intermediate[i * 8 + 6] * s6;
+        const float g4 = intermediate[i * 8 + 5] * s5;
+        const float g5 = intermediate[i * 8 + 1] * s1;
+        const float g6 = intermediate[i * 8 + 7] * s7;
+        const float g7 = intermediate[i * 8 + 3] * s3;
 
         const float f0 = g0;
         const float f1 = g1;
