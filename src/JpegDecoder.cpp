@@ -16,7 +16,9 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_b
 
 bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk, BlockWriter& writer) {
     if (parse_header() == StateID::HEADER_OK) {
-        std::cout << "\nFinished in state HEADER_OK\n\n";
+        #ifdef PRINT_STATES_FLOW
+            std::cout << "\nFinished in state HEADER_OK\n\n";
+        #endif
     }
     else {
         return false;
@@ -55,7 +57,9 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_b
 
 bool JpegDecoder::dc_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) {
     if (parse_header() == StateID::HEADER_OK) {
-        std::cout << "\nFinished in state HEADER_OK\n\n";
+        #ifdef PRINT_STATES_FLOW
+            std::cout << "\nFinished in state HEADER_OK\n\n";
+        #endif
     }
     else {
         return false;

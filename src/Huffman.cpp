@@ -1,8 +1,9 @@
 #include "Huffman.h"
 
-#include <iostream>
-#include <fmt/core.h>
-
+#ifdef PRINT_HUFFMAN_TABLES
+    #include <iostream>
+    #include <fmt/core.h>
+#endif
 
 size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept {
     const uint next_byte = *reader.peek();
@@ -32,8 +33,11 @@ size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept 
     if (is_dc) {
         m_htables[table_id].dc.histogram = reader.tell_ptr() + 1;
         m_htables[table_id].dc.symbols = reader.tell_ptr() + 1 + 16;
-        std::cout << "\nHuffman table id " << (int)table_id << " (DC):\n";
-        std::cout << "(length: code -> symbol)\n";
+
+        #ifdef PRINT_HUFFMAN_TABLES
+            std::cout << "\nHuffman table id " << (int)table_id << " (DC):\n";
+            std::cout << "(length: code -> symbol)\n";
+        #endif
 
         // generate Huffman codes for DC coeff length symbols
         uint curr_huff_code = 0;
@@ -41,11 +45,17 @@ size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept 
         for (uint i = 0; i < 16; ++i) {
             curr_huff_code <<= 1;
             for (uint j = 0; j < m_htables[table_id].dc.histogram[i]; ++j) {
-                fmt::print("  {: >2}: {:0>{}b} -> 0x{:0>2x}\n",
-                            i + 1,
-                            curr_huff_code, i + 1,
-                            m_htables[table_id].dc.symbols[idx]);
-                m_htables[table_id].dc.codes[idx++] = curr_huff_code++;
+                m_htables[table_id].dc.codes[idx] = curr_huff_code;
+
+                #ifdef PRINT_HUFFMAN_TABLES
+                    fmt::print("  {: >2}: {:0>{}b} -> 0x{:0>2x}\n",
+                                i + 1,
+                                curr_huff_code, i + 1,
+                                m_htables[table_id].dc.symbols[idx]);
+                #endif
+
+                ++idx;
+                ++curr_huff_code;
             }
         }
         m_htables[table_id].dc.is_set = true;
@@ -53,8 +63,11 @@ size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept 
     else {
         m_htables[table_id].ac.histogram = reader.tell_ptr() + 1;
         m_htables[table_id].ac.symbols = reader.tell_ptr() + 1 + 16;
-        std::cout << "\nHuffman table id " << (int)table_id << " (AC):\n";
-        std::cout << "(length: code -> symbol)\n";
+
+        #ifdef PRINT_HUFFMAN_TABLES
+            std::cout << "\nHuffman table id " << (int)table_id << " (AC):\n";
+            std::cout << "(length: code -> symbol)\n";
+        #endif
 
         // generate Huffman codes for AC coeff length symbols
         uint curr_huff_code = 0;
@@ -62,11 +75,17 @@ size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept 
         for (uint i = 0; i < 16; ++i) {
             curr_huff_code <<= 1;
             for (uint j = 0; j < m_htables[table_id].ac.histogram[i]; ++j) {
-                fmt::print("  {: >2}: {:0>{}b} -> 0x{:0>2x}\n",
-                            i + 1,
-                            curr_huff_code, i + 1,
-                            m_htables[table_id].ac.symbols[idx]);
-                m_htables[table_id].ac.codes[idx++] = curr_huff_code++;
+                m_htables[table_id].ac.codes[idx] = curr_huff_code;
+
+                #ifdef PRINT_HUFFMAN_TABLES
+                    fmt::print("  {: >2}: {:0>{}b} -> 0x{:0>2x}\n",
+                                i + 1,
+                                curr_huff_code, i + 1,
+                                m_htables[table_id].ac.symbols[idx]);
+                #endif
+
+                ++idx;
+                ++curr_huff_code;                
             }
         }
         m_htables[table_id].ac.is_set = true;

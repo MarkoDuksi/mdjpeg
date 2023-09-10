@@ -1,6 +1,9 @@
 #include "states.h"
 
-#include <iostream>
+#ifdef PRINT_STATES_FLOW
+    #include <iostream>
+#endif
+
 #include <sys/types.h>
 
 #include "JpegReader.h"
@@ -22,7 +25,9 @@ bool State::is_final_state() const noexcept {
 
 template<>
 void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) {
-    std::cout << "Entered state ENTRY\n";
+    #ifdef PRINT_STATES_FLOW
+        std::cout << "Entered state ENTRY\n";
+    #endif
 
     const auto next_marker = reader.read_marker();
 
@@ -33,35 +38,47 @@ void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) {
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::SOI:
-            std::cout << "\nFound marker: SOI (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: SOI (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::SOI);
             break;
 
         default:
-            std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+            #endif
             SET_NEXT_STATE(StateID::ERROR_UUM);
     }
 }
 
 template<>
 void ConcreteState<StateID::SOI>::parse_header(JpegReader& reader) {
-    std::cout << "Entered state SOI\n";
+    #ifdef PRINT_STATES_FLOW
+        std::cout << "Entered state SOI\n";
+    #endif
 
     const auto next_marker = reader.read_marker();
 
     if (static_cast<StateID>(*next_marker) >= StateID::APP0 && static_cast<StateID>(*next_marker) <= StateID::APP15) {
-        std::cout << "\nFound marker: APPN (0x" << std::hex << *next_marker << ")\n";
+        #ifdef PRINT_STATES_FLOW
+            std::cout << "\nFound marker: APPN (0x" << std::hex << *next_marker << ")\n";
+        #endif
         SET_NEXT_STATE(StateID::APP0);
     }
     else {
-        std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+        #ifdef PRINT_STATES_FLOW
+            std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+        #endif
         SET_NEXT_STATE(StateID::ERROR_UUM);
     }
 }
 
 template<>
 void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) {
-    std::cout << "Entered state APP0\n";
+    #ifdef PRINT_STATES_FLOW
+        std::cout << "Entered state APP0\n";
+    #endif
 
     const auto segment_size = reader.read_segment_size();
 
@@ -80,29 +97,39 @@ void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) {
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::DQT:
-            std::cout << "\nFound marker: DQT (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: DQT (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::DQT);
             break;
 
         case StateID::DHT:
-            std::cout << "\nFound marker: DHT (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: DHT (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::DHT);
             break;
 
         case StateID::SOF0:
-            std::cout << "\nFound marker: SOF0 (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: SOF0 (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::SOF0);
             break;
 
         default:
-            std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+            #endif
             SET_NEXT_STATE(StateID::ERROR_UUM);
     }
 }
 
 template<>
 void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) {
-    std::cout << "Entered state DQT\n";
+    #ifdef PRINT_STATES_FLOW
+        std::cout << "Entered state DQT\n";
+    #endif
 
     auto segment_size = reader.read_segment_size();
 
@@ -134,34 +161,46 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) {
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::DQT:
-            std::cout << "\nFound marker: DQT (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: DQT (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::DQT);
             break;
 
         case StateID::DHT:
-            std::cout << "\nFound marker: DHT (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: DHT (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::DHT);
             break;
 
         case StateID::SOF0:
-            std::cout << "\nFound marker: SOF0 (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: SOF0 (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::SOF0);
             break;
 
         case StateID::SOS:
-            std::cout << "\nFound marker: SOS (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: SOS (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::SOS);
             break;
 
         default:
-            std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+            #endif
             SET_NEXT_STATE(StateID::ERROR_UUM);
     }
 }
 
 template<>
 void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) {
-    std::cout << "Entered state DHT\n";
+    #ifdef PRINT_STATES_FLOW
+        std::cout << "Entered state DHT\n";
+    #endif
 
     auto segment_size = reader.read_segment_size();
 
@@ -195,34 +234,46 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) {
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::DHT:
-            std::cout << "\nFound marker: DHT (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: DHT (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::DHT);
             break;
 
         case StateID::DQT:
-            std::cout << "\nFound marker: DQT (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: DQT (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::DQT);
             break;
 
         case StateID::SOF0:
-            std::cout << "\nFound marker: SOF0 (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: SOF0 (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::SOF0);
             break;
 
         case StateID::SOS:
-            std::cout << "\nFound marker: SOS (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: SOS (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::SOS);
             break;
 
         default:
-            std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+            #endif
             SET_NEXT_STATE(StateID::ERROR_UUM);
     }
 }
 
 template<>
 void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) {
-    std::cout << "Entered state SOF0\n";
+    #ifdef PRINT_STATES_FLOW
+        std::cout << "Entered state SOF0\n";
+    #endif
 
     const auto segment_size = reader.read_segment_size();
 
@@ -292,29 +343,39 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) {
 
     switch (static_cast<StateID>(*next_marker)) {
         case StateID::DQT:
-            std::cout << "\nFound marker: DQT (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: DQT (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::DQT);
             break;
 
         case StateID::DHT:
-            std::cout << "\nFound marker: DHT (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: DHT (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::DHT);
             break;
 
         case StateID::SOS:
-            std::cout << "\nFound marker: SOS (0x" << std::hex << *next_marker << ")\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nFound marker: SOS (0x" << std::hex << *next_marker << ")\n";
+            #endif
             SET_NEXT_STATE(StateID::SOS);
             break;
 
         default:
-            std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+            #ifdef PRINT_STATES_FLOW
+                std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+            #endif
             SET_NEXT_STATE(StateID::ERROR_UUM);
     }
 }
 
 template<>
 void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) {
-    std::cout << "Entered state SOS\n";
+    #ifdef PRINT_STATES_FLOW
+        std::cout << "Entered state SOS\n";
+    #endif
 
     // at this point, DQT, DHT and SOF0 segments must have been parsed
     if (!m_decoder->m_dequantizer.is_set() || !m_decoder->m_huffman.is_set()
