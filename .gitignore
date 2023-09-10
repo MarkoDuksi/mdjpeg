@@ -1,6 +1,7 @@
 .deps
 obj
 bin
+tests
 output*
-input
+input*
 *.nogit

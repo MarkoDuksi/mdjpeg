@@ -10,7 +10,7 @@
         "request": "launch",
         "program": "${workspaceFolder}/bin/debug/main.out",
         "args": [
-            "${workspaceFolder}/input/test"
+            "${workspaceFolder}/tests"
         ],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",
