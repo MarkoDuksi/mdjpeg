@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
         auto [buff, size] = read_raw_jpeg_from_file(file_path);
 
         JpegDecoder decoder(buff, size);
-        DirectBlockWriter writer1;
+        BasicBlockWriter writer1;
 
 
         constexpr uint     x1_blk1 = 0;

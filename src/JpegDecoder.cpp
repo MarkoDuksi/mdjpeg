@@ -10,7 +10,7 @@ JpegDecoder::JpegDecoder(const uint8_t* const buff, const size_t size) noexcept 
     {}
 
 bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) {
-    DirectBlockWriter writer;
+    BasicBlockWriter writer;
     return decode(dst, x1_blk, y1_blk, x2_blk, y2_blk, writer);
 }
 

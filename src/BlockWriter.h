@@ -13,7 +13,7 @@ class BlockWriter {
 };
 
 
-class DirectBlockWriter : public BlockWriter {
+class BasicBlockWriter : public BlockWriter {
     public:
         void init_frame(uint8_t* const dst, uint src_width_px, [[maybe_unused]] uint src_height_px) final {
             m_dst = dst;
