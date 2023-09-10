@@ -17,23 +17,23 @@ class BasicBlockWriter : public BlockWriter {
     public:
         void init_frame(uint8_t* const dst, uint src_width_px, [[maybe_unused]] uint src_height_px) final {
             m_dst = dst;
-            m_width_px = src_width_px;
+            m_src_width_px = src_width_px;
             m_block_x = 0;
             m_block_y = 0;
         }
         
         void write(int (&src_block)[64]) final {
-            uint offset = m_block_y * m_width_px + m_block_x;
+            uint offset = m_block_y * m_src_width_px + m_block_x;
             uint src_idx = 0;
             for (uint row = 0; row < 8; ++row) {
                 for (uint col = 0; col < 8; ++col) {
                     m_dst[offset + col] = src_block[src_idx++];
                 }
-                offset += m_width_px;
+                offset += m_src_width_px;
             }
 
             m_block_x += 8;
-            if (m_block_x == m_width_px) {
+            if (m_block_x == m_src_width_px) {
                 m_block_x = 0;
                 m_block_y += 8;
             }
@@ -41,7 +41,7 @@ class BasicBlockWriter : public BlockWriter {
 
     private:
         uint8_t* m_dst {nullptr};
-        uint m_width_px {};
+        uint m_src_width_px {};
         uint m_block_x {};
         uint m_block_y {};
 };
@@ -51,8 +51,8 @@ class DownscalingBlockWriter : public BlockWriter {
     public:
         void init_frame(uint8_t* const dst, uint src_width_px, uint src_height_px) final {
             m_dst = dst;
-            m_width_px = src_width_px;
-            m_height_px = src_height_px;
+            m_src_width_px = src_width_px;
+            m_src_height_px = src_height_px;
             m_horiz_scaling_factor = static_cast<float>(DST_WIDTH_PX) / src_width_px;
             m_vert_scaling_factor = static_cast<float>(DST_HEIGHT_PX) / src_height_px;
             m_val_norm_factor = m_horiz_scaling_factor * m_vert_scaling_factor;
@@ -273,7 +273,7 @@ class DownscalingBlockWriter : public BlockWriter {
             }
 
             m_block_x += 8;
-            if (m_block_x == m_width_px) {
+            if (m_block_x == m_src_width_px) {
                 m_block_x = 0;
                 m_block_y += 8;
             }
@@ -281,8 +281,8 @@ class DownscalingBlockWriter : public BlockWriter {
 
     private:
         uint8_t* m_dst {nullptr};
-        uint m_width_px {};
-        uint m_height_px {};
+        uint m_src_width_px {};
+        uint m_src_height_px {};
         uint m_block_x {};
         uint m_block_y {};
 
