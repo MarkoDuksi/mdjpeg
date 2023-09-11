@@ -5,6 +5,7 @@ LIB_DIRS = lib
 HDR_DIRS = include
 BIN_DIR = bin
 DEP_DIR = .deps
+TESTS_DIR = tests
 
 CXX = g++
 CXX_FLAGS = -std=c++17 -pthread -fdiagnostics-color=always -pedantic -Wall -Wextra -Wunreachable-code -Wfatal-errors
@@ -62,6 +63,11 @@ $(RELEASE_OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEP_DIR)/%.release.d | $(RELEASE_OBJ_
 $(DEBUG_BIN_DIR) $(DEBUG_OBJ_DIR) $(RELEASE_BIN_DIR) $(RELEASE_OBJ_DIR) $(DEP_DIR):
 	@mkdir -p $@
 
+
+.PHONY: clean-tests
+clean-tests:
+	find $(TESTS_DIR) -type f -regex '.*test[0-9]+\/.*\.pgm' -delete
+	find $(TESTS_DIR) -type d -regex '.*test[0-9]+' -delete
 
 .PHONY: clean-debug
 clean-debug:
