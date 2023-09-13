@@ -66,8 +66,8 @@ $(DEBUG_BIN_DIR) $(DEBUG_OBJ_DIR) $(RELEASE_BIN_DIR) $(RELEASE_OBJ_DIR) $(DEP_DI
 
 .PHONY: clean-tests
 clean-tests:
-	find $(TESTS_DIR) -type f -regex '.*test[0-9]+\/.*\.pgm' -delete
-	find $(TESTS_DIR) -type d -regex '.*test[0-9]+' -delete
+	find $(TESTS_DIR) -type f -regex '.+\/.+\.pgm' -delete
+	find $(TESTS_DIR) -type d -regex '.+\/[0-9]+x[0-9]+\/.+' -delete
 
 .PHONY: clean-debug
 clean-debug:

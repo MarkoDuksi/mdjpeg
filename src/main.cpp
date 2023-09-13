@@ -13,11 +13,13 @@ int main(int argc, char** argv) {
         std::cout << "usage: " << argv[0] << " tests_base_directory" << "\n";
     }
 
-    const char* input_base_dir = argv[1];
-    // Dimensions dim {160, 120};
-    // Dimensions dim {1280, 1024};
-    Dimensions dim {1600, 1200};
-    run_tests(input_base_dir, dim);
+    std::filesystem::path input_base_dir = argv[1];
+
+    run_integral_decoding_tests(input_base_dir, {160, 120});
+    run_integral_decoding_tests(input_base_dir, {1280, 1024});
+    run_integral_decoding_tests(input_base_dir, {1600, 1200});
+    
+    run_partial_decoding_tests(input_base_dir);
 
     return 0;
 }
