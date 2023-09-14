@@ -15,7 +15,7 @@
 #include "tests.h"
 
 
-// run tests that decode complete image frames with no downscaling, using BasicBlockWriter
+// run tests that decode full image frames w/o downscaling
 bool run_integral_decoding_tests(std::filesystem::path input_base_dir, const Dimensions& dim) {
 
     bool test_passed{true};
@@ -60,7 +60,7 @@ bool run_integral_decoding_tests(std::filesystem::path input_base_dir, const Dim
     return test_passed;
 }
 
-// run tests that decode cropped 200x200px blocks from 800x800 px images, using BasicBlockWriter
+// run tests that decode cropped 200x200px blocks from 800x800 px image frames
 bool run_partial_decoding_tests(std::filesystem::path input_base_dir) {
 
     bool test_passed{true};
