@@ -20,13 +20,13 @@ bool run_integral_decoding_tests(std::filesystem::path input_base_dir, const Dim
 
     bool test_passed{true};
 
-    auto input_files_paths = get_input_img_paths(input_base_dir, dim);
+    const auto input_files_paths = get_input_img_paths(input_base_dir, dim);
 
     for (const auto& file_path : input_files_paths) {
 
         std::cout << "Running integral decoding test on \"" << file_path.c_str() << "\"... ";
 
-        auto [buff, size] = read_raw_jpeg_from_file(file_path);
+        const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder(buff, size);
         uint8_t* decoded_img = new uint8_t[dim.width_px * dim.height_px];
 
@@ -65,21 +65,21 @@ bool run_partial_decoding_tests(std::filesystem::path input_base_dir) {
 
     bool test_passed{true};
 
-    Dimensions src_dims {800, 800};
-    Dimensions cropped_dims {200, 200};
+    const Dimensions src_dims {800, 800};
+    const Dimensions cropped_dims {200, 200};
 
     constexpr uint src_width_px = 800;
     constexpr uint src_height_px = 800;
     constexpr uint dst_width_px = 200;
     constexpr uint dst_height_px = 200;
 
-    auto input_files_paths = get_input_img_paths(input_base_dir, src_dims);
+    const auto input_files_paths = get_input_img_paths(input_base_dir, src_dims);
 
     for (const auto& file_path : input_files_paths) {
 
         std::cout << "Running partial decoding test on \"" << file_path.c_str() << "\"... ";
 
-        auto [buff, size] = read_raw_jpeg_from_file(file_path);
+        const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder(buff, size);
         uint8_t decoded_img[dst_width_px * dst_height_px] {};
 
@@ -152,7 +152,7 @@ std::tuple<uint8_t*, size_t> read_raw_jpeg_from_file(const std::filesystem::path
         return {nullptr, 0};
     }
 
-    auto size = file.tellg();
+    const auto size = file.tellg();
     char* raw_jpeg = new char[size];
 
     file.seekg(0);
@@ -198,20 +198,20 @@ bool write_pgm(const std::filesystem::path& file_path, uint8_t* raw_image_data, 
 }
 
 void run_targeted_test1(const std::filesystem::path& input_base_dir) {
-    Dimensions src_dims {1600, 1200};
+    const Dimensions src_dims {1600, 1200};
     constexpr uint dst_width_px = 192;
     constexpr uint dst_height_px = 64;
-    Dimensions cropped_dims {dst_width_px, dst_height_px};
+    const Dimensions cropped_dims {dst_width_px, dst_height_px};
 
-    auto file_path = input_base_dir / "1600x1200" / "ESP32-CAM_res13_qual3.jpg";
+    const auto file_path = input_base_dir / "1600x1200" / "ESP32-CAM_res13_qual3.jpg";
 
-    auto [buff, size] = read_raw_jpeg_from_file(file_path);
+    const auto [buff, size] = read_raw_jpeg_from_file(file_path);
     JpegDecoder decoder(buff, size);
     uint8_t decoded_img[dst_width_px * dst_height_px] {};
 
     if (decoder.decode(decoded_img, (1600 - dst_width_px) / 8, 2, src_dims.width_blk, cropped_dims.height_blk)) {
 
-        std::filesystem::path output_dir = file_path.parent_path() / "targeted";
+        std::filesystem::path output_dir = file_path.parent_path() / "targeted1";
         std::filesystem::create_directory(output_dir);
         std::filesystem::path output_file_path = output_dir / (std::string(file_path.stem()) + "_" + std::to_string(dst_width_px) + "x" + std::to_string(dst_height_px) + ".pgm");
 
@@ -226,4 +226,54 @@ void run_targeted_test1(const std::filesystem::path& input_base_dir) {
     }
 
     delete[] buff;
+}
+
+void run_targeted_test2() {
+    
+    constexpr uint src_width_px = 32;
+    constexpr uint src_height_px = 8;
+
+    constexpr uint dst_width_px = 31;
+    constexpr uint dst_height_px = 7;
+    const Dimensions scaled_dims {dst_width_px, dst_height_px};
+
+
+    int src_array1[64];
+    for (uint row = 0; row < 8; ++row) {
+        for (uint col = 0; col < 8; ++col) {
+            src_array1[8 * row + col] = 0;
+        }
+    }
+
+    int src_array2[64];
+    for (uint row = 0; row < 8; ++row) {
+        for (uint col = 0; col < 8; ++col) {
+            src_array2[8 * row + col] = 8;
+        }
+    }
+
+    uint8_t dst_array[dst_width_px * dst_height_px] {};
+
+    DownscalingBlockWriter<dst_width_px, dst_height_px> writer;
+    writer.init_frame(dst_array, src_width_px, src_height_px);
+
+    writer.write(src_array1);
+    writer.write(src_array2);
+    writer.write(src_array1);
+    writer.write(src_array2);
+
+    std::cout << " P2\n " << scaled_dims.width_px << " " << scaled_dims.height_px << " " << 255 << "\n";
+    for (uint row = 0; row < scaled_dims.height_px; ++row) {
+            if (row % 8 == 0) {
+                std::cout << "\n";
+            }
+        for (uint col = 0; col < scaled_dims.width_px; ++col) {
+            if (col % 8 == 0) {
+                std::cout << " ";
+            }
+            std::cout << static_cast<uint>(dst_array[scaled_dims.width_px * row + col]) << " ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n";
 }

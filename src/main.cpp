@@ -15,7 +15,8 @@ int main(int argc, char** argv) {
 
     std::filesystem::path input_base_dir = argv[1];
 
-    run_targeted_test1(input_base_dir);
+    // run_targeted_test1(input_base_dir);
+    run_targeted_test2();
     // run_integral_decoding_tests(input_base_dir, {160, 120});
     // run_integral_decoding_tests(input_base_dir, {1280, 1024});
     // run_integral_decoding_tests(input_base_dir, {1600, 1200});
