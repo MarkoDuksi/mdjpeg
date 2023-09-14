@@ -106,6 +106,18 @@ StateID JpegDecoder::parse_header() {
 
 void JpegDecoder::level_transform(int (&block)[64]) noexcept {
     for (uint i = 0; i < 64; ++i) {
-        block[i] += 128;
+        
+        if (block[i] < -128) {
+
+            block[i] = 0;
+        }
+        else if (block[i] > 127) {
+
+            block[i] = 255;
+        }
+        else {
+
+            block[i] += 128;
+        }
     }
 }
