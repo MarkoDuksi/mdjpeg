@@ -94,3 +94,5 @@ bool run_downscaling_decoding_tests(std::filesystem::path input_base_dir) {
 
     return test_passed;
 }
+
+void run_targeted_test1(const std::filesystem::path& input_base_dir);

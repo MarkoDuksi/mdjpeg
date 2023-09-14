@@ -196,3 +196,34 @@ bool write_pgm(const std::filesystem::path& file_path, uint8_t* raw_image_data, 
 
     return true;
 }
+
+void run_targeted_test1(const std::filesystem::path& input_base_dir) {
+    Dimensions src_dims {1600, 1200};
+    constexpr uint dst_width_px = 192;
+    constexpr uint dst_height_px = 64;
+    Dimensions cropped_dims {dst_width_px, dst_height_px};
+
+    auto file_path = input_base_dir / "1600x1200" / "ESP32-CAM_res13_qual3.jpg";
+
+    auto [buff, size] = read_raw_jpeg_from_file(file_path);
+    JpegDecoder decoder(buff, size);
+    uint8_t decoded_img[dst_width_px * dst_height_px] {};
+
+    if (decoder.decode(decoded_img, (1600 - dst_width_px) / 8, 2, src_dims.width_blk, cropped_dims.height_blk)) {
+
+        std::filesystem::path output_dir = file_path.parent_path() / "targeted";
+        std::filesystem::create_directory(output_dir);
+        std::filesystem::path output_file_path = output_dir / (std::string(file_path.stem()) + "_" + std::to_string(dst_width_px) + "x" + std::to_string(dst_height_px) + ".pgm");
+
+        if (!write_pgm(output_file_path, decoded_img, cropped_dims)) {
+
+            std::cout << "\n  Writing output FAILED.\n";
+        }
+    }
+    else {
+
+        std::cout << "\n  Decoding JPEG FAILED.\n";
+    }
+
+    delete[] buff;
+}
