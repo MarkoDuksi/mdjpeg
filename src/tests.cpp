@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include <fmt/core.h>
+
 #include "JpegDecoder.h"
 #include "BlockWriter.h"
 #include "tests.h"
@@ -241,14 +243,14 @@ void run_targeted_test2() {
     int src_array1[64];
     for (uint row = 0; row < 8; ++row) {
         for (uint col = 0; col < 8; ++col) {
-            src_array1[8 * row + col] = 0;
+            src_array1[8 * row + col] = 100;
         }
     }
 
     int src_array2[64];
     for (uint row = 0; row < 8; ++row) {
         for (uint col = 0; col < 8; ++col) {
-            src_array2[8 * row + col] = 8;
+            src_array2[8 * row + col] = 200;
         }
     }
 
@@ -262,16 +264,16 @@ void run_targeted_test2() {
     writer.write(src_array1);
     writer.write(src_array2);
 
-    std::cout << " P2\n " << scaled_dims.width_px << " " << scaled_dims.height_px << " " << 255 << "\n";
+    std::cout << "P2\n" << scaled_dims.width_px << " " << scaled_dims.height_px << " " << 255 << "\n";
     for (uint row = 0; row < scaled_dims.height_px; ++row) {
             if (row % 8 == 0) {
                 std::cout << "\n";
             }
         for (uint col = 0; col < scaled_dims.width_px; ++col) {
-            if (col % 8 == 0) {
+            if (col && col % 8 == 0) {
                 std::cout << " ";
             }
-            std::cout << static_cast<uint>(dst_array[scaled_dims.width_px * row + col]) << " ";
+            fmt::print("{:0>3} ", dst_array[scaled_dims.width_px * row + col]);
         }
         std::cout << "\n";
     }
