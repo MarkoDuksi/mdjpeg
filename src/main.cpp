@@ -15,9 +15,11 @@ int main(int argc, char** argv) {
 
     std::filesystem::path input_base_dir = argv[1];
 
-    // run_targeted_test1(input_base_dir);
+    run_targeted_test3();
 
     // run_targeted_test2();
+
+    // run_targeted_test1(input_base_dir);
 
     // run_integral_decoding_tests(input_base_dir, {160, 120});
     // run_integral_decoding_tests(input_base_dir, {1280, 1024});
@@ -107,26 +109,26 @@ int main(int argc, char** argv) {
     // run_downscaling_decoding_tests<200, 200, 20, 20>(input_base_dir);
     // run_downscaling_decoding_tests<200, 200, 10, 10>(input_base_dir);
 
-    run_downscaling_decoding_tests<40, 40, 40, 40>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 39, 39>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 38, 38>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 37, 37>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 36, 36>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 35, 35>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 34, 34>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 33, 33>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 32, 32>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 31, 31>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 30, 30>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 28, 28>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 25, 25>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 22, 22>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 19, 19>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 16, 16>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 13, 13>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 10, 10>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 9, 9>(input_base_dir);
-    run_downscaling_decoding_tests<40, 40, 8, 8>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 40, 40>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 39, 39>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 38, 38>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 37, 37>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 36, 36>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 35, 35>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 34, 34>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 33, 33>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 32, 32>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 31, 31>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 30, 30>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 28, 28>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 25, 25>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 22, 22>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 19, 19>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 16, 16>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 13, 13>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 10, 10>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 9, 9>(input_base_dir);
+    // run_downscaling_decoding_tests<40, 40, 8, 8>(input_base_dir);
 
     return 0;
 }
