@@ -98,3 +98,5 @@ void run_targeted_test1(const std::filesystem::path& input_base_dir);
 void run_targeted_test2();
 
 void run_targeted_test3();
+
+void run_targeted_test4();
