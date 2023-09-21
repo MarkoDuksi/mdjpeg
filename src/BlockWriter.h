@@ -170,17 +170,31 @@ class DownscalingBlockWriter : public BlockWriter {
                     // if src column is otherwise contained within single dst column (B)
                     else if (floor_west == floor_east) {
 
-                        // if src row is contained within single dst row (B1 & B2)
+                        // if src row is contained within single dst row (B1 or B2)
                         if (north_fraction == 1) {
 
                             // if src and dst rows are aligned along their south borders (B1) *and* src pixel is last one in its row
                             if (south == floor_south && col == 7) {
 
                                 m_column_buffer[col_buff_idx++] = m_row_buffer[floor_west] + val;
-                                m_row_buffer[floor_west] = 0;                                
+                                m_row_buffer[floor_west] = 0;
                             }
 
-                            // (B1 & B2)
+                            // otherwise B1 or B2 *and* src pixel is last one in its block
+                            else if (row == 7 && col == 7) {
+
+                                m_column_buffer[col_buff_idx++] = m_row_buffer[floor_west] + val;
+                                m_row_buffer[floor_west] = 0;
+                            }
+
+                            // otherwise B1 or B2 *and* src pixel is first one in its block
+                            else if (row == 0 && col == 0) {
+
+                                m_row_buffer[floor_west] += m_column_buffer[col_buff_idx] + val;
+                                m_column_buffer[col_buff_idx] = 0;
+                            }
+
+                            // all other B1 or B2 cases
                             else {
 
                                 m_row_buffer[floor_west] += val;

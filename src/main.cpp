@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     // run_downscaling_decoding_tests<800, 800, 776, 776>(input_base_dir);
     // run_downscaling_decoding_tests<800, 800, 773, 773>(input_base_dir);
     // run_downscaling_decoding_tests<800, 800, 770, 770>(input_base_dir);
-    // run_downscaling_decoding_tests<800, 800,7 760, 760>(input_base_dir);
+    // run_downscaling_decoding_tests<800, 800, 760, 760>(input_base_dir);
     // run_downscaling_decoding_tests<800, 800, 750, 750>(input_base_dir);
     // run_downscaling_decoding_tests<800, 800, 740, 740>(input_base_dir);
     // run_downscaling_decoding_tests<800, 800, 730, 730>(input_base_dir);
