@@ -107,16 +107,17 @@ class DownscalingBlockWriter : public BlockWriter {
                 const float north_fraction = (floor_south != south && floor_south != floor_north)  // TODO: floor_north could be just north?
                                            ? (static_cast<float>(floor_south) - north) / m_vert_scaling_factor : 1;
 
-                // on initial scan of every new dst row - if src and dst rows are aligned along their north borders (A0, B0, or C0)
-                if (floor_north == north) {  // TODO: bug - pt. 1 of the fix?
+                // if src and dst rows are aligned along their north borders (A0, B0, or C0) or
+                // if starting scanning new block
+                if (floor_north == north || row == 0) {
 
                     // carry over from column buffer
                     m_row_buffer[floor_block_west] += m_column_buffer[col_buff_idx];
                     m_column_buffer[col_buff_idx] = 0;
                 }
 
-                // on initial scan of every new dst row - if src row (partially) overlays 2 adjacent dst rows (A3, B3, or C3)
-                else if (north_fraction != 1) {  // TODO: bug - pt. 2 of the fix?
+                // if src row (partially) overlays 2 adjacent dst rows (A3, B3, or C3)
+                if (north_fraction != 1) {
 
                     // carry over from south position in column buffer
                     m_edge_buffer = m_column_buffer[col_buff_idx + 1];
@@ -171,6 +172,7 @@ class DownscalingBlockWriter : public BlockWriter {
                     else if (floor_west == floor_east) {
 
                         // if src row is contained within single dst row (B1 or B2)
+                        // TODO: refactor
                         if (north_fraction == 1) {
 
                             // if src and dst rows are aligned along their south borders (B1) *and* src pixel is last one in its row
@@ -185,13 +187,6 @@ class DownscalingBlockWriter : public BlockWriter {
 
                                 m_column_buffer[col_buff_idx++] = m_row_buffer[floor_west] + val;
                                 m_row_buffer[floor_west] = 0;
-                            }
-
-                            // otherwise B1 or B2 *and* src pixel is first one in its block
-                            else if (row == 0 && col == 0) {
-
-                                m_row_buffer[floor_west] += m_column_buffer[col_buff_idx] + val;
-                                m_column_buffer[col_buff_idx] = 0;
                             }
 
                             // all other B1 or B2 cases
