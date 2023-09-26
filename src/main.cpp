@@ -15,11 +15,13 @@ int main(int argc, char** argv) {
 
     std::filesystem::path input_base_dir = argv[1];
 
-    run_targeted_test4();
+    // run_targeted_test2();
 
-    run_targeted_test3();
+    // run_targeted_test3();
 
-    run_targeted_test2();
+    // run_targeted_test4();
+
+    run_targeted_test5();
 
     // run_targeted_test1(input_base_dir);
 
