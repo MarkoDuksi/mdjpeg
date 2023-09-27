@@ -83,25 +83,13 @@ class DownscalingBlockWriter : public BlockWriter {
             // column buffer index used to store/read dst block's easternmost pixels' partial values
             uint col_buff_idx = 0;
 
-            // index of first pixel in row buffer relevant for the current src block
-            const uint floor_block_west = static_cast<uint>(block_west + float_max_error);
-
-            // float values that are within float_max_error from nearest integral value are rounded to it
-            if (block_west < floor_block_west || block_west - floor_block_west < float_max_error) {
-
-                block_west = floor_block_west;
-            }
+            // index of first pixel in row buffer relevant to the current src block
+            const uint floor_block_west = round_and_floor(block_west);
 
             for (uint row = 0; row < 8; ++row) {
 
                 // dst row index overlayed by north portion of src row
-                const int floor_north = static_cast<uint>(north + float_max_error);
-
-                // float values that are within float_max_error from nearest integral value are rounded to it
-                if (north < floor_north || north - floor_north < float_max_error) {
-
-                    north = floor_north;
-                }
+                const int floor_north = round_and_floor(north);
 
                 // current dst row index offset from start of array
                 const int vert_offset = DST_WIDTH_PX * floor_north;
@@ -110,13 +98,7 @@ class DownscalingBlockWriter : public BlockWriter {
                 float south = north + m_vert_scaling_factor;
 
                 // dst row index overlayed by south portion of src row
-                const int floor_south = static_cast<uint>(south + float_max_error);
-
-                // float values that are within float_max_error from nearest integral value are rounded to it
-                if (south < floor_south || south - floor_south < float_max_error) {
-
-                    south = floor_south;
-                }
+                const int floor_south = round_and_floor(south);
 
                 // (re)start row at block west border on each src row scan
                 float west = block_west;
@@ -129,7 +111,7 @@ class DownscalingBlockWriter : public BlockWriter {
                 // if starting scanning new block
                 if (floor_north == north || row == 0) {
 
-                    // carry over from column buffer
+                    // carry over from north position column buffer
                     m_row_buffer[floor_block_west] += m_column_buffer[col_buff_idx];
                     m_column_buffer[col_buff_idx] = 0;
                 }
@@ -148,22 +130,10 @@ class DownscalingBlockWriter : public BlockWriter {
                     float east = west + m_horiz_scaling_factor;
 
                     // X-coord of dst column overlayed by west portion of src column
-                    const int floor_west = static_cast<uint>(west + float_max_error);
-
-                    // float values that are within float_max_error from nearest integral value are rounded to it
-                    if (west < floor_west || west - floor_west < float_max_error) {
-
-                        west = floor_west;
-                    }
+                    const int floor_west = round_and_floor(west);
 
                     // X-coord of dst column overlayed by east portion of src column
-                    const int floor_east = static_cast<uint>(east + float_max_error);
-
-                    // float values that are within float_max_error from nearest integral value are rounded to it
-                    if (east < floor_east || east - floor_east < float_max_error) {
-
-                        east = floor_east;
-                    }
+                    const int floor_east = round_and_floor(east);
 
                     // total src pixel value to be weight-distributed between up to 4 dst pixels that it potentially overlays
                     const float val = static_cast<float>(src_block[src_idx++]);
@@ -171,7 +141,7 @@ class DownscalingBlockWriter : public BlockWriter {
                     // if src and dst columns are aligned along their east borders (A)
                     if (east == floor_east) {
 
-                        // if src and dst rows are aligned along their west borders (A1)
+                        // if src and dst rows are aligned along their south borders (A1)
                         if (south == floor_south) {  // TODO: bool south_aligned = (south == floor_south)
 
                             m_dst[vert_offset + floor_west] = static_cast<uint8_t>(0.5f + (m_row_buffer[floor_west] + val) * m_val_norm_factor);
@@ -212,7 +182,7 @@ class DownscalingBlockWriter : public BlockWriter {
                                 m_row_buffer[floor_west] = 0;
                             }
 
-                            // otherwise B1 or B2 *and* src pixel is last one in its block
+                            // if otherwise B1 or B2 *and* src pixel is last one in its block
                             else if (row == 7 && col == 7) {
 
                                 m_column_buffer[col_buff_idx++] = m_row_buffer[floor_west] + val;
@@ -345,7 +315,18 @@ class DownscalingBlockWriter : public BlockWriter {
         float m_column_buffer[8] {};
         float m_edge_buffer {};
 
-        // errors smaller than this are expected with floating point math
-        // and are checked for in certain places
-        const float float_max_error = 0.0001f;
+        // conditionally round input (in place) to float representation of nearest integer within +/- epsilon and return its floor
+        uint round_and_floor(float& input) {
+
+            const float epsilon = 0.0001f;
+
+            const uint floored = static_cast<uint>(input + epsilon);
+
+            if (input != floored && input - floored < epsilon) {
+
+                input = floored;
+            }
+
+            return floored;
+        }
 };
