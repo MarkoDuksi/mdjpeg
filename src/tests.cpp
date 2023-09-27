@@ -413,3 +413,51 @@ void run_targeted_test5() {
     }
     std::cout << "\n";
 }
+
+void run_targeted_test6() {
+    
+    constexpr uint src_width_px = 24;
+    constexpr uint src_height_px = 24;
+
+    constexpr uint dst_width_px = 10;
+    constexpr uint dst_height_px = 10;
+    const Dimensions scaled_dims {dst_width_px, dst_height_px};
+
+
+    int src_array[64];
+    for (uint row = 0; row < 8; ++row) {
+        for (uint col = 0; col < 8; ++col) {
+            src_array[8 * row + col] = 10;
+        }
+    }
+
+    uint8_t dst_array[dst_width_px * dst_height_px] {};
+
+    DownscalingBlockWriter<dst_width_px, dst_height_px> writer;
+    writer.init_frame(dst_array, src_width_px, src_height_px);
+
+    writer.write(src_array);
+    writer.write(src_array);
+    writer.write(src_array);
+    writer.write(src_array);
+    writer.write(src_array);
+    writer.write(src_array);
+    writer.write(src_array);
+    writer.write(src_array);
+    writer.write(src_array);
+
+    std::cout << "P2\n" << scaled_dims.width_px << " " << scaled_dims.height_px << " " << 255 << "\n";
+    for (uint row = 0; row < scaled_dims.height_px; ++row) {
+            if (row % 8 == 0) {
+                std::cout << "\n";
+            }
+        for (uint col = 0; col < scaled_dims.width_px; ++col) {
+            if (col && col % 8 == 0) {
+                std::cout << " ";
+            }
+            fmt::print("{:0>2} ", dst_array[scaled_dims.width_px * row + col]);
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n";
+}
