@@ -237,6 +237,11 @@ class DownscalingBlockWriter : public BlockWriter {
                                 m_column_buffer[col_buff_idx++] = m_row_buffer[floor_west] + north_val;
                                 m_row_buffer[floor_west] = m_edge_buffer + south_val;
                                 m_edge_buffer = 0;
+                                
+                                if (row == 7) {
+                                    m_column_buffer[col_buff_idx] = m_row_buffer[floor_west];
+                                    m_row_buffer[floor_west] = 0;
+                                }
                             }
                             else {
 
