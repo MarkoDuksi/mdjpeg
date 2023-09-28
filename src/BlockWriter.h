@@ -312,7 +312,7 @@ class DownscalingBlockWriter : public BlockWriter {
         float m_val_norm_factor {};
 
         float m_row_buffer[DST_WIDTH_PX] {};
-        float m_column_buffer[8] {};
+        float m_column_buffer[9] {};
         float m_edge_buffer {};
 
         // conditionally round input (in place) to float representation of nearest integer within +/- epsilon and return its floor
