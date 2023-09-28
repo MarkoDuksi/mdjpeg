@@ -104,3 +104,5 @@ void run_targeted_test4();
 void run_targeted_test5();
 
 void run_targeted_test6();
+
+void run_targeted_test7();
