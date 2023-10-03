@@ -90,6 +90,9 @@ class DownscalingBlockWriter : public BlockWriter {
 
             for (uint row = 0; row < 8; ++row) {
 
+                // (re)start row at block west border on each src row scan
+                float west = block_west;
+
                 // dst row index overlayed by north portion of src row
                 const int floor_north = round_and_floor_vert(north);
 
@@ -102,20 +105,20 @@ class DownscalingBlockWriter : public BlockWriter {
                 // dst row index overlayed by south portion of src row
                 const int floor_south = round_and_floor_vert(south);
 
-                // (re)start row at block west border on each src row scan
-                float west = block_west;
+                // rows alignment
+                const bool rows_are_south_aligned = floor_south == south;
+                const bool src_row_spans_next_dst_row = floor_south != floor_north;
 
                 // determine fraction (proportion) of src row (partially) overlaying northern dst row
-                const float north_fraction = (floor_south != south && floor_south != floor_north)  // TODO: floor_north could be just north?
-                                           ? (static_cast<float>(floor_south) - north) / m_vert_scaling_factor : 1;
+                const float north_fraction = (!rows_are_south_aligned && src_row_spans_next_dst_row)
+                                           ? (static_cast<float>(floor_south) - north) / m_vert_scaling_factor : 1.0f;
 
-                // if src and dst rows are aligned along their north borders (A0, B0, or C0) or
-                // if starting scanning new block
+                // if src and dst rows are aligned along their north borders or if starting new block
                 if (floor_north == north || row == 0) {
 
                     // carry over from north position column buffer
                     m_row_buffer[floor_block_west] += m_column_buffer[col_buff_idx];
-                    m_column_buffer[col_buff_idx] = 0;
+                    m_column_buffer[col_buff_idx] = 0.0f;
                 }
 
                 // if src row (partially) overlays 2 adjacent dst rows (A3, B3, or C3)
@@ -123,7 +126,7 @@ class DownscalingBlockWriter : public BlockWriter {
 
                     // carry over from south position in column buffer
                     m_edge_buffer = m_column_buffer[col_buff_idx + 1];
-                    m_column_buffer[col_buff_idx + 1] = 0;
+                    m_column_buffer[col_buff_idx + 1] = 0.0f;
                 }
 
                 for (uint col = 0; col < 8; ++col) {
@@ -137,153 +140,70 @@ class DownscalingBlockWriter : public BlockWriter {
                     // X-coord of dst column overlayed by east portion of src column
                     const int floor_east = round_and_floor_horiz(east);
 
-                    // total src pixel value to be weight-distributed between up to 4 dst pixels that it potentially overlays
+                    // total src pixel value to be weight-distributed across up to 4 dst pixels that it potentially overlays
                     const float val = static_cast<float>(src_block[src_idx++]);
 
-                    // if src and dst columns are aligned along their east borders (A)
-                    if (east == floor_east) {
+                    const float west_val = floor_east == floor_west ? val : (static_cast<float>(floor_east) - west) * val / m_horiz_scaling_factor;
+                    const float east_val = val - west_val;
 
-                        // if src and dst rows are aligned along their south borders (A1)
-                        if (south == floor_south) {  // TODO: bool south_aligned = (south == floor_south)
+                    const float north_west_val = north_fraction * west_val;
+                    const float south_west_val = west_val - north_west_val;
+                    const float north_east_val = north_fraction * east_val;
+                    const float south_east_val = east_val - north_east_val;
 
-                            m_dst[vert_offset + floor_west] = static_cast<uint8_t>(0.5f + (m_row_buffer[floor_west] + val) * m_val_norm_factor);
-                            m_row_buffer[floor_west] = 0;
-                            col_buff_idx += col == 7;
-                        }
+                    m_row_buffer[floor_west] += north_west_val;
+                    m_edge_buffer += south_west_val;
 
-                        // if src row is otherwise contained within single dst row (A2)
-                        else if (north_fraction == 1) {
+                    // east-aligned columns and src row reaches up to or into next dst row
+                    if (east == floor_east && src_row_spans_next_dst_row) {
 
-                            m_row_buffer[floor_west] += val;
-                        }
-
-                        // else src row (partially) overlays 2 adjacent dst rows (A3)
-                        else {
-
-                            const float north_val = north_fraction * val;
-                            const float south_val = val - north_val;
-
-                            m_dst[vert_offset + floor_west] = static_cast<uint8_t>(0.5f + (m_row_buffer[floor_west] + north_val) * m_val_norm_factor);
-                            m_row_buffer[floor_west] = m_edge_buffer + south_val;
-                            m_edge_buffer = 0;
-                            col_buff_idx += col == 7;
-                        }
+                        m_dst[vert_offset + floor_west] = static_cast<uint8_t>(0.5f + m_row_buffer[floor_west] * m_val_norm_factor);
+                        m_row_buffer[floor_west] = m_edge_buffer;
+                        m_edge_buffer = 0.0f;
+                        col_buff_idx += col == 7;
                     }
 
-                    // if src column is otherwise contained within single dst column (B)
+                    // src column is otherwise contained within single dst column
                     else if (floor_west == floor_east) {
 
-                        // if src row is contained within single dst row (B1 or B2)
-                        // TODO: refactor
-                        if (north_fraction == 1) {
+                        if  (col == 7) {
 
-                            // if src and dst rows are aligned along their south borders (B1) *and* src pixel is last one in its row
-                            if (south == floor_south && col == 7) {
+                            if (src_row_spans_next_dst_row || row == 7) {
 
-                                m_column_buffer[col_buff_idx++] = m_row_buffer[floor_west] + val;
-                                m_row_buffer[floor_west] = 0;
+                                m_column_buffer[col_buff_idx++] = m_row_buffer[floor_west];
+                                m_row_buffer[floor_west] = m_edge_buffer;
+                                m_edge_buffer = 0.0f;
                             }
 
-                            // if otherwise B1 or B2 *and* src pixel is last one in its block
-                            else if (row == 7 && col == 7) {
+                            if (north_fraction != 1 && row == 7) {
 
-                                m_column_buffer[col_buff_idx++] = m_row_buffer[floor_west] + val;
-                                m_row_buffer[floor_west] = 0;
-                            }
-
-                            // all other B1 or B2 cases
-                            else {
-
-                                m_row_buffer[floor_west] += val;
-                            }
-                        }
-
-                        // else src row (partially) overlays 2 adjacent dst rows (B3)
-                        else {
-
-                            const float north_val = north_fraction * val;
-                            const float south_val = val - north_val;
-
-                            if (col == 7) {
-
-                                m_column_buffer[col_buff_idx++] = m_row_buffer[floor_west] + north_val;
-                                m_row_buffer[floor_west] = m_edge_buffer + south_val;
-                                m_edge_buffer = 0;
-                                
-                                if (row == 7) {
-                                    m_column_buffer[col_buff_idx] = m_row_buffer[floor_west];
-                                    m_row_buffer[floor_west] = 0;
-                                }
-                            }
-                            else {
-
-                                m_row_buffer[floor_west] += north_val;
-                                m_edge_buffer += south_val;
+                                m_column_buffer[col_buff_idx] = m_row_buffer[floor_west];
+                                m_row_buffer[floor_west] = 0.0f;
                             }
                         }
                     }
 
-                    // else src column (partially) overlays 2 adjacent dst columns (C)
+                    // src column (partially) overlays 2 adjacent dst columns
                     else {
 
-                        const float west_val = (static_cast<float>(floor_east) - west) * val / m_horiz_scaling_factor;
-                        const float east_val = val - west_val;
+                        if (src_row_spans_next_dst_row) {
 
-                        // TODO: C1 and C2 share most of their logic, can be combined
-                        
-                        // if src and dst rows are aligned along their south borders (C1)
-                        if (south == floor_south) {
-
-                            m_dst[vert_offset + floor_west] = static_cast<uint8_t>(0.5f + (m_row_buffer[floor_west] + west_val) * m_val_norm_factor);
-                            m_row_buffer[floor_west] = 0;
-
-                            if (col == 7) {
-
-                                m_column_buffer[col_buff_idx++] += east_val;
-                            }
-                            else {
-
-                                m_row_buffer[floor_east] += east_val;
-                            }
+                            m_dst[vert_offset + floor_west] = static_cast<uint8_t>(0.5f + m_row_buffer[floor_west] * m_val_norm_factor);
+                            m_row_buffer[floor_west] = m_edge_buffer;
                         }
 
-                        // if src row is otherwise contained within single dst row (C2)
-                        else if (north_fraction == 1) {
+                        if (col == 7) {
 
-                            m_row_buffer[floor_west] += west_val;
-
-                            if (col == 7) {
-
-                                m_column_buffer[col_buff_idx] += east_val;
-                            }
-                            else {
-
-                                m_row_buffer[floor_east] += east_val;
-                            }
+                            m_edge_buffer = 0.0f;
+                            m_column_buffer[col_buff_idx] += north_east_val;
+                            col_buff_idx += src_row_spans_next_dst_row;
+                            m_column_buffer[col_buff_idx] += south_east_val;
                         }
 
-                        // else src row (partially) overlays 2 adjacent dst rows (C3)
                         else {
 
-                            const float north_west_val = north_fraction * west_val;
-                            const float south_west_val = west_val - north_west_val;
-                            const float north_east_val = north_fraction * east_val;
-                            const float south_east_val = east_val - north_east_val;
-
-                            m_dst[vert_offset + floor_west] = static_cast<uint8_t>(0.5f + (m_row_buffer[floor_west] + north_west_val) * m_val_norm_factor);
-                            m_row_buffer[floor_west] = m_edge_buffer + south_west_val;
-
-                            if (col == 7) {
-
-                                m_edge_buffer = 0;
-                                m_column_buffer[col_buff_idx++] += north_east_val;
-                                m_column_buffer[col_buff_idx] = south_east_val;
-                            }
-                            else {
-
-                                m_row_buffer[floor_east] += north_east_val;
-                                m_edge_buffer = south_east_val;
-                            }
+                            m_row_buffer[floor_east] += north_east_val;
+                            m_edge_buffer = south_east_val;
                         }
                     }
 
