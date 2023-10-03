@@ -85,16 +85,22 @@ class DownscalingBlockWriter : public BlockWriter {
             // column buffer index used to store/read dst block's easternmost pixels' partial values
             uint col_buff_idx = 0;
 
+            // correct minor floating point error
+            block_west = snap_to_horiz_grid(block_west);
+
             // index of first pixel in row buffer relevant to the current src block
-            const uint floor_block_west = round_and_floor_horiz(block_west);
+            const uint floor_block_west = static_cast<uint>(block_west);
 
             for (uint row = 0; row < 8; ++row) {
 
                 // (re)start row at block west border on each src row scan
                 float west = block_west;
 
+                // correct minor floating point error
+                north = snap_to_vert_grid(north);
+
                 // dst row index overlayed by north portion of src row
-                const int floor_north = round_and_floor_vert(north);
+                const int floor_north = static_cast<uint>(north);
 
                 // current dst row index offset from start of array
                 const int vert_offset = DST_WIDTH_PX * floor_north;
@@ -102,8 +108,11 @@ class DownscalingBlockWriter : public BlockWriter {
                 // south border of src row expressed in dst pixels
                 float south = north + m_vert_scaling_factor;
 
+                // correct minor floating point error
+                south = snap_to_vert_grid(south);
+
                 // dst row index overlayed by south portion of src row
-                const int floor_south = round_and_floor_vert(south);
+                const int floor_south = static_cast<uint>(south);
 
                 // rows alignment
                 const bool rows_are_south_aligned = floor_south == south;
@@ -134,11 +143,17 @@ class DownscalingBlockWriter : public BlockWriter {
                     // src column east border X-coord expressed in dst columns X-coords
                     float east = west + m_horiz_scaling_factor;
 
+                    // correct minor floating point error
+                    west = snap_to_horiz_grid(west);
+
                     // X-coord of dst column overlayed by west portion of src column
-                    const int floor_west = round_and_floor_horiz(west);
+                    const uint floor_west = static_cast<uint>(west);
+
+                    // correct minor floating point error
+                    east = snap_to_horiz_grid(east);
 
                     // X-coord of dst column overlayed by east portion of src column
-                    const int floor_east = round_and_floor_horiz(east);
+                    const uint floor_east = static_cast<uint>(east);
 
                     // total src pixel value to be weight-distributed across up to 4 dst pixels that it potentially overlays
                     const float val = static_cast<float>(src_block[src_idx++]);
@@ -239,31 +254,19 @@ class DownscalingBlockWriter : public BlockWriter {
         float m_column_buffer[9] {};
         float m_edge_buffer {};
 
-
-        // conditionally round input (in place) to float representation of nearest integer within +/- epsilon and return its floor
-        uint round_and_floor_horiz(float& input) {
+        // snap floating point input to integer grid if within +/- m_epsilon_horiz proximity
+        float snap_to_horiz_grid(float input) {
 
             const uint floored = static_cast<uint>(input + m_epsilon_horiz);
 
-            if (input != floored && input - floored < m_epsilon_horiz) {
-
-                input = floored;
-            }
-
-            return floored;
+            return (input != floored && input - floored < m_epsilon_horiz) ? floored : input;
         }
 
-        // conditionally round input (in place) to float representation of nearest integer within +/- epsilon and return its floor
-        uint round_and_floor_vert(float& input) {
+        // snap floating point input to integer grid if within +/- m_epsilon_vert proximity
+        float snap_to_vert_grid(float input) {
 
             const uint floored = static_cast<uint>(input + m_epsilon_vert);
 
-            if (input != floored && input - floored < m_epsilon_vert) {
-
-                input = floored;
-            }
-
-            return floored;
+            return (input != floored && input - floored < m_epsilon_vert) ? floored : input;
         }
-
 };
