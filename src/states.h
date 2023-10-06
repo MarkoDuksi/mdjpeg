@@ -147,3 +147,24 @@ class ConcreteState final : public State {
         
         void parse_header([[maybe_unused]] JpegReader& reader) override {};
 };
+
+template<>
+void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader);
+
+template<>
+void ConcreteState<StateID::SOI>::parse_header(JpegReader& reader);
+
+template<>
+void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader);
+
+template<>
+void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader);
+
+template<>
+void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader);
+
+template<>
+void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader);
+
+template<>
+void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader);
