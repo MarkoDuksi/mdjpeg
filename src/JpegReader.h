@@ -7,9 +7,11 @@
 #include "states.h"
 
 
-#define ECS_ERROR -1
-#define SYMBOL_ERROR 0xff
-#define COEF_ERROR 0x2000
+enum class ReadError {
+    ECS = -1,
+    SYMBOL = 0xff,
+    COEF = 0x2000
+};
 
 
 /// \brief Class providing reading facilites specific to JFIF data.

@@ -174,5 +174,5 @@ int JpegReader::read_bit() noexcept {
         std::cout << "error reading unexpected marker in ECS\n";
     }
 
-    return ECS_ERROR;
+    return static_cast<int>(ReadError::ECS);
 }
