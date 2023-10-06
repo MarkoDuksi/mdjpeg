@@ -4,8 +4,11 @@
 #include <sys/types.h>
 
 
+/// \brief Interface for writing decompressed block data.
 class BlockWriter {
+
     public:
+
         virtual ~BlockWriter() = default;
 
         virtual void init_frame(uint8_t* const dst, uint src_width_px, [[maybe_unused]] uint src_height_px) = 0;
@@ -14,8 +17,11 @@ class BlockWriter {
 
 
 class BasicBlockWriter : public BlockWriter {
+
     public:
+
         void init_frame(uint8_t* const dst, uint src_width_px, [[maybe_unused]] uint src_height_px) final {
+
             m_dst = dst;
             m_src_width_px = src_width_px;
             m_block_x = 0;
@@ -23,23 +29,31 @@ class BasicBlockWriter : public BlockWriter {
         }
         
         void write(int (&src_block)[64]) final {
+
             uint offset = m_block_y * m_src_width_px + m_block_x;
             uint src_idx = 0;
+
             for (uint row = 0; row < 8; ++row) {
+
                 for (uint col = 0; col < 8; ++col) {
+
                     m_dst[offset + col] = src_block[src_idx++];
                 }
+
                 offset += m_src_width_px;
             }
 
             m_block_x += 8;
+
             if (m_block_x == m_src_width_px) {
+
                 m_block_x = 0;
                 m_block_y += 8;
             }
         }
 
     private:
+
         uint8_t* m_dst {nullptr};
         uint m_src_width_px {};
         uint m_block_x {};
@@ -48,8 +62,11 @@ class BasicBlockWriter : public BlockWriter {
 
 template <uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
 class DownscalingBlockWriter : public BlockWriter {
+
     public:
+
         void init_frame(uint8_t* const dst, uint src_width_px, uint src_height_px) final {
+
             m_dst = dst;
             m_src_width_px = src_width_px;
             m_src_height_px = src_height_px;
@@ -62,10 +79,12 @@ class DownscalingBlockWriter : public BlockWriter {
             m_block_y = 0;
 
             for (uint i = 0; i < DST_WIDTH_PX; ++i) {
+
                 m_row_buffer[i] = 0.0f;
             }
 
             for (uint i = 0; i < 8; ++i) {
+
                 m_column_buffer[i] = 0.0f;
             }
 
@@ -73,6 +92,7 @@ class DownscalingBlockWriter : public BlockWriter {
         }
 
         void write(int (&src_block)[64]) final {
+
             // src block west border X-coord expressed in dst pixels
             float block_west = m_horiz_scaling_factor * m_block_x;
 
@@ -231,13 +251,16 @@ class DownscalingBlockWriter : public BlockWriter {
             }
 
             m_block_x += 8;
+
             if (m_block_x == m_src_width_px) {
+
                 m_block_x = 0;
                 m_block_y += 8;
             }
         }
 
     private:
+
         uint8_t* m_dst {nullptr};
         uint m_src_width_px {};
         uint m_src_height_px {};

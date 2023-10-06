@@ -4,10 +4,11 @@
 
 
 // marker values from:
-//  https://github.com/dannye/jed/blob/master/src/jpg.h
-//  https://webdocs.cs.ualberta.ca/~jag/courses/ImProc/lectures2001/lec26/Lec26jpegCompr.PDF
+// https://github.com/dannye/jed/blob/master/src/jpg.h
+// https://webdocs.cs.ualberta.ca/~jag/courses/ImProc/lectures2001/lec26/Lec26jpegCompr.PDF
 
 enum class StateID : uint16_t {
+
     // Custom final states
     HEADER_OK  = 0, // Valid final state
     ERROR_PEOB = 1, // Premature End of Buffer
@@ -114,7 +115,9 @@ class JpegReader;
 
 
 class State {
+
     public:
+
         State(JpegDecoder* const decoder) noexcept;
         virtual ~State();
 
@@ -123,18 +126,22 @@ class State {
         virtual void parse_header([[maybe_unused]] JpegReader& reader) = 0;
 
     protected:
+
         JpegDecoder* const m_decoder;
 };
 
 
 template <StateID state_id>
 class ConcreteState final : public State {
+
     public:
+
         ConcreteState(JpegDecoder* const decoder) noexcept :
             State(decoder)
             {}
 
         StateID getID() const noexcept override {
+
             return state_id;
         }
         

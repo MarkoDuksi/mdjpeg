@@ -821,6 +821,9 @@ int main(int argc, char** argv) {
     targeted_downscaling_decoding_test<800, 800, 4, 4>(127);
     targeted_downscaling_decoding_test<800, 800, 3, 3>(127);
     targeted_downscaling_decoding_test<800, 800, 2, 2>(127);
+
+    // following test fails most likely due to sufficient loss of precission in accumulating buffers (results in 128 instead of 127)
+    // such +/- 1 rounding errors (including 255->0 overflow) were sparsely detected with synthetic data but not observed with real-world images
     targeted_downscaling_decoding_test<800, 800, 1, 1>(127);
 
     full_frame_decoding_tests(input_base_dir, {160, 120});

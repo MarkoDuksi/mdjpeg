@@ -2,6 +2,7 @@
 
 
 size_t Dequantizer::set_qtable(JpegReader& reader, const size_t max_read_length) noexcept {
+
     const uint next_byte = *reader.peek();
     reader.seek(1);
 
@@ -10,15 +11,20 @@ size_t Dequantizer::set_qtable(JpegReader& reader, const size_t max_read_length)
     const uint table_size = 64 * precision;
 
     if (1 + table_size > max_read_length) {
+
         return 0;
     }
 
     // store only 8-bit luma quantization table pointer
     if (table_id == 0) {
+
         if (precision == 1) {
+
             m_qtable = reader.tell_ptr();
         }
+
         else {
+
             return 0;
         }
     }
@@ -29,15 +35,19 @@ size_t Dequantizer::set_qtable(JpegReader& reader, const size_t max_read_length)
 }
 
 bool Dequantizer::is_set() const noexcept {
+
     return m_qtable;
 }
 
-void Dequantizer::transform(int (&block)[64]) noexcept {
+void Dequantizer::transform(int (&block)[64]) const noexcept {
+
     for (uint i = 0; i < 64; ++i) {
+
         block[i] *= m_qtable[i];
     }
 }
 
-void Dequantizer::transform(int& dc_coeff) noexcept {
+void Dequantizer::transform(int& dc_coeff) const noexcept {
+
     dc_coeff *= m_qtable[0];
 }

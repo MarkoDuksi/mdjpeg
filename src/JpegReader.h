@@ -12,12 +12,15 @@
 #define COEF_ERROR 0x2000
 
 
+/// \brief Class providing reading facilites specific to JFIF data.
 class JpegReader {
+
     public:
+
         JpegReader(const uint8_t* const buff, const size_t size) noexcept;
         
         void mark_start_of_ecs() noexcept;
-        void restart_ecs();
+        void restart_ecs() noexcept;
         size_t size_remaining() const noexcept;
 
         const uint8_t* tell_ptr() const noexcept;
@@ -31,6 +34,7 @@ class JpegReader {
         int read_bit() noexcept;
         
     private:
+
         const uint8_t* const m_buff_start {nullptr};
         const uint8_t* const m_buff_end {nullptr};
         const uint8_t* m_buff_start_of_ECS {nullptr};

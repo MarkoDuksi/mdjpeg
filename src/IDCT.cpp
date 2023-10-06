@@ -3,12 +3,14 @@
 #include <sys/types.h>
 
 
-void IDCT::transform(int (&block)[64]) noexcept {
-// idct code from https://github.com/dannye/jed/blob/master/src/decoder.cpp
+void IDCT::transform(int (&block)[64]) const noexcept {
+
+// AAN IDCT implementation code adapted from https://github.com/dannye/jed/blob/master/src/decoder.cpp
 
     float intermediate[64];
 
     for (uint i = 0; i < 8; ++i) {
+
         const float g0 = block[0 * 8 + i] * s0;
         const float g1 = block[4 * 8 + i] * s4;
         const float g2 = block[2 * 8 + i] * s2;
@@ -77,6 +79,7 @@ void IDCT::transform(int (&block)[64]) noexcept {
     }
 
     for (uint i = 0; i < 8; ++i) {
+
         const float g0 = intermediate[i * 8 + 0] * s0;
         const float g1 = intermediate[i * 8 + 4] * s4;
         const float g2 = intermediate[i * 8 + 2] * s2;
