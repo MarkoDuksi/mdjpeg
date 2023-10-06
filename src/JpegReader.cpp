@@ -1,7 +1,5 @@
 #include "JpegReader.h"
 
-#include <iostream>
-
 
 JpegReader::JpegReader(const uint8_t* const buff, const size_t size) noexcept :
     m_buff_start(buff),
@@ -161,18 +159,6 @@ int JpegReader::read_bit() noexcept {
         return *m_buff_current_byte++ & 1;
     }
 
-    // if reading last bit before invalid marker
-    const auto marker = read_marker();
-
-    if (marker) {
-
-        std::cout << "unexpected marker in ECS: " << std::hex << *marker << "\n";
-    }
-
-    else {
-
-        std::cout << "error reading unexpected marker in ECS\n";
-    }
-
+    // else reading last bit before invalid marker
     return static_cast<int>(ReadError::ECS);
 }

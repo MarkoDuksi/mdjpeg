@@ -1,6 +1,3 @@
-// #define PRINT_STATES_FLOW
-// #define PRINT_HUFFMAN_TABLES
-
 #include <iostream>
 
 #include "tests.h"

@@ -1,6 +1,8 @@
 #include "JpegDecoder.h"
 
-#include <iostream>
+#ifdef PRINT_STATES_FLOW
+    #include <iostream>
+#endif
 
 
 JpegDecoder::JpegDecoder(const uint8_t* const buff, const size_t size) noexcept :
@@ -52,8 +54,6 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_b
 
             if (!m_huffman.decode_luma_block(m_reader, block_8x8, luma_block_idx, m_frame_info.horiz_chroma_subs_factor)) {
 
-                std::cout << "\nHuffman decoding FAILED!" << "\n";
-
                 return false;
             }
 
@@ -100,8 +100,6 @@ bool JpegDecoder::dc_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x
         for (uint col_blk = x1_blk; col_blk < x2_blk; ++col_blk, ++luma_block_idx) {
 
             if (!m_huffman.decode_luma_block(m_reader, block_8x8, luma_block_idx, m_frame_info.horiz_chroma_subs_factor)) {
-
-                std::cout << "\nHuffman decoding FAILED!" << "\n";
 
                 return false;
             }

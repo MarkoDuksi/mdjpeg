@@ -1,6 +1,5 @@
 #include "Huffman.h"
 
-
 #ifdef PRINT_HUFFMAN_TABLES
     #include <iostream>
     #include <fmt/core.h>
