@@ -34,13 +34,14 @@ class JpegDecoder {
         IDCT m_idct {};
 
         struct {
-            uint height_px {0};
-            uint width_px {0};
-            uint height_blk {0};
-            uint width_blk {0};
-            uint horiz_chroma_subs_factor {false};
+            uint height_px {};
+            uint width_px {};
+            uint height_blk {};
+            uint width_blk {};
+            uint horiz_chroma_subs_factor {};
 
             void set_dims(uint height_px, uint width_px) {
+
                 this->height_px = height_px;
                 this->width_px = width_px;
                 height_blk = (height_px + 7) / 8;
@@ -48,11 +49,13 @@ class JpegDecoder {
             }
 
             bool is_set() const noexcept {
+
                 return height_px;
             }
         } m_frame_info {};
 
         StateID parse_header();
 
-        void level_transform(int (&block)[64]) noexcept;
+        // inplace shift all block values by +128 and clip the result to uint8_t range
+        void range_normalize(int (&block)[64]) noexcept;
 };
