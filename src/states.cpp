@@ -10,17 +10,12 @@
 #include "JpegDecoder.h"
 
 
-State::State(JpegDecoder* const decoder) noexcept :
-    m_decoder(decoder)
-    {}
-
-State::~State() {}
-
-bool State::is_final_state() const noexcept {
-
-    return getID() < StateID::ENTRY;
-}
-
+#ifdef NDEBUG
+    #define ERROR_PEOB ERROR_GEN
+    #define ERROR_UUM  ERROR_GEN
+    #define ERROR_UPAR ERROR_GEN
+    #define ERROR_CORR ERROR_GEN
+#endif
 
 #define SET_NEXT_STATE(state_id) m_decoder->m_istate = new (m_decoder->m_istate) ConcreteState<state_id>(m_decoder)
 

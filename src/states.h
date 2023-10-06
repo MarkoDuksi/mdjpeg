@@ -15,6 +15,7 @@ enum class StateID : uint16_t {
     ERROR_UUM  = 2, // Unsuported or Unrecognized Marker
     ERROR_UPAR = 3, // Unsuported PARameter
     ERROR_CORR = 4, // CORRupted data
+    ERROR_GEN  = 5, // GENeric invalid final state
 
     // Custom transient states
     ENTRY  = 100, // Inital state
@@ -118,10 +119,17 @@ class State {
 
     public:
 
-        State(JpegDecoder* const decoder) noexcept;
-        virtual ~State();
+        State(JpegDecoder* const decoder) noexcept :
+            m_decoder(decoder)
+            {}
 
-        bool is_final_state() const noexcept;
+        virtual ~State() {}
+
+        bool is_final_state() const noexcept {
+
+            return getID() < StateID::ENTRY;
+        }
+
         virtual StateID getID() const noexcept = 0;
         virtual void parse_header([[maybe_unused]] JpegReader& reader) = 0;
 
@@ -145,7 +153,7 @@ class ConcreteState final : public State {
             return state_id;
         }
         
-        void parse_header([[maybe_unused]] JpegReader& reader) override {};
+        void parse_header([[maybe_unused]] JpegReader& reader) override {}
 };
 
 template<>
