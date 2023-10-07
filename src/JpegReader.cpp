@@ -113,7 +113,7 @@ std::optional<uint16_t> JpegReader::read_segment_size() noexcept {
     if (!result || *result < 2) {
 
         result = std::nullopt;
-        }
+    }
 
     return *result - 2;
 }

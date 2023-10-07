@@ -56,7 +56,7 @@ bool downscaling_decoding_tests(std::filesystem::path input_base_dir) {
 
     Dimensions dst_dims {DST_WIDTH_PX, DST_HEIGHT_PX};
 
-    auto input_files_paths = get_input_img_paths(input_base_dir, src_dims);
+    const auto input_files_paths = get_input_img_paths(input_base_dir, src_dims);
 
     bool test_passed{true};
 
@@ -67,7 +67,7 @@ bool downscaling_decoding_tests(std::filesystem::path input_base_dir) {
         std::cout << "Running donwscaling decoding subtest on \"" << file_path.c_str() << "\""
                   << " (" << src_dims.to_str() << " -> " << dst_dims.to_str() << ")... ";
 
-        auto [buff, size] = read_raw_jpeg_from_file(file_path);
+        const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder(buff, size);
         DownscalingBlockWriter<DST_WIDTH_PX, DST_HEIGHT_PX> writer;
 

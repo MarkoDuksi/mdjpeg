@@ -3,8 +3,7 @@
 
 size_t Dequantizer::set_qtable(JpegReader& reader, const size_t max_read_length) noexcept {
 
-    const uint next_byte = *reader.peek();
-    reader.seek(1);
+    const uint next_byte = *reader.read_uint8();
 
     const uint precision = 1 + bool(next_byte >> 4);  // in bytes, not bits
     const uint table_id  = next_byte & 0xf;

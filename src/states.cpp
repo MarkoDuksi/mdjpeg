@@ -260,9 +260,6 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) {
         }
 
         // any valid htable_size is *always* lte *segment_size
-        // no reading beyond buff + size - 1 (as provided to JpegDecoder constructor)
-        reader.seek(htable_size);
-
         // no integer overflow possible
         *segment_size -= htable_size;
     }

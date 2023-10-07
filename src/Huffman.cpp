@@ -8,7 +8,7 @@
 
 size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept {
 
-    const uint next_byte = *reader.peek();
+    const uint next_byte = *reader.read_uint8();
     --max_read_length;
 
     const bool is_dc = !(next_byte >> 4);
@@ -16,9 +16,9 @@ size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept 
 
     uint symbols_count = 0;
 
-    for (uint i = 1; i < 17; ++i) {
+    for (uint i = 0; i < 16; ++i) {
 
-        if (!max_read_length || *reader.peek(i) > 1 << i) {
+        if (!max_read_length || *reader.peek(i) > 1 << (i + 1)) {
 
             return 0;
         }
@@ -38,8 +38,9 @@ size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept 
 
     if (is_dc) {
 
-        m_htables[table_id].dc.histogram = reader.tell_ptr() + 1;
-        m_htables[table_id].dc.symbols = reader.tell_ptr() + 1 + 16;
+        m_htables[table_id].dc.histogram = reader.tell_ptr();
+        reader.seek(16);
+        m_htables[table_id].dc.symbols = reader.tell_ptr();
 
         #ifdef PRINT_HUFFMAN_TABLES
             std::cout << "\nHuffman table id " << (int)table_id << " (DC):\n";
@@ -75,8 +76,9 @@ size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept 
 
     else {
 
-        m_htables[table_id].ac.histogram = reader.tell_ptr() + 1;
-        m_htables[table_id].ac.symbols = reader.tell_ptr() + 1 + 16;
+        m_htables[table_id].ac.histogram = reader.tell_ptr();
+        reader.seek(16);
+        m_htables[table_id].ac.symbols = reader.tell_ptr();
 
         #ifdef PRINT_HUFFMAN_TABLES
             std::cout << "\nHuffman table id " << (int)table_id << " (AC):\n";
@@ -109,6 +111,8 @@ size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept 
 
         m_htables[table_id].ac.is_set = true;
     }
+
+    reader.seek(symbols_count);
 
     return 1 + 16 + symbols_count;
 }
