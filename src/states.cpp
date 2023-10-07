@@ -342,45 +342,45 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) {
         return;
     }
 
-    const auto precision = reader.read_uint8();
-    const auto height_px = reader.read_uint16();
-    const auto width_px = reader.read_uint16();
-    auto components_count = reader.read_uint8();
+    const uint8_t precision = *reader.read_uint8();
+    const uint16_t height_px = *reader.read_uint16();
+    const uint16_t width_px = *reader.read_uint16();
+    uint8_t components_count = *reader.read_uint8();
 
-    if (*precision != 8 || !*height_px
-                        || !*width_px
-                        || *components_count != 3) {
+    if (precision != 8 || !height_px
+                       || !width_px
+                       || components_count != 3) {
 
         SET_NEXT_STATE(StateID::ERROR_UPAR);
         return;
     }
 
-    m_decoder->m_frame_info.set_dims(*height_px, *width_px);
+    m_decoder->m_frame_info.set_dims(height_px, width_px);
 
-    while ((*components_count)--) {
+    while ((components_count)--) {
 
-        const auto component_id = reader.read_uint8();
-        const auto sampling_factor = reader.read_uint8();
-        const auto qtable_id = reader.read_uint8();
+        const uint8_t component_id = *reader.read_uint8();
+        const uint8_t sampling_factor = *reader.read_uint8();
+        const uint8_t qtable_id = *reader.read_uint8();
 
         // supported component IDs: 1, 2 and 3 (Y, U and V channel, respectively)
-        if (*component_id == 0 || *component_id > 3 ) {
+        if (component_id == 0 || component_id > 3 ) {
 
             SET_NEXT_STATE(StateID::ERROR_UPAR);
             return;
         }
 
-        if (*component_id == 1) {
+        if (component_id == 1) {
 
             // component 1 must use qtable 0
-            if (*qtable_id != 0) {
+            if (qtable_id != 0) {
 
                 SET_NEXT_STATE(StateID::ERROR_UPAR);
                 return;
             }
 
             // component 1 must use sampling factors 0x11 or 0x21
-            if (*sampling_factor != 0x11 && *sampling_factor != 0x21 ) {
+            if (sampling_factor != 0x11 && sampling_factor != 0x21 ) {
 
                 SET_NEXT_STATE(StateID::ERROR_UPAR);
                 return;
@@ -388,12 +388,12 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) {
 
             else {
 
-                m_decoder->m_frame_info.horiz_chroma_subs_factor = *sampling_factor >> 4;
+                m_decoder->m_frame_info.horiz_chroma_subs_factor = sampling_factor >> 4;
             }
         }
 
         // components 2 and 3 must use sampling factors 0x11
-        if (*component_id > 1 && *sampling_factor != 0x11) {
+        if (component_id > 1 && sampling_factor != 0x11) {
 
             SET_NEXT_STATE(StateID::ERROR_UPAR);
             return;
@@ -491,7 +491,9 @@ void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) {
         const auto dc_ac_table_ids = reader.read_uint8();
 
         // component 1 must use htables 0 (DC) and 0 (AC)
-        if (*component_id == 1 && *dc_ac_table_ids != 0 ) {
+        if (component_id && *component_id == 1
+                         && dc_ac_table_ids
+                         && *dc_ac_table_ids != 0 ) {
 
             SET_NEXT_STATE(StateID::ERROR_UPAR);
             return;

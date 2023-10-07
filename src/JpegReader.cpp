@@ -73,8 +73,9 @@ std::optional<uint16_t> JpegReader::read_uint16() noexcept {
 
     if (size_remaining() >= 2) {
 
-        const uint result = m_buff_current_byte[0] << 8 | m_buff_current_byte[1];
+        const uint16_t result = m_buff_current_byte[0] << 8 | m_buff_current_byte[1];
         m_buff_current_byte += 2;
+
         return result;
     }
 
@@ -90,16 +91,14 @@ std::optional<uint16_t> JpegReader::read_marker() noexcept {
 
     while (result && *result == 0xffff) {
 
-        const auto next_byte = read_uint8();
-
-        if (next_byte) {
+        if (const auto next_byte = read_uint8()) {
 
             *result = *result & *next_byte;
         }
 
         else {
 
-            result = std::nullopt;
+            result = {};
         }
     }
 
@@ -108,14 +107,17 @@ std::optional<uint16_t> JpegReader::read_marker() noexcept {
 
 std::optional<uint16_t> JpegReader::read_segment_size() noexcept {
 
-    auto result = read_uint16();
+    const auto result = read_uint16();
 
-    if (!result || *result < 2) {
+    if (result && *result >= 2) {
 
-        result = std::nullopt;
+        return *result - 2;
     }
 
-    return *result - 2;
+    else {
+
+        return {};
+    }
 }
 
 int JpegReader::read_bit() noexcept {
