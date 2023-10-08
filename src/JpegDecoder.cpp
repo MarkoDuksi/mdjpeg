@@ -1,5 +1,8 @@
 #include "JpegDecoder.h"
 
+#include "transform.h"
+
+
 #ifdef PRINT_STATES_FLOW
     #include <iostream>
 #endif
@@ -58,9 +61,9 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_b
             }
 
             m_dequantizer.transform(block_8x8);
-            m_zigzag.transform(block_8x8);
-            m_idct.transform(block_8x8);
-            range_normalize(block_8x8);
+            transform::zig_zag(block_8x8);
+            transform::idct(block_8x8);
+            transform::range_normalize(block_8x8);
             writer.write(block_8x8);
         }
     }
@@ -125,25 +128,4 @@ StateID JpegDecoder::parse_header() {
     }
 
     return m_istate->getID();
-}
-
-void JpegDecoder::range_normalize(int (&block)[64]) noexcept {
-
-    for (uint i = 0; i < 64; ++i) {
-        
-        if (block[i] < -128) {
-
-            block[i] = 0;
-        }
-
-        else if (block[i] > 127) {
-
-            block[i] = 255;
-        }
-
-        else {
-
-            block[i] += 128;
-        }
-    }
 }

@@ -1,9 +1,63 @@
-#include "IDCT.h"
+#include "transform.h"
 
 #include <sys/types.h>
+#include <cmath>
 
 
-void IDCT::transform(int (&block)[64]) const noexcept {
+namespace {
+
+namespace ZigZag {
+
+    const uint8_t map[64] {
+            0,  1,  8, 16,  9,  2,  3, 10,
+        17, 24, 32, 25, 18, 11,  4,  5,
+        12, 19, 26, 33, 40, 48, 41, 34,
+        27, 20, 13,  6,  7, 14, 21, 28,
+        35, 42, 49, 56, 57, 50, 43, 36,
+        29, 22, 15, 23, 30, 37, 44, 51,
+        58, 59, 52, 45, 38, 31, 39, 46,
+        53, 60, 61, 54, 47, 55, 62, 63
+    };
+}  // namespace ZigZag
+
+namespace IDCT {
+
+    const float m0 = 2.0 * std::cos(1.0 / 16.0 * 2.0 * M_PI);
+    const float m1 = 2.0 * std::cos(2.0 / 16.0 * 2.0 * M_PI);
+    const float m3 = 2.0 * std::cos(2.0 / 16.0 * 2.0 * M_PI);
+    const float m5 = 2.0 * std::cos(3.0 / 16.0 * 2.0 * M_PI);
+    const float m2 = m0 - m5;
+    const float m4 = m0 + m5;
+
+    const float s0 = std::cos(0.0 / 16.0 * M_PI) / std::sqrt(8);
+    const float s1 = std::cos(1.0 / 16.0 * M_PI) / 2.0;
+    const float s2 = std::cos(2.0 / 16.0 * M_PI) / 2.0;
+    const float s3 = std::cos(3.0 / 16.0 * M_PI) / 2.0;
+    const float s4 = std::cos(4.0 / 16.0 * M_PI) / 2.0;
+    const float s5 = std::cos(5.0 / 16.0 * M_PI) / 2.0;
+    const float s6 = std::cos(6.0 / 16.0 * M_PI) / 2.0;
+    const float s7 = std::cos(7.0 / 16.0 * M_PI) / 2.0;
+}  // namespace IDCT
+
+}  // anonymous namespace
+
+
+void transform::zig_zag(int (&block)[64]) noexcept {
+
+    int temp[64];
+
+    for (uint i = 0; i < 64; ++i) {
+
+        temp[i] = block[i];
+    }
+
+    for (uint i = 0; i < 64; ++i) {
+
+        block[ZigZag::map[i]] = temp[i];
+    }
+}
+
+void transform::idct(int (&block)[64]) noexcept {
 
 // AAN IDCT implementation code adapted from https://github.com/dannye/jed/blob/master/src/decoder.cpp
 
@@ -11,14 +65,14 @@ void IDCT::transform(int (&block)[64]) const noexcept {
 
     for (uint i = 0; i < 8; ++i) {
 
-        const float g0 = block[0 * 8 + i] * s0;
-        const float g1 = block[4 * 8 + i] * s4;
-        const float g2 = block[2 * 8 + i] * s2;
-        const float g3 = block[6 * 8 + i] * s6;
-        const float g4 = block[5 * 8 + i] * s5;
-        const float g5 = block[1 * 8 + i] * s1;
-        const float g6 = block[7 * 8 + i] * s7;
-        const float g7 = block[3 * 8 + i] * s3;
+        const float g0 = block[0 * 8 + i] * IDCT::s0;
+        const float g1 = block[4 * 8 + i] * IDCT::s4;
+        const float g2 = block[2 * 8 + i] * IDCT::s2;
+        const float g3 = block[6 * 8 + i] * IDCT::s6;
+        const float g4 = block[5 * 8 + i] * IDCT::s5;
+        const float g5 = block[1 * 8 + i] * IDCT::s1;
+        const float g6 = block[7 * 8 + i] * IDCT::s7;
+        const float g7 = block[3 * 8 + i] * IDCT::s3;
 
         const float f0 = g0;
         const float f1 = g1;
@@ -41,13 +95,13 @@ void IDCT::transform(int (&block)[64]) const noexcept {
 
         const float d0 = e0;
         const float d1 = e1;
-        const float d2 = e2 * m1;
+        const float d2 = e2 * IDCT::m1;
         const float d3 = e3;
-        const float d4 = e4 * m2;
-        const float d5 = e5 * m3;
-        const float d6 = e6 * m4;
+        const float d4 = e4 * IDCT::m2;
+        const float d5 = e5 * IDCT::m3;
+        const float d6 = e6 * IDCT::m4;
         const float d7 = e7;
-        const float d8 = e8 * m5;
+        const float d8 = e8 * IDCT::m5;
 
         const float c0 = d0 + d1;
         const float c1 = d0 - d1;
@@ -80,14 +134,14 @@ void IDCT::transform(int (&block)[64]) const noexcept {
 
     for (uint i = 0; i < 8; ++i) {
 
-        const float g0 = intermediate[i * 8 + 0] * s0;
-        const float g1 = intermediate[i * 8 + 4] * s4;
-        const float g2 = intermediate[i * 8 + 2] * s2;
-        const float g3 = intermediate[i * 8 + 6] * s6;
-        const float g4 = intermediate[i * 8 + 5] * s5;
-        const float g5 = intermediate[i * 8 + 1] * s1;
-        const float g6 = intermediate[i * 8 + 7] * s7;
-        const float g7 = intermediate[i * 8 + 3] * s3;
+        const float g0 = intermediate[i * 8 + 0] * IDCT::s0;
+        const float g1 = intermediate[i * 8 + 4] * IDCT::s4;
+        const float g2 = intermediate[i * 8 + 2] * IDCT::s2;
+        const float g3 = intermediate[i * 8 + 6] * IDCT::s6;
+        const float g4 = intermediate[i * 8 + 5] * IDCT::s5;
+        const float g5 = intermediate[i * 8 + 1] * IDCT::s1;
+        const float g6 = intermediate[i * 8 + 7] * IDCT::s7;
+        const float g7 = intermediate[i * 8 + 3] * IDCT::s3;
 
         const float f0 = g0;
         const float f1 = g1;
@@ -110,13 +164,13 @@ void IDCT::transform(int (&block)[64]) const noexcept {
 
         const float d0 = e0;
         const float d1 = e1;
-        const float d2 = e2 * m1;
+        const float d2 = e2 * IDCT::m1;
         const float d3 = e3;
-        const float d4 = e4 * m2;
-        const float d5 = e5 * m3;
-        const float d6 = e6 * m4;
+        const float d4 = e4 * IDCT::m2;
+        const float d5 = e5 * IDCT::m3;
+        const float d6 = e6 * IDCT::m4;
         const float d7 = e7;
-        const float d8 = e8 * m5;
+        const float d8 = e8 * IDCT::m5;
 
         const float c0 = d0 + d1;
         const float c1 = d0 - d1;
@@ -145,5 +199,26 @@ void IDCT::transform(int (&block)[64]) const noexcept {
         block[i * 8 + 5] = b2 - b5 + 0.5f;
         block[i * 8 + 6] = b1 - b6 + 0.5f;
         block[i * 8 + 7] = b0 - b7 + 0.5f;
+    }
+}
+
+void transform::range_normalize(int (&block)[64]) noexcept {
+
+    for (uint i = 0; i < 64; ++i) {
+        
+        if (block[i] < -128) {
+
+            block[i] = 0;
+        }
+
+        else if (block[i] > 127) {
+
+            block[i] = 255;
+        }
+
+        else {
+
+            block[i] += 128;
+        }
     }
 }

@@ -7,8 +7,6 @@
 #include "JpegReader.h"
 #include "Huffman.h"
 #include "Dequantizer.h"
-#include "ZigZag.h"
-#include "IDCT.h"
 #include "BlockWriter.h"
 
 
@@ -30,8 +28,6 @@ class JpegDecoder {
         JpegReader m_reader;
         Huffman m_huffman {};
         Dequantizer m_dequantizer {};
-        ZigZag m_zigzag {};
-        IDCT m_idct {};
 
         struct {
             uint height_px {};
@@ -56,6 +52,4 @@ class JpegDecoder {
 
         StateID parse_header();
 
-        // inplace shift all block values by +128 and clip the result to uint8_t range
-        void range_normalize(int (&block)[64]) noexcept;
 };
