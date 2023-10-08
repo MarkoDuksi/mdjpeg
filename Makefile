@@ -8,13 +8,13 @@ DEP_DIR = .deps
 TESTS_DIR = tests
 
 CXX = g++
-CXX_FLAGS = -std=c++17 -pthread -fdiagnostics-color=always -pedantic -Wall -Wextra -Wunreachable-code -Wfatal-errors
+CXX_FLAGS = -std=c++17 -fdiagnostics-color=always -pedantic -Wall -Wextra -Wunreachable-code -Wfatal-errors
 CXX_DEBUG_FLAGS = -g -DDEBUG
 CXX_RELEASE_FLAGS = -O3 -DNDEBUG -DRELEASE
 DEP_FLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$(*F).$(BUILD_TYPE).d.tmp
 LIB_INCLUDE_DIRS_FLAGS = $(addprefix -L, $(LIB_DIRS))
 HDR_INCLUDE_DIRS_FLAGS = $(addprefix -I, $(HDR_DIRS))
-LD_FLAGS = -lX11 -lfmt
+LD_FLAGS = -lfmt
 
 POSTCOMPILE = @mv -f $(DEP_DIR)/$(*F).$(BUILD_TYPE).d.tmp $(DEP_DIR)/$(*F).$(BUILD_TYPE).d && touch $@
 
