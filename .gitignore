@@ -2,6 +2,7 @@
 obj
 bin
 tests
-output*
 input*
+output*
+doc/doxy*
 *.nogit
