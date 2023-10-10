@@ -10,6 +10,7 @@
 #include "JpegDecoder.h"
 
 
+// no need to differentiate error states if NDEBUG
 #ifdef NDEBUG
     #define ERROR_PEOB ERROR_GEN
     #define ERROR_UUM  ERROR_GEN
@@ -17,10 +18,13 @@
     #define ERROR_CORR ERROR_GEN
 #endif
 
+// shorthand that takes its full effect only after returning from the caller
+// note: the caller should return IMMEDIATELY after its use
 #define SET_NEXT_STATE(state_id) m_decoder->m_istate = new (m_decoder->m_istate) ConcreteState<state_id>(m_decoder)
 
+
 template<>
-void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) {
+void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) noexcept {
 
     #ifdef PRINT_STATES_FLOW
         std::cout << "Entered state ENTRY\n";
@@ -56,7 +60,7 @@ void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) {
 }
 
 template<>
-void ConcreteState<StateID::SOI>::parse_header(JpegReader& reader) {
+void ConcreteState<StateID::SOI>::parse_header(JpegReader& reader) noexcept {
 
     #ifdef PRINT_STATES_FLOW
         std::cout << "Entered state SOI\n";
@@ -84,7 +88,7 @@ void ConcreteState<StateID::SOI>::parse_header(JpegReader& reader) {
 }
 
 template<>
-void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) {
+void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) noexcept {
 
     #ifdef PRINT_STATES_FLOW
         std::cout << "Entered state APP0\n";
@@ -147,7 +151,7 @@ void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) {
 }
 
 template<>
-void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) {
+void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept {
 
     #ifdef PRINT_STATES_FLOW
         std::cout << "Entered state DQT\n";
@@ -165,14 +169,14 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) {
 
         const uint qtable_size = m_decoder->m_dequantizer.set_qtable(reader, *segment_size);
 
-        // any invalid qtable_size gets returned as 0
+        // any invalid `qtable_size` gets returned as 0
         if (!qtable_size) {
 
             SET_NEXT_STATE(StateID::ERROR_CORR);
             return;
         }
 
-        // any valid qtable_size is *always* lte *segment_size
+        // any valid `qtable_size` is *always* lte `*segment_size`
         // no integer overflow possible
         *segment_size -= qtable_size;
     }
@@ -234,7 +238,7 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) {
 }
 
 template<>
-void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) {
+void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept {
 
     #ifdef PRINT_STATES_FLOW
         std::cout << "Entered state DHT\n";
@@ -252,14 +256,14 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) {
 
         const uint htable_size = m_decoder->m_huffman.set_htable(reader, *segment_size);
 
-        // any invalid htable_size gets returned as 0
+        // any invalid `htable_size` gets returned as 0
         if (!htable_size) {
 
             SET_NEXT_STATE(StateID::ERROR_CORR);
             return;
         }
 
-        // any valid htable_size is *always* lte *segment_size
+        // any valid `htable_size` is *always* lte `*segment_size`
         // no integer overflow possible
         *segment_size -= htable_size;
     }
@@ -321,7 +325,7 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) {
 }
 
 template<>
-void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) {
+void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
 
     #ifdef PRINT_STATES_FLOW
         std::cout << "Entered state SOF0\n";
@@ -335,7 +339,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) {
         return;
     }
 
-    // only the 3-component YUV color mode is supported
+    // only the 3-component Y'CrCb color space is supported
     if (*segment_size != 15) {
 
         SET_NEXT_STATE(StateID::ERROR_UPAR);
@@ -363,7 +367,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) {
         const uint8_t sampling_factor = *reader.read_uint8();
         const uint8_t qtable_id = *reader.read_uint8();
 
-        // supported component IDs: 1, 2 and 3 (Y, U and V channel, respectively)
+        // supported component IDs: 1, 2 and 3 (Y', Cr and Cb channel, respectively)
         if (component_id == 0 || component_id > 3 ) {
 
             SET_NEXT_STATE(StateID::ERROR_UPAR);
@@ -372,7 +376,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) {
 
         if (component_id == 1) {
 
-            // component 1 must use qtable 0
+            // component 1 must use qtable ID 0
             if (qtable_id != 0) {
 
                 SET_NEXT_STATE(StateID::ERROR_UPAR);
@@ -448,7 +452,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) {
 }
 
 template<>
-void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) {
+void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) noexcept {
 
     #ifdef PRINT_STATES_FLOW
         std::cout << "Entered state SOS\n";
@@ -470,7 +474,7 @@ void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) {
         return;
     }
 
-    // only the 3-component YUV color mode is supported
+    // only the 3-component Y'CrCb color space is supported
     if (*segment_size != 10) {
 
         SET_NEXT_STATE(StateID::ERROR_UPAR);
@@ -490,7 +494,7 @@ void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) {
         const auto component_id = reader.read_uint8();
         const auto dc_ac_table_ids = reader.read_uint8();
 
-        // component 1 must use htables 0 (DC) and 0 (AC)
+        // component 1 must use both (DC and AC) htable IDs 0
         if (component_id && *component_id == 1
                          && dc_ac_table_ids
                          && *dc_ac_table_ids != 0 ) {

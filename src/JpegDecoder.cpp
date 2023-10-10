@@ -47,7 +47,7 @@ bool JpegDecoder::luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint
     uint src_width_px = 8 * (x2_blk - x1_blk);
     uint src_height_px = 8 * (y2_blk - y1_blk);
 
-    writer.init_frame(dst, src_width_px, src_height_px);
+    writer.init(dst, src_width_px, src_height_px);
 
     for (uint row_blk = y1_blk; row_blk < y2_blk; ++row_blk) {
 
@@ -61,7 +61,7 @@ bool JpegDecoder::luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint
             }
 
             m_dequantizer.transform(block_8x8);
-            transform::zig_zag(block_8x8);
+            transform::reverse_zig_zag(block_8x8);
             transform::idct(block_8x8);
             transform::range_normalize(block_8x8);
             writer.write(block_8x8);
@@ -107,7 +107,7 @@ bool JpegDecoder::dc_luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, u
                 return false;
             }
 
-            // dequantize only the DC coefficient
+            // dequantize only the DC DCT coefficient
             m_dequantizer.transform(block_8x8[0]);
 
             // recover block-averaged luma value

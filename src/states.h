@@ -3,111 +3,100 @@
 #include <stdint.h>
 
 
-// marker values from:
-// https://github.com/dannye/jed/blob/master/src/jpg.h
-// https://webdocs.cs.ualberta.ca/~jag/courses/ImProc/lectures2001/lec26/Lec26jpegCompr.PDF
-
+/// \brief All the different state IDs for identifying state machine's various states.
+///
+/// \note Marker values used for state IDs compiled from:
+/// - https://github.com/dannye/jed/blob/master/src/jpg.h
+/// - https://webdocs.cs.ualberta.ca/~jag/courses/ImProc/lectures2001/lec26/Lec26jpegCompr.PDF
 enum class StateID : uint16_t {
 
-    // Custom final states
-    HEADER_OK  = 0, // Valid final state
-    ERROR_PEOB = 1, // Premature End of Buffer
-    ERROR_UUM  = 2, // Unsuported or Unrecognized Marker
-    ERROR_UPAR = 3, // Unsuported PARameter
-    ERROR_CORR = 4, // CORRupted data
-    ERROR_GEN  = 5, // GENeric invalid final state
+    HEADER_OK  = 0, ///< Valid (custom final state)
+    ERROR_PEOB = 1, ///< Premature End of Buffer (custom final state)
+    ERROR_UUM  = 2, ///< Unsuported or Unrecognized Marker (custom final state)
+    ERROR_UPAR = 3, ///< Unsuported PARameter (custom final state)
+    ERROR_CORR = 4, ///< CORRupted data (custom final state)
+    ERROR_GEN  = 5, ///< GENeric invalid (custom final state)
 
-    // Custom transient states
-    ENTRY  = 100, // Inital state
+    ENTRY  = 100, ///< Inital state (custom transient state)
 
-    // Temporary, arithmetic coding
-    TEM = 0xff01,
+    TEM = 0xff01, ///< Temporary, arithmetic coding
 
     // Reserved from 0xff02 to 0xffbf
 
-    // Start of Frame
-    SOF0 = 0xffc0, // Baseline
-    SOF1 = 0xffc1, // Extended sequential
-    SOF2 = 0xffc2, // Progressive
-    SOF3 = 0xffc3, // Lossless
+    SOF0 = 0xffc0, ///< Start of Frame - Baseline
+    SOF1 = 0xffc1, ///< Start of Frame - Extended sequential
+    SOF2 = 0xffc2, ///< Start of Frame - Progressive
+    SOF3 = 0xffc3, ///< Start of Frame - Lossless
 
-    // Define Huffman Tables
-    DHT = 0xffc4,
+    DHT = 0xffc4, ///< Define %Huffman Tables
 
-    // Start of Frame
-    SOF5 = 0xffc5, // Sequential, differential
-    SOF6 = 0xffc6, // Progressive, differential
-    SOF7 = 0xffc7, // Lossless, differential
+    SOF5 = 0xffc5, ///< Start of Frame - Sequential, differential
+    SOF6 = 0xffc6, ///< Start of Frame - Progressive, differential
+    SOF7 = 0xffc7, ///< Start of Frame - Lossless, differential
 
-    // Reserved
-    JPG = 0xffc8,
+    JPG = 0xffc8, ///< Reserved
 
-    // Start of Frame
-    SOF9  = 0xffc9, // Extended sequential, arithmetic coding
-    SOF10 = 0xffca, // Progressive, arithmetic coding
-    SOF11 = 0xffcb, // Lossless, arithmetic coding
+    SOF9  = 0xffc9, ///< Start of Frame - Extended sequential, arithmetic coding
+    SOF10 = 0xffca, ///< Start of Frame - Progressive, arithmetic coding
+    SOF11 = 0xffcb, ///< Start of Frame - Lossless, arithmetic coding
 
-    // Define Arithmetic Conditions
-    DAC = 0xffcc,
+    DAC = 0xffcc, ///< Define Arithmetic Conditions
 
-    // Start of Frame
-    SOF13 = 0xffcd, // Sequential, differential, arithmetic coding
-    SOF14 = 0xffce, // Progressive, differential, arithmetic coding
-    SOF15 = 0xffcf, // Lossless, differential, arithmetic coding
+    SOF13 = 0xffcd, ///< Start of Frame - Sequential, differential, arithmetic coding
+    SOF14 = 0xffce, ///< Start of Frame - Progressive, differential, arithmetic coding
+    SOF15 = 0xffcf, ///< Start of Frame - Lossless, differential, arithmetic coding
 
-    // Resets
-    RST0 = 0xffd0, // Reset
-    RST1 = 0xffd1, // Reset
-    RST2 = 0xffd2, // Reset
-    RST3 = 0xffd3, // Reset
-    RST4 = 0xffd4, // Reset
-    RST5 = 0xffd5, // Reset
-    RST6 = 0xffd6, // Reset
-    RST7 = 0xffd7, // Reset
+    RST0 = 0xffd0, ///< Reset
+    RST1 = 0xffd1, ///< Reset
+    RST2 = 0xffd2, ///< Reset
+    RST3 = 0xffd3, ///< Reset
+    RST4 = 0xffd4, ///< Reset
+    RST5 = 0xffd5, ///< Reset
+    RST6 = 0xffd6, ///< Reset
+    RST7 = 0xffd7, ///< Reset
 
-    // Misc
-    SOI = 0xffd8, // Start of Image
-    EOI = 0xffd9, // End of Image
-    SOS = 0xffda, // Start of Scan
-    DQT = 0xffdb, // Define Quantization Tables
-    DNL = 0xffdc, // Define Number of Lines
-    DRI = 0xffdd, // Define Restart Interval
-    DHP = 0xffde, // Define Hierarchical Progression
-    EXP = 0xffdf, // Expand Reference Components
+    SOI = 0xffd8, ///< Start of Image
+    EOI = 0xffd9, ///< End of Image
+    SOS = 0xffda, ///< Start of Scan
+    DQT = 0xffdb, ///< Define Quantization Tables
+    DNL = 0xffdc, ///< Define Number of Lines
+    DRI = 0xffdd, ///< Define Restart Interval
+    DHP = 0xffde, ///< Define Hierarchical Progression
+    EXP = 0xffdf, ///< Expand Reference Components
 
-    APP0  = 0xffe0, // Aplication Specific Data
-    APP1  = 0xffe1, // Aplication Specific Data
-    APP2  = 0xffe2, // Aplication Specific Data
-    APP3  = 0xffe3, // Aplication Specific Data
-    APP4  = 0xffe4, // Aplication Specific Data
-    APP5  = 0xffe5, // Aplication Specific Data
-    APP6  = 0xffe6, // Aplication Specific Data
-    APP7  = 0xffe7, // Aplication Specific Data
-    APP8  = 0xffe8, // Aplication Specific Data
-    APP9  = 0xffe9, // Aplication Specific Data
-    APP10 = 0xffea, // Aplication Specific Data
-    APP11 = 0xffeb, // Aplication Specific Data
-    APP12 = 0xffec, // Aplication Specific Data
-    APP13 = 0xffed, // Aplication Specific Data
-    APP14 = 0xffee, // Aplication Specific Data
-    APP15 = 0xffef, // Aplication Specific Data
+    APP0  = 0xffe0, ///< Aplication Specific Data
+    APP1  = 0xffe1, ///< Aplication Specific Data
+    APP2  = 0xffe2, ///< Aplication Specific Data
+    APP3  = 0xffe3, ///< Aplication Specific Data
+    APP4  = 0xffe4, ///< Aplication Specific Data
+    APP5  = 0xffe5, ///< Aplication Specific Data
+    APP6  = 0xffe6, ///< Aplication Specific Data
+    APP7  = 0xffe7, ///< Aplication Specific Data
+    APP8  = 0xffe8, ///< Aplication Specific Data
+    APP9  = 0xffe9, ///< Aplication Specific Data
+    APP10 = 0xffea, ///< Aplication Specific Data
+    APP11 = 0xffeb, ///< Aplication Specific Data
+    APP12 = 0xffec, ///< Aplication Specific Data
+    APP13 = 0xffed, ///< Aplication Specific Data
+    APP14 = 0xffee, ///< Aplication Specific Data
+    APP15 = 0xffef, ///< Aplication Specific Data
 
-    JPG0  = 0xfff0, // Reserved
-    JPG1  = 0xfff1, // Reserved
-    JPG2  = 0xfff2, // Reserved
-    JPG3  = 0xfff3, // Reserved
-    JPG4  = 0xfff4, // Reserved
-    JPG5  = 0xfff5, // Reserved
-    JPG6  = 0xfff6, // Reserved
-    JPG7  = 0xfff7, // Reserved
-    JPG8  = 0xfff8, // Reserved
-    JPG9  = 0xfff9, // Reserved
-    JPG10 = 0xfffa, // Reserved
-    JPG11 = 0xfffb, // Reserved
-    JPG12 = 0xfffc, // Reserved
-    JPG13 = 0xfffd, // Reserved
+    JPG0  = 0xfff0, ///< Reserved
+    JPG1  = 0xfff1, ///< Reserved
+    JPG2  = 0xfff2, ///< Reserved
+    JPG3  = 0xfff3, ///< Reserved
+    JPG4  = 0xfff4, ///< Reserved
+    JPG5  = 0xfff5, ///< Reserved
+    JPG6  = 0xfff6, ///< Reserved
+    JPG7  = 0xfff7, ///< Reserved
+    JPG8  = 0xfff8, ///< Reserved
+    JPG9  = 0xfff9, ///< Reserved
+    JPG10 = 0xfffa, ///< Reserved
+    JPG11 = 0xfffb, ///< Reserved
+    JPG12 = 0xfffc, ///< Reserved
+    JPG13 = 0xfffd, ///< Reserved
 
-    COM = 0xfffe // Comment
+    COM = 0xfffe ///< Comment
 };
 
 
@@ -115,6 +104,7 @@ class JpegDecoder;
 class JpegReader;
 
 
+/// \brief Abstract base class for ConcreteState of the state machine.
 class State {
 
     public:
@@ -125,13 +115,17 @@ class State {
 
         virtual ~State() {}
 
+        /// \brief Checks if the current ConcreteState is a final state.
         bool is_final_state() const noexcept {
 
             return getID() < StateID::ENTRY;
         }
 
+        /// \brief Dispatches getting the current ConcreteState StateID.
         virtual StateID getID() const noexcept = 0;
-        virtual void parse_header([[maybe_unused]] JpegReader& reader) = 0;
+
+        /// \brief Dispatches parsing step to the current ConcreteState.
+        virtual void parse_header(JpegReader& reader) = 0;
 
     protected:
 
@@ -139,6 +133,15 @@ class State {
 };
 
 
+/// \brief Provides generic ConcreteState facilities.
+///
+/// \note
+/// Doxygen (1.9.1 as well as 1.9.8) still cannot correctly handle documentation for
+/// member function specializations of a class template. This class contains
+/// \ref temp_specs "seven of them in a group" but not all of their documentation
+/// gets generated by Doxygen, some of it is duplicated and all of it lacks any
+/// readability. For better overview check the raw comments in the source code of
+/// states.h.
 template <StateID state_id>
 class ConcreteState final : public State {
 
@@ -148,31 +151,100 @@ class ConcreteState final : public State {
             State(decoder)
             {}
 
-        StateID getID() const noexcept override {
+        /// \brief Gets the actual StateID when called through State::getID.
+        StateID getID() const noexcept final {
 
             return state_id;
         }
         
-        void parse_header([[maybe_unused]] JpegReader& reader) override {}
+        /// \brief Generic version of the step function.
+        ///
+        /// \note Empty body is provided only to satisfy the linker but otherwise
+        /// not useful unless \ref temp_specs "specialized" to a particular StateID.
+        void parse_header([[maybe_unused]] JpegReader& reader) noexcept final {}
 };
 
-template<>
-void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader);
 
+/// \addtogroup temp_specs Specialized ConcreteState member functions
+/// \brief Step function specialization for the state defined by StateID::ENTRY.
+///
+/// Validates the next expected marker: \e SOI. Sets the next state of the state machine
+/// to the one defined by StateID::SOI or one of the invalid final states, depending
+/// on the validation outcome.
 template<>
-void ConcreteState<StateID::SOI>::parse_header(JpegReader& reader);
+void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) noexcept;
 
+/// \addtogroup temp_specs
+/// \brief Step function specialization for the state defined by StateID::SOI.
+///
+/// Validates the next expected marker: \e APP0. Sets the next state of the state machine
+/// to the one defined by StateID::APP0 or one of the invalid final states, depending
+/// on the validation outcome.
+///
+/// \note Other APP markers are not supported.
 template<>
-void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader);
+void ConcreteState<StateID::SOI>::parse_header(JpegReader& reader) noexcept;
 
+/// \addtogroup temp_specs
+/// \brief Step function specialization for the state defined by StateID::APP0.
+///
+/// Skips through \e APP0 segment. Validates the next expected marker: \e DQT, \e DHT or
+/// \e SOF0. Sets the next state of the state machine to the one defined by StateID::DQT,
+/// StateID::DHT, StateID::SOF0 or one of the invalid final states, depending on the validation
+/// outcome.
+///
+/// \note Other SOF markers are not supported.
 template<>
-void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader);
+void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) noexcept;
 
+/// \addtogroup temp_specs
+/// \brief Step function specialization for the state defined by StateID::DQT.
+///
+/// Sets luma quantization table, skips over chroma quantization table. Validates
+/// the next expected marker: \e DQT, \e DHT, \e SOF0 or \e SOS. Sets the next state of
+/// the state machine to the one defined by StateID::DQT, StateID::DHT, StateID::SOF0,
+/// StateID::SOS or one of the invalid final states, depending on the validation outcome.
+///
+/// \note Other SOF markers are not supported.
 template<>
-void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader);
+void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept;
 
+/// \addtogroup temp_specs
+/// \brief Step function specialization for the state defined by StateID::DHT.
+///
+/// Sets %Huffman tables. Validates the next expected marker: \e DQT, \e DHT, \e SOF0 or
+/// \e SOS. Sets the next state of the state machine to the one defined by StateID::DQT,
+/// StateID::DHT, StateID::SOF0, StateID::SOS or one of the invalid final states, depending
+/// on the validation outcome.
+///
+/// \note Other SOF markers are not supported.
 template<>
-void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader);
+void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept;
 
+/// \addtogroup temp_specs
+/// \brief Step function specialization for the state defined by StateID::SOF0.
+///
+/// Validates and stores image metadata (quantization table precision, height, width, color
+/// space and chroma subsampling scheme). Validates the next expected marker: \e DQT, \e DHT
+/// or \e SOS. Sets the next state of the state machine to the one defined by StateID::DQT,
+/// StateID::DHT, StateID::SOS or one of the invalid final states, depending on validations
+/// outcome.
+///
+/// \note
+/// Quantization table precision other than 8 bits is not supported.
+/// Color spaces other than Y'CbCr are not supported.
+/// Chroma subsampling schemes other than 4:4:4 and 4:2:2 are not supported.
 template<>
-void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader);
+void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept;
+
+/// \addtogroup temp_specs
+/// \brief Step function specialization for the state defined by StateID::SOS.
+///
+/// Validates that all prerequisite metadata has been found and set. Validates that \e SOS
+/// segment describes the supported baseline JPEG mode. Marks the start of entropy coded segment.
+/// Sets the next state of the state machine to the one defined by StateID::HEADER_OK or one of
+/// the invalid final states, depending on validations outcome.
+///
+/// \note Modes other than baseline JPEG are not supported.
+template<>
+void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) noexcept;

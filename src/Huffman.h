@@ -6,14 +6,21 @@
 #include "JpegReader.h"
 
 
+/// \brief Provides %Huffman decoding facilities specific to JFIF data.
+///
+/// Reads %Huffman symbols from JFIF header and stores (pointers to) them.
+/// Generates %Huffman codes. Decodes JFIF %Huffman stream block by block.
 class Huffman {
 
     public:
 
+        /// \brief Populates %Huffman tables starting at \c reader cursor.
         size_t set_htable(JpegReader& reader, size_t max_read_length) noexcept;
 
+        /// \brief Checks if all DC/AC-luma/chroma %Huffman tables are populated.
         bool is_set() const noexcept;
 
+        /// \brief Decodes a luma block by its index.
         bool decode_luma_block(JpegReader& reader, int (&dst_block)[64], const uint luma_block_idx, uint horiz_chroma_subs_factor) noexcept;
 
     private:
@@ -42,5 +49,6 @@ class Huffman {
         uint8_t get_ac_symbol(JpegReader& reader, const uint table_id) const noexcept;
         int16_t get_dct_coeff(JpegReader& reader, const uint length) const noexcept;
 
+        // decodes next block from the ECS, be it luma or chroma (specified via `table_id`)
         bool decode_next_block(JpegReader& reader, int (&dst_block)[64], const uint table_id) const noexcept;
 };

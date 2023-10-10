@@ -4,23 +4,59 @@
 #include <sys/types.h>
 
 
-/// \brief Interface for writing decompressed block data.
+/// \brief Abstract base class for block-wise writing of image data to memory.
 class BlockWriter {
 
     public:
 
         virtual ~BlockWriter() = default;
 
-        virtual void init_frame(uint8_t* const dst, uint src_width_px, [[maybe_unused]] uint src_height_px) = 0;
+        /// \brief Dispatches initialization.
+        ///
+        /// Every implementation should use this function's override to:
+        /// - register a destination for their output
+        /// - register basic information relevant to their task
+        /// - (re)set initial conditions relevant to their task.
+        ///
+        /// \param dst            Raw pixel buffer for writing output to, min size
+        ///                       depending on particular implementation.
+        /// \param src_width_px   Width of the region of interest expressed in pixels.
+        /// \param src_height_px  Height of the region of interest expressed in pixels.
+        virtual void init(uint8_t* const dst, uint src_width_px, [[maybe_unused]] uint src_height_px) = 0;
+        
+        /// \brief Dispathes a single block write.
+        ///
+        /// Every implementation should use this function's override to iteratively
+        /// perform the task of writing input blocks to their output destination.
+        ///
+        /// \param src_block  Input block.
+        ///
+        /// \note
+        /// - Blocks from a particular region of interest are presumed served in the
+        ///   order in which they appear in the entropy-coded segment.
+        /// - It is not required for the writes to be unbuffered providing that all
+        ///   expected output is written to the destination by the time the function
+        ///   finishes with its last input block.
         virtual void write(int (&src_block)[64]) = 0;
 };
 
 
+/// \brief Implements BlockWriter for block-wise writing of input to output in 1:1 scale.
 class BasicBlockWriter : public BlockWriter {
 
     public:
 
-        void init_frame(uint8_t* const dst, uint src_width_px, [[maybe_unused]] uint src_height_px) final {
+        /// \brief Performs initialization.
+        ///
+        /// It is called before write() is called for the first input block of every
+        /// new region of interest and should not be called again until the last block
+        /// of that region has been written to destination memory.
+        ///
+        /// \param dst            Raw pixel buffer for writing output to,
+        ///                       minimum size is `src_width_px * src_height_px`.
+        /// \param src_width_px   Width of the region of interest expressed in pixels.
+        /// \param src_height_px  Height of the region of interest expressed in pixels.
+        void init(uint8_t* const dst, uint src_width_px, [[maybe_unused]] uint src_height_px) final {
 
             m_dst = dst;
             m_src_width_px = src_width_px;
@@ -28,6 +64,16 @@ class BasicBlockWriter : public BlockWriter {
             m_block_y = 0;
         }
         
+        /// \brief Performs a single block write.
+        ///
+        /// Each call performs an unbuffered write of all input block pixels to
+        /// destination memory.
+        ///
+        /// \param src_block  Input block.
+        ///
+        /// \note
+        /// - Blocks from a particular region of interest are presumed served in the
+        ///   order in which they appear in the entropy-coded segment.
         void write(int (&src_block)[64]) final {
 
             uint offset = m_block_y * m_src_width_px + m_block_x;
@@ -60,16 +106,45 @@ class BasicBlockWriter : public BlockWriter {
         uint m_block_y {};
 };
 
+/// \brief Implements BlockWriter for block-wise writing with donwscaling.
+///
+/// \tparam DST_WIDTH_PX   Width of the destination image in pixels.
+/// \tparam DST_HEIGHT_PX  Height of the destination image in pixels.
+///
+/// \note Output dimensions defined by these parameters need not be multiples of
+/// 8 pixels. They must be greater than zero and no greater than corresponding
+/// dimensions of source region of interest (see parameters to init()).
 template <uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
+// DST_HEIGHT_PX could have been passed as a regular parameter to `init`
+// but is kept bundled here instead because of its close relation to
+// DST_WIDTH_PX and no relation to `init` parameters. For all intended
+// purposes the two template parameters are interdependent and no additional
+// template instantiation occurs in normal use just because of the extra
+// parameter.
 class DownscalingBlockWriter : public BlockWriter {
 
     public:
 
-        void init_frame(uint8_t* const dst, uint src_width_px, uint src_height_px) final {
+        /// \brief Performs initialization.
+        ///
+        /// It is called before write() is called for the first input block of every
+        /// new region of interest and should not be called again until the last block
+        /// of that region has been written to destination memory.
+        ///
+        /// \param dst            Raw pixel buffer for writing output to,
+        ///                       minimum size is `DST_WIDTH_PX * DST_HEIGHT_PX`.
+        /// \param src_width_px   Width of the region of interest expressed in pixels.
+        /// \param src_height_px  Height of the region of interest expressed in pixels.
+        ///
+        /// \note Both src dimensions must be at least as big as the corresponding
+        /// destination dimensions. Otherwise it would not be a task of downscaling but
+        /// rather upscaling. Additionally, since writing is done in blocks, both source
+        /// dimensions must be multiples of 8 pixels.
+        // `[[maybe_unused]]` added only to satisfy Doxygen (in fact, the parameter is allways used)
+        void init(uint8_t* const dst, uint src_width_px, [[maybe_unused]] uint src_height_px) final {
 
             m_dst = dst;
             m_src_width_px = src_width_px;
-            m_src_height_px = src_height_px;
             m_horiz_scaling_factor = static_cast<float>(DST_WIDTH_PX) / src_width_px;
             m_vert_scaling_factor = static_cast<float>(DST_HEIGHT_PX) / src_height_px;
             m_val_norm_factor = m_horiz_scaling_factor * m_vert_scaling_factor;
@@ -91,6 +166,27 @@ class DownscalingBlockWriter : public BlockWriter {
             m_edge_buffer = 0.0f;
         }
 
+        /// \brief Performs a single block write with downscaling.
+        ///
+        /// Each call performs a partially buffered write of input block pixels to
+        /// destination memory, downscaling the output according to specified
+        /// source and destination dimensions. No source information is discarded
+        /// in the downscaling process.
+        ///
+        /// \par Implementation Details
+        ///
+        /// Current downscaling algorithm is analogous to block-averaging but not
+        /// limited to integral downscaling factors. Instead, true rational downscaling
+        /// factors (horizontal and vertical separately) are approximated by floating
+        /// point values with corrections to rounding errors if necessary.
+        ///
+        /// \param src_block  Input block.
+        ///
+        /// \note
+        /// - Blocks from a particular region of interest are presumed served in the
+        ///   order in which they appear in the entropy-coded segment.
+        /// - All expected output is written to the destination by the time the function
+        ///   finishes with its last input block.
         void write(int (&src_block)[64]) final {
 
             // src block west border X-coord expressed in dst pixels
@@ -102,7 +198,7 @@ class DownscalingBlockWriter : public BlockWriter {
             // 1D index (0-63) of pixels within 8x8 src block
             uint src_idx = 0;
 
-            // column buffer index used to store/read dst block's easternmost pixels' partial values
+            // column buffer index used for dst block's easternmost pixels' partial values
             uint col_buff_idx = 0;
 
             // correct minor floating point error
@@ -150,7 +246,7 @@ class DownscalingBlockWriter : public BlockWriter {
                     m_column_buffer[col_buff_idx] = 0.0f;
                 }
 
-                // if src row (partially) overlays 2 adjacent dst rows (A3, B3, or C3)
+                // if src row (partially) overlays 2 adjacent dst rows
                 if (north_fraction != 1) {
 
                     // carry over from south position in column buffer
@@ -178,9 +274,11 @@ class DownscalingBlockWriter : public BlockWriter {
                     // total src pixel value to be weight-distributed across up to 4 dst pixels that it potentially overlays
                     const float val = static_cast<float>(src_block[src_idx++]);
 
+                    // distribute value horizontally
                     const float west_val = floor_east == floor_west ? val : (static_cast<float>(floor_east) - west) * val / m_horiz_scaling_factor;
                     const float east_val = val - west_val;
 
+                    // further distribute the pair of values vertically
                     const float north_west_val = north_fraction * west_val;
                     const float south_west_val = west_val - north_west_val;
                     const float north_east_val = north_fraction * east_val;
@@ -189,7 +287,7 @@ class DownscalingBlockWriter : public BlockWriter {
                     m_row_buffer[floor_west] += north_west_val;
                     m_edge_buffer += south_west_val;
 
-                    // east-aligned columns and src row reaches up to or into next dst row
+                    // east-aligned columns *and* src row reaches up to or into next dst row
                     if (east == floor_east && src_row_spans_next_dst_row) {
 
                         m_dst[vert_offset + floor_west] = static_cast<uint8_t>(0.5f + m_row_buffer[floor_west] * m_val_norm_factor);
@@ -263,7 +361,6 @@ class DownscalingBlockWriter : public BlockWriter {
 
         uint8_t* m_dst {nullptr};
         uint m_src_width_px {};
-        uint m_src_height_px {};
         uint m_block_x {};
         uint m_block_y {};
 
@@ -274,10 +371,10 @@ class DownscalingBlockWriter : public BlockWriter {
         float m_epsilon_vert {};
 
         float m_row_buffer[DST_WIDTH_PX] {};
-        float m_column_buffer[9] {};
+        float m_column_buffer[9] {};  // size is 9 because it's one greater than block height in pixels
         float m_edge_buffer {};
 
-        // snap floating point input to integer grid if within +/- m_epsilon_horiz proximity
+        // snap floating point input to integer grid if within `m_epsilon_horiz` proximity
         float snap_to_horiz_grid(float input) {
 
             const uint floored = static_cast<uint>(input + m_epsilon_horiz);
@@ -285,7 +382,7 @@ class DownscalingBlockWriter : public BlockWriter {
             return (input != floored && input - floored < m_epsilon_horiz) ? floored : input;
         }
 
-        // snap floating point input to integer grid if within +/- m_epsilon_vert proximity
+        // snap floating point input to integer grid if within `m_epsilon_vert` proximity
         float snap_to_vert_grid(float input) {
 
             const uint floored = static_cast<uint>(input + m_epsilon_vert);

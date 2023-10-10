@@ -6,6 +6,7 @@ HDR_DIRS = include
 BIN_DIR = bin
 DEP_DIR = .deps
 TESTS_DIR = tests
+DOXY_TREE = doc/doxy*
 
 CXX = g++
 CXX_FLAGS = -std=c++17 -fdiagnostics-color=always -pedantic -Wall -Wextra -Wunreachable-code -Wfatal-errors
@@ -70,10 +71,9 @@ $(RELEASE_OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEP_DIR)/%.release.d | $(RELEASE_OBJ_
 $(DEBUG_BIN_DIR) $(DEBUG_OBJ_TREE) $(RELEASE_BIN_DIR) $(RELEASE_OBJ_TREE) $(DEP_TREE):
 	@mkdir -p $@
 
-.PHONY: clean-tests
-clean-tests:
-	find $(TESTS_DIR) -type f -regex '.+\/.+\.pgm' -delete
-	find $(TESTS_DIR) -type d -regex '.+\/[0-9]+x[0-9]+\/.+' -delete
+.PHONY: doxy
+doxy: clean-doxy
+	doxygen
 
 .PHONY: clean-debug
 clean-debug:
@@ -86,6 +86,15 @@ clean-release:
 .PHONY: clean-all
 clean-all:
 	rm -rf $(OBJ_DIR) $(BIN_DIR) $(DEP_DIR)
+
+.PHONY: clean-tests
+clean-tests:
+	find $(TESTS_DIR) -type f -regex '.+\/.+\.pgm' -delete
+	find $(TESTS_DIR) -type d -regex '.+\/[0-9]+x[0-9]+\/.+' -delete
+
+.PHONY: clean-doxy
+clean-doxy:
+	rm -rf $(DOXY_TREE)
 
 
 $(DEPS):

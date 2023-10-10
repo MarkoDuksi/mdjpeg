@@ -4,6 +4,7 @@
 #include <cmath>
 
 
+/// \cond
 namespace {
 
 namespace ZigZag {
@@ -40,9 +41,9 @@ namespace IDCT {
 }  // namespace IDCT
 
 }  // anonymous namespace
+/// \endcond
 
-
-void transform::zig_zag(int (&block)[64]) noexcept {
+void transform::reverse_zig_zag(int (&block)[64]) noexcept {
 
     int temp[64];
 
@@ -57,9 +58,8 @@ void transform::zig_zag(int (&block)[64]) noexcept {
     }
 }
 
+/// \note AAN %IDCT implementation adapted from and contributed back to https://github.com/dannye/jed/blob/master/src/decoder.cpp.
 void transform::idct(int (&block)[64]) noexcept {
-
-// AAN IDCT implementation code adapted from https://github.com/dannye/jed/blob/master/src/decoder.cpp
 
     float intermediate[64];
 

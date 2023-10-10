@@ -3,13 +3,16 @@
 #include <stdint.h>
 
 
+/// \brief Stateless block-level tranformation functions that don't need a class.
 namespace transform {
 
-void zig_zag(int (&block)[64]) noexcept;
+/// \brief Reverses zig-zag reordering of a block of values (in place).
+void reverse_zig_zag(int (&block)[64]) noexcept;
 
+/// \brief Computes %IDCT on a block of values (in place).
 void idct(int (&block)[64]) noexcept;
 
-// inplace shift all block values by +128 and clip the result to uint8_t range
+/// \brief Increments block values by \c +128 and clips results to \c uint8_t range (in place).
 void range_normalize(int (&block)[64]) noexcept;
 
 }  // namespace transform

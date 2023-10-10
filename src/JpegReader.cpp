@@ -1,5 +1,7 @@
 #include "JpegReader.h"
 
+#include "ReadError.h"
+
 
 JpegReader::JpegReader(const uint8_t* const buff, const size_t size) noexcept :
     m_buff_start(buff),
@@ -162,5 +164,5 @@ int JpegReader::read_bit() noexcept {
     }
 
     // else reading last bit before invalid marker
-    return static_cast<int>(ReadError::ECS);
+    return static_cast<int>(ReadError::ECS_BIT);
 }
