@@ -14,9 +14,11 @@ class JpegDecoder {
     public:
         JpegDecoder(const uint8_t* const buff, const size_t size) noexcept;
 
-        bool decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk);
-        bool decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk, BlockWriter& writer);
-        bool dc_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk);
+        bool luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk);
+
+        bool luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk, BlockWriter& writer);
+
+        bool dc_luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk);
 
         template <StateID ANY>
         friend class ConcreteState;

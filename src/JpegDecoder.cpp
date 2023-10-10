@@ -14,14 +14,14 @@ JpegDecoder::JpegDecoder(const uint8_t* const buff, const size_t size) noexcept 
     m_reader(buff, size)
     {}
 
-bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) {
+bool JpegDecoder::luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) {
 
     BasicBlockWriter writer;
 
-    return decode(dst, x1_blk, y1_blk, x2_blk, y2_blk, writer);
+    return luma_decode(dst, x1_blk, y1_blk, x2_blk, y2_blk, writer);
 }
 
-bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk, BlockWriter& writer) {
+bool JpegDecoder::luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk, BlockWriter& writer) {
 
     if (parse_header() == StateID::HEADER_OK) {
 
@@ -71,7 +71,7 @@ bool JpegDecoder::decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_b
     return true;
 }
 
-bool JpegDecoder::dc_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) {
+bool JpegDecoder::dc_luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) {
 
     if (parse_header() == StateID::HEADER_OK) {
 
