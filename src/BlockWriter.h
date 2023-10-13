@@ -195,6 +195,9 @@ class DownscalingBlockWriter : public BlockWriter {
             // src block north border Y-coord expressed in dst pixels
             float north = m_vert_scaling_factor * m_block_y;
 
+            // correct minor floating point error
+            north = snap_to_vert_grid(north);
+
             // 1D index (0-63) of pixels within 8x8 src block
             uint src_idx = 0;
 
@@ -212,9 +215,6 @@ class DownscalingBlockWriter : public BlockWriter {
                 // (re)start row at block west border on each src row scan
                 float west = block_west;
 
-                // correct minor floating point error
-                north = snap_to_vert_grid(north);
-
                 // dst row index overlayed by north portion of src row
                 const int floor_north = static_cast<uint>(north);
 
@@ -231,12 +231,11 @@ class DownscalingBlockWriter : public BlockWriter {
                 const int floor_south = static_cast<uint>(south);
 
                 // rows alignment
-                const bool rows_are_south_aligned = floor_south == south;
                 const bool src_row_spans_next_dst_row = floor_south != floor_north;
 
-                // determine fraction (proportion) of src row (partially) overlaying northern dst row
-                const float north_fraction = (!rows_are_south_aligned && src_row_spans_next_dst_row)
-                                           ? (static_cast<float>(floor_south) - north) / m_vert_scaling_factor : 1.0f;
+                // determine fraction (proportion) of src col (partially) overlaying western dst col
+                const float north_fraction = floor_south == floor_north || floor_south == south ?
+                                             1.0f : (static_cast<float>(floor_south) - north) / m_vert_scaling_factor;
 
                 // if src and dst rows are aligned along their north borders or if starting new block
                 if (floor_north == north || row == 0) {
@@ -259,9 +258,6 @@ class DownscalingBlockWriter : public BlockWriter {
                     // src column east border X-coord expressed in dst columns X-coords
                     float east = west + m_horiz_scaling_factor;
 
-                    // correct minor floating point error
-                    west = snap_to_horiz_grid(west);
-
                     // X-coord of dst column overlayed by west portion of src column
                     const uint floor_west = static_cast<uint>(west);
 
@@ -274,8 +270,12 @@ class DownscalingBlockWriter : public BlockWriter {
                     // total src pixel value to be weight-distributed across up to 4 dst pixels that it potentially overlays
                     const float val = static_cast<float>(src_block[src_idx++]);
 
+                    // determine fraction (proportion) of src col (partially) overlaying western dst col
+                    const float west_fraction = floor_east == floor_west ?
+                                                1.0f : (static_cast<float>(floor_east) - west) / m_horiz_scaling_factor;
+
                     // distribute value horizontally
-                    const float west_val = floor_east == floor_west ? val : (static_cast<float>(floor_east) - west) * val / m_horiz_scaling_factor;
+                    const float west_val = west_fraction * val;
                     const float east_val = val - west_val;
 
                     // further distribute the pair of values vertically
@@ -290,7 +290,8 @@ class DownscalingBlockWriter : public BlockWriter {
                     // east-aligned columns *and* src row reaches up to or into next dst row
                     if (east == floor_east && src_row_spans_next_dst_row) {
 
-                        m_dst[vert_offset + floor_west] = static_cast<uint8_t>(0.5f + m_row_buffer[floor_west] * m_val_norm_factor);
+                        const int dst_val = static_cast<int>(0.5f + m_row_buffer[floor_west] * m_val_norm_factor);
+                        m_dst[vert_offset + floor_west] = dst_val <= 255 ? dst_val : 255;
                         m_row_buffer[floor_west] = m_edge_buffer;
                         m_edge_buffer = 0.0f;
                         col_buff_idx += col == 7;
@@ -321,7 +322,8 @@ class DownscalingBlockWriter : public BlockWriter {
 
                         if (src_row_spans_next_dst_row) {
 
-                            m_dst[vert_offset + floor_west] = static_cast<uint8_t>(0.5f + m_row_buffer[floor_west] * m_val_norm_factor);
+                            const int dst_val = static_cast<int>(0.5f + m_row_buffer[floor_west] * m_val_norm_factor);
+                            m_dst[vert_offset + floor_west] = dst_val <= 255 ? dst_val : 255;
                             m_row_buffer[floor_west] = m_edge_buffer;
                         }
 
