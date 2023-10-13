@@ -89,8 +89,8 @@ clean-all:
 
 .PHONY: clean-tests
 clean-tests:
-	find $(TESTS_DIR) -type f -regex '.+\/.+\.pgm' -delete
-	find $(TESTS_DIR) -type d -regex '.+\/[0-9]+x[0-9]+\/.+' -delete
+	find ./ -type f -regex '.+\/.+\.pgm' -delete
+	find ./ -type d -regex '.+\/[0-9]+x[0-9]+\/.+' -delete
 
 .PHONY: clean-doxy
 clean-doxy:

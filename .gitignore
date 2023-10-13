@@ -2,6 +2,7 @@
 obj
 bin
 tests
+*.pgm
 input*
 output*
 doc/doxy*
