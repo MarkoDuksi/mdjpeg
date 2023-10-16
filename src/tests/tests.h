@@ -66,7 +66,7 @@ bool downscaling_decoding_test(std::filesystem::path input_base_dir) {
         bool subtest_passed{true};
 
         std::cout << "Running donwscaling decoding test on \"" << file_path.c_str() << "\""
-                  << " (" << src_dims.to_str() << " -> " << dst_dims.to_str() << ")... ";
+                  << " (" << src_dims.to_str() << " -> " << dst_dims.to_str() << ")  => ";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder(buff, size);
@@ -102,8 +102,6 @@ bool downscaling_decoding_test(std::filesystem::path input_base_dir) {
         }
     }
 
-    std::cout << "\n";
-
     return test_passed;
 }
 
@@ -135,9 +133,9 @@ bool downscaling_test(const uint8_t fill_value) {
         writer.write(src_array);
     }
 
-    std::cout << "Running downscaling test "
-              << " (" << src_dims.to_str() << " -> " << dst_dims.to_str()
-              << ") with fill value = " << static_cast<uint>(fill_value) << "... ";
+    std::cout << "Running downscaling test ("
+              << src_dims.to_str() << " -> " << dst_dims.to_str()
+              << "/ fill value = " << static_cast<uint>(fill_value) << ")  => ";
 
     uint error = max_abs_error(dst_array, dst_dims, fill_value);
 
@@ -154,7 +152,7 @@ bool downscaling_test(const uint8_t fill_value) {
                                src_dims.to_str() + "_to_" + dst_dims.to_str() +
                                "_with_fill_value_" + std::to_string(static_cast<uint>(fill_value)) + ".pgm";
         
-        std::cout << "  writing resulting output to ./" << filename << "... ";
+        std::cout << "  writing resulting output to ./" << filename << "  => ";
         
         if (!write_as_pgm(filename, dst_array, dst_dims)) {
 
@@ -165,6 +163,20 @@ bool downscaling_test(const uint8_t fill_value) {
     }
 
     return error == 0;
+}
+
+template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
+uint recursive_downscaling_decoding_test(std::filesystem::path input_base_dir, uint tests_failed = 0) {
+
+    if constexpr (DST_WIDTH_PX && DST_HEIGHT_PX) {
+
+        tests_failed += recursive_downscaling_decoding_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX - 1, DST_HEIGHT_PX - 1>(
+            input_base_dir,
+            !downscaling_decoding_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX, DST_HEIGHT_PX>(input_base_dir)
+        );
+    }
+
+    return tests_failed;
 }
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>

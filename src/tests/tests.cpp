@@ -24,7 +24,7 @@ bool full_frame_decoding_tests(const std::filesystem::path input_base_dir, const
 
         bool subtest_passed{true};
 
-        std::cout << "Running full-frame decoding subtest on \"" << file_path.c_str() << "\"... ";
+        std::cout << "Running full-frame decoding subtest on \"" << file_path.c_str() << "\"  => ";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder(buff, size);
@@ -83,7 +83,7 @@ bool cropped_decoding_tests(const std::filesystem::path input_base_dir) {
 
         bool subtest_passed{true};
 
-        std::cout << "Running cropped decoding subtest on \"" << file_path.c_str() << "\"... ";
+        std::cout << "Running cropped decoding subtest on \"" << file_path.c_str() << "\"  => ";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder(buff, size);
