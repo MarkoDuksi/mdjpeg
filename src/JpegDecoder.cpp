@@ -93,7 +93,7 @@ bool JpegDecoder::dc_luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, u
         return false;
     }
 
-    uint src_width_px = x2_blk - x1_blk;
+    uint dst_width_px = x2_blk - x1_blk;
     int block_8x8[64] {0};
 
     for (uint row_blk = y1_blk; row_blk < y2_blk; ++row_blk) {
@@ -113,7 +113,7 @@ bool JpegDecoder::dc_luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, u
             // recover block-averaged luma value
             const int dc_luma = (block_8x8[0] + 1024) / 8;
 
-            dst[(row_blk - y1_blk) * src_width_px + (col_blk - x1_blk)] = dc_luma;
+            dst[(row_blk - y1_blk) * dst_width_px + (col_blk - x1_blk)] = dc_luma;
         }
     }
 
