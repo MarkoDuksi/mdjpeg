@@ -82,10 +82,6 @@ clean-debug:
 clean-release:
 	rm -rf $(RELEASE_OBJ_DIR) $(RELEASE_BIN_DIR) $(addsuffix /*release.d, $(DEP_TREE))
 
-.PHONY: clean-all
-clean-all:
-	rm -rf $(OBJ_DIR) $(BIN_DIR) $(DEP_DIR)
-
 .PHONY: clean-tests
 clean-tests:
 	find ./ -type f -regex '.+\/.+\.pgm' -delete
@@ -94,6 +90,10 @@ clean-tests:
 .PHONY: clean-doxy
 clean-doxy:
 	rm -rf $(DOXY_TREE)
+
+.PHONY: clean
+clean: clean-tests clean-doxy
+	rm -rf $(OBJ_DIR) $(BIN_DIR) $(DEP_DIR)
 
 
 $(DEPS):

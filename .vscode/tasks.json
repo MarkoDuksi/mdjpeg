@@ -49,22 +49,7 @@
 			},
 			"detail": "compiler: g++"
 		},
-		{
-			"type": "process",
-			"label": "GNU make: clean",
-			"command": "/usr/bin/make",
-			"args": [
-				"clean"
-			],
-			"problemMatcher": [
-				"$gcc"
-			],
-			"group": {
-				"kind": "build",
-				"isDefault": false
-			},
-			"detail": "clean all objs, deps, bins"
-		},
+
 		{
 			"type": "process",
 			"label": "GNU make: clean-debug",
