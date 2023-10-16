@@ -5,7 +5,6 @@ LIB_DIRS = lib
 HDR_DIRS = include
 BIN_DIR = bin
 DEP_DIR = .deps
-TESTS_DIR = tests
 DOXY_TREE = doc/doxy*
 
 CXX = g++

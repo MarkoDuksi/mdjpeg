@@ -1,7 +1,8 @@
 .deps
 obj
 bin
-tests
+test_imgs/1280x1024
+test_imgs/1600x1200
 *.pgm
 input*
 output*
