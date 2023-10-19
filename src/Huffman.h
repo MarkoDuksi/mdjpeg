@@ -3,7 +3,8 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-#include "JpegReader.h"
+
+class JpegReader;
 
 
 /// \brief Provides %Huffman decoding facilities specific to JFIF data.

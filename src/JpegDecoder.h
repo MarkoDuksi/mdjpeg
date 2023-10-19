@@ -7,7 +7,9 @@
 #include "JpegReader.h"
 #include "Huffman.h"
 #include "Dequantizer.h"
-#include "BlockWriter.h"
+
+
+class BlockWriter;
 
 
 /// \brief Decoder class for JPEG File Interchange Format (JFIF) data.

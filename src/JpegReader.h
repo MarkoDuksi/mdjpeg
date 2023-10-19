@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <optional>
 
-#include "states.h"
-
 
 /// \brief Provides sequential reading facilites specific to JFIF data.
 ///

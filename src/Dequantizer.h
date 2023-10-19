@@ -3,7 +3,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#include "JpegReader.h"
+
+class JpegReader;
 
 
 /// \brief Class for dequantizing JFIF DCT coefficients.

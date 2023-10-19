@@ -1,5 +1,7 @@
 #include "Dequantizer.h"
 
+#include "JpegReader.h"
+
 
 size_t Dequantizer::set_qtable(JpegReader& reader, const size_t max_read_length) noexcept {
 

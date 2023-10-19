@@ -5,6 +5,7 @@
     #include <fmt/core.h>
 #endif
 
+#include "JpegReader.h"
 #include "ReadError.h"
 
 

@@ -11,6 +11,7 @@
 #include <sys/types.h>
 
 #include "../JpegDecoder.h"
+#include "../BlockWriter.h"
 
 
 struct Dimensions {

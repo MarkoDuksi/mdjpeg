@@ -1,9 +1,11 @@
 MAIN_BASENAME = main
+LIBRARY_BASENAME = libmdjpeg
 SRC_DIR = src
+LIB_INCLUDE_DIRS = lib
+HDR_INCLUDE_DIRS = include
 OBJ_DIR = obj
-LIB_DIRS = lib
-HDR_DIRS = include
 BIN_DIR = bin
+LIB_DIR = $(OBJ_DIR)/library
 DEP_DIR = .deps
 DOXY_TREE = doc/doxy*
 
@@ -12,11 +14,14 @@ CXX_FLAGS = -std=c++17 -fdiagnostics-color=always -pedantic -Wall -Wextra -Wunre
 CXX_DEBUG_FLAGS = -g -DDEBUG
 CXX_RELEASE_FLAGS = -O3 -DNDEBUG -DRELEASE
 DEP_FLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$(*D)/$(*F).$(BUILD_TYPE).d.tmp
-LIB_INCLUDE_DIRS_FLAGS = $(addprefix -L, $(LIB_DIRS))
-HDR_INCLUDE_DIRS_FLAGS = $(addprefix -I, $(HDR_DIRS))
+LIB_INCLUDE_DIRS_FLAGS = $(addprefix -L, $(LIB_INCLUDE_DIRS))
+HDR_INCLUDE_DIRS_FLAGS = $(addprefix -I, $(HDR_INCLUDE_DIRS))
 LD_FLAGS = -lfmt
 
 POSTCOMPILE = @mv -f $(DEP_DIR)/$(*D)/$(*F).$(BUILD_TYPE).d.tmp $(DEP_DIR)/$(*D)/$(*F).$(BUILD_TYPE).d && touch $@
+
+LIB_ARCHIVER = ar
+LIB_ARCHIVER_FLAGS = -crs
 
 SRCS = $(wildcard $(shell find $(SRC_DIR) -name '*.cpp'))
 SRCS_SUBDIRS = $(wildcard $(shell find $(SRC_DIR)/* -type d))
@@ -39,14 +44,21 @@ RELEASE_OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(RELEASE_OBJ_DIR)/%.o)
 RELEASE_BIN = $(RELEASE_BIN_DIR)/$(MAIN_BASENAME).out
 
 
+LIBRARY_OBJS = $(filter-out %tests.o, $(RELEASE_OBJS))
+LIBRARY = $(LIB_DIR)/$(LIBRARY_BASENAME).a
+
+
 .PHONY: all
-all: debug release
+all: release library
 
 .PHONY: debug
 debug: $(DEBUG_BIN)
 
 .PHONY: release
 release: $(RELEASE_BIN)
+
+.PHONY: library
+library: $(LIBRARY)
 
 
 $(DEBUG_BIN): $(DEBUG_OBJS) | $(DEBUG_BIN_DIR)
@@ -66,9 +78,13 @@ $(RELEASE_OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEP_DIR)/%.release.d | $(RELEASE_OBJ_
 	$(CXX) $(DEP_FLAGS) $(CXX_RELEASE_FLAGS) $(CXX_FLAGS) $(HDR_INCLUDE_DIRS_FLAGS) -c $< -o $@
 	$(POSTCOMPILE)
 
+$(LIBRARY): $(LIBRARY_OBJS) | $(LIB_DIR)
+	$(LIB_ARCHIVER) $(LIB_ARCHIVER_FLAGS) $@ $?
 
-$(DEBUG_BIN_DIR) $(DEBUG_OBJ_TREE) $(RELEASE_BIN_DIR) $(RELEASE_OBJ_TREE) $(DEP_TREE):
+
+$(DEBUG_BIN_DIR) $(DEBUG_OBJ_TREE) $(RELEASE_BIN_DIR) $(RELEASE_OBJ_TREE) $(LIB_DIR) $(DEP_TREE):
 	@mkdir -p $@
+
 
 .PHONY: doxy
 doxy: clean-doxy
@@ -81,6 +97,10 @@ clean-debug:
 .PHONY: clean-release
 clean-release:
 	rm -rf $(RELEASE_OBJ_DIR) $(RELEASE_BIN_DIR) $(addsuffix /*release.d, $(DEP_TREE))
+
+.PHONY: clean-library
+clean-library:
+	rm -rf $(LIB_DIR)
 
 .PHONY: clean-tests
 clean-tests:
