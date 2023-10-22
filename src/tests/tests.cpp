@@ -151,7 +151,7 @@ std::vector<std::filesystem::path> get_input_img_paths(const std::filesystem::pa
     return input_files_paths;
 }
 
-std::tuple<uint8_t*, size_t> read_raw_jpeg_from_file(const std::filesystem::path& file_path) {
+std::pair<uint8_t*, size_t> read_raw_jpeg_from_file(const std::filesystem::path& file_path) {
 
     std::ifstream file(file_path, std::ios::in | std::ios::binary | std::ios::ate);
     

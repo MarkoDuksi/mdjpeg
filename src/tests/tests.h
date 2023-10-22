@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <tuple>
+#include <utility>
 #include <filesystem>
 #include <iostream>
 
@@ -38,7 +38,7 @@ struct Dimensions {
 
 std::vector<std::filesystem::path> get_input_img_paths(const std::filesystem::path& input_base_dir, const Dimensions& dims);
 
-std::tuple<uint8_t*, size_t> read_raw_jpeg_from_file(const std::filesystem::path& file_path);
+std::pair<uint8_t*, size_t> read_raw_jpeg_from_file(const std::filesystem::path& file_path);
 
 uint max_abs_error(const uint8_t* const array, const Dimensions& dims, const uint8_t value);
 
@@ -136,7 +136,7 @@ bool downscaling_test(const uint8_t fill_value) {
 
     std::cout << "Running downscaling test ("
               << src_dims.to_str() << " -> " << dst_dims.to_str()
-              << "/ fill value = " << static_cast<uint>(fill_value) << ")  => ";
+              << " / fill value = " << static_cast<uint>(fill_value) << ")  => ";
 
     uint error = max_abs_error(dst_array, dst_dims, fill_value);
 

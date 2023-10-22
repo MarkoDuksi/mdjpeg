@@ -80,7 +80,7 @@ $(RELEASE_OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEP_DIR)/%.release.d | $(RELEASE_OBJ_
 
 $(LIBRARY): $(LIBRARY_OBJS) | $(LIB_DIR)
 	$(LIB_ARCHIVER) $(LIB_ARCHIVER_FLAGS) $@ $?
-
+	./generate_lib_header.sh $(SRC_DIR)
 
 $(DEBUG_BIN_DIR) $(DEBUG_OBJ_TREE) $(RELEASE_BIN_DIR) $(RELEASE_OBJ_TREE) $(LIB_DIR) $(DEP_TREE):
 	@mkdir -p $@
