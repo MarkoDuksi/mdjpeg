@@ -46,12 +46,12 @@ bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* raw_ima
 
 void print_as_pgm(const uint8_t* const array, const Dimensions& dims);
 
-bool full_frame_decoding_tests(const std::filesystem::path input_base_dir, const Dimensions& dims);
+uint full_frame_decoding_tests(const std::filesystem::path input_base_dir, const Dimensions& dims);
 
-bool cropped_decoding_tests(const std::filesystem::path input_base_dir);
+uint cropped_decoding_tests(const std::filesystem::path input_base_dir);
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-bool downscaling_decoding_test(std::filesystem::path input_base_dir) {
+uint downscaling_decoding_test(std::filesystem::path input_base_dir) {
 
     Dimensions src_dims {SRC_WIDTH_PX, SRC_HEIGHT_PX};
     assert(src_dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
@@ -60,14 +60,14 @@ bool downscaling_decoding_test(std::filesystem::path input_base_dir) {
 
     const auto input_files_paths = get_input_img_paths(input_base_dir, src_dims);
 
-    bool test_passed{true};
+    uint tests_failed = 0;
 
     for (const auto& file_path : input_files_paths) {
 
         bool subtest_passed{true};
 
         std::cout << "Running donwscaling decoding test on \"" << file_path.c_str() << "\""
-                  << " (" << src_dims.to_str() << " -> " << dst_dims.to_str() << ")  => ";
+                  << " (" << src_dims.to_str() << " -> " << dst_dims.to_str() << ")";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder(buff, size);
@@ -83,27 +83,27 @@ bool downscaling_decoding_test(std::filesystem::path input_base_dir) {
             if (!write_as_pgm(output_file_path, decoded_img, dst_dims)) {
 
                 subtest_passed = false;
-                test_passed = false;
-                std::cout << "\n  Writing output file FAILED.\n";
+                ++tests_failed;
+                std::cout << "  => FAILED writing output.\n";
             }
         }
 
         else {
 
             subtest_passed = false;
-            test_passed = false;
-            std::cout << "\n  Decoding+downscaling input file FAILED.\n";
+            ++tests_failed;
+            std::cout << "  => FAILED decoding+downscaling JPEG.\n";
         }
 
         delete[] buff;
 
         if (subtest_passed) {
 
-            std::cout << "passed?\n";
+            std::cout << "  => passed?\n";
         }
     }
 
-    return test_passed;
+    return tests_failed;
 }
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
@@ -136,31 +136,27 @@ bool downscaling_test(const uint8_t fill_value) {
 
     std::cout << "Running downscaling test ("
               << src_dims.to_str() << " -> " << dst_dims.to_str()
-              << " / fill value = " << static_cast<uint>(fill_value) << ")  => ";
+              << " / fill value = " << static_cast<uint>(fill_value) << ")";
 
-    uint error = max_abs_error(dst_array, dst_dims, fill_value);
+    int error = max_abs_error(dst_array, dst_dims, fill_value);
 
     if (error == 0) {
 
-        std::cout << "passed.\n";
+        std::cout << "  => passed.\n";
     }
 
     else {
 
-        std::cout << "FAILED (max absolute error = " << static_cast<int>(error) << ")\n";
+        std::cout << "  => FAILED with max absolute error = " << error << "\n";
 
         std::string filename = "failed_test__downscaling_from_" +
                                src_dims.to_str() + "_to_" + dst_dims.to_str() +
                                "_with_fill_value_" + std::to_string(static_cast<uint>(fill_value)) + ".pgm";
         
-        std::cout << "  writing resulting output to ./" << filename << "  => ";
-        
         if (!write_as_pgm(filename, dst_array, dst_dims)) {
 
-            std::cout << "FAILED";
+            std::cout << "  => FAILED writing output.\n";
         }
-
-        std::cout << "\n";
     }
 
     return error == 0;
@@ -173,7 +169,7 @@ uint recursive_downscaling_decoding_test(std::filesystem::path input_base_dir, u
 
         tests_failed += recursive_downscaling_decoding_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX - 1, DST_HEIGHT_PX - 1>(
             input_base_dir,
-            !downscaling_decoding_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX, DST_HEIGHT_PX>(input_base_dir)
+            downscaling_decoding_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX, DST_HEIGHT_PX>(input_base_dir)
         );
     }
 

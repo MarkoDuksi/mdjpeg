@@ -12,19 +12,19 @@
 #include <fmt/core.h>
 
 
-bool full_frame_decoding_tests(const std::filesystem::path input_base_dir, const Dimensions& dims) {
+uint full_frame_decoding_tests(const std::filesystem::path input_base_dir, const Dimensions& dims) {
 
     assert(dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
 
     const auto input_files_paths = get_input_img_paths(input_base_dir, dims);
 
-    bool test_passed{true};
+    uint tests_failed = 0;
 
     for (const auto& file_path : input_files_paths) {
 
         bool subtest_passed{true};
 
-        std::cout << "Running full-frame decoding subtest on \"" << file_path.c_str() << "\"  => ";
+        std::cout << "Running full-frame decoding test on \"" << file_path.c_str() << "\"";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder(buff, size);
@@ -39,16 +39,16 @@ bool full_frame_decoding_tests(const std::filesystem::path input_base_dir, const
             if (!write_as_pgm(output_file_path, decoded_img, dims)) {
 
                 subtest_passed = false;
-                test_passed = false;
-                std::cout << "\n  Writing output FAILED.\n";
+                ++tests_failed;
+                std::cout << "  => FAILED writing output.\n";
             }
         }
 
         else {
 
             subtest_passed = false;
-            test_passed = false;
-            std::cout << "\n  Decoding JPEG FAILED.\n";
+            ++tests_failed;
+            std::cout << "  => FAILED decoding JPEG.\n";
         }
 
         delete[] buff;
@@ -56,16 +56,14 @@ bool full_frame_decoding_tests(const std::filesystem::path input_base_dir, const
 
         if (subtest_passed) {
 
-            std::cout << "passed?\n";
+            std::cout << "  => passed?\n";
         }
     }
 
-    std::cout << "\n";
-
-    return test_passed;
+    return tests_failed;
 }
 
-bool cropped_decoding_tests(const std::filesystem::path input_base_dir) {
+uint cropped_decoding_tests(const std::filesystem::path input_base_dir) {
 
     const uint src_width_px = 800;
     const uint src_height_px = 800;
@@ -77,13 +75,13 @@ bool cropped_decoding_tests(const std::filesystem::path input_base_dir) {
 
     const auto input_files_paths = get_input_img_paths(input_base_dir, src_dims);
 
-    bool test_passed{true};
+    uint tests_failed = 0;
 
     for (const auto& file_path : input_files_paths) {
 
         bool subtest_passed{true};
 
-        std::cout << "Running cropped decoding subtest on \"" << file_path.c_str() << "\"  => ";
+        std::cout << "Running cropped decoding test on \"" << file_path.c_str() << "\"";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder(buff, size);
@@ -102,19 +100,19 @@ bool cropped_decoding_tests(const std::filesystem::path input_base_dir) {
                     std::filesystem::create_directory(output_dir);
                     std::filesystem::path output_file_path = output_dir / (std::string(file_path.stem()) + "_" + quadrants[quadrant_idx] + ".pgm");
 
-                    if (!write_as_pgm(output_file_path, decoded_img, dst_dims)) {
+                    if (write_as_pgm(output_file_path, decoded_img, dst_dims)) {
 
                         subtest_passed = false;
-                        test_passed = false;
-                        std::cout << "\n  Writing output for quadrant \"" << quadrants[quadrant_idx] << "\" FAILED.\n";
+                        ++tests_failed;
+                        std::cout << "  => FAILED writing output for quadrant \"" << quadrants[quadrant_idx] << "\".\n";
                     }
                 }
 
                 else {
 
                     subtest_passed = false;
-                    test_passed = false;
-                    std::cout << "\n  Decoding JPEG for quadrant \"" << quadrants[quadrant_idx] << "\" FAILED.\n";
+                    ++tests_failed;
+                    std::cout << "  => FAILED decoding JPEG for quadrant \"" << quadrants[quadrant_idx] << "\".\n";
                 }
 
                 ++quadrant_idx;
@@ -125,13 +123,11 @@ bool cropped_decoding_tests(const std::filesystem::path input_base_dir) {
 
         if (subtest_passed) {
 
-            std::cout << "passed?\n";
+            std::cout << "  => passed?\n";
         }
     }
 
-    std::cout << "\n";
-
-    return test_passed;
+    return tests_failed;
 }
 
 std::vector<std::filesystem::path> get_input_img_paths(const std::filesystem::path& input_base_dir, const Dimensions& dims) {
