@@ -7,6 +7,7 @@ OBJ_DIR = obj
 BIN_DIR = bin
 LIB_DIR = $(OBJ_DIR)/library
 DEP_DIR = .deps
+TESTS_DIR = test_imgs
 DOXY_TREE = doc/doxy*
 
 CXX = g++
@@ -104,8 +105,8 @@ clean-library:
 
 .PHONY: clean-tests
 clean-tests:
-	find ./ -type f -regex '.+\/.+\.pgm' -delete
-	find ./ -type d -regex '.+\/[0-9]+x[0-9]+\/.+' -delete
+	find $(TESTS_DIR) -type f -name '*.pgm' ! -regex '.+_ref\/.+' -delete
+	find $(TESTS_DIR) -type d -empty -delete
 
 .PHONY: clean-doxy
 clean-doxy:
