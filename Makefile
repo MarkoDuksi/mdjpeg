@@ -61,6 +61,10 @@ release: $(RELEASE_BIN)
 .PHONY: library
 library: $(LIBRARY)
 
+.PHONY: doxy
+doxy: clean-doxy
+	doxygen
+
 
 $(DEBUG_BIN): $(DEBUG_OBJS) | $(DEBUG_BIN_DIR)
 	$(CXX) $(CXX_DEBUG_FLAGS) $(CXX_FLAGS) $^ -o $@ $(LIB_INCLUDE_DIRS_FLAGS) $(LD_FLAGS)
@@ -79,25 +83,31 @@ $(RELEASE_OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEP_DIR)/%.release.d | $(RELEASE_OBJ_
 	$(CXX) $(DEP_FLAGS) $(CXX_RELEASE_FLAGS) $(CXX_FLAGS) $(HDR_INCLUDE_DIRS_FLAGS) -c $< -o $@
 	$(POSTCOMPILE)
 
+
 $(LIBRARY): $(LIBRARY_OBJS) | $(LIB_DIR)
 	$(LIB_ARCHIVER) $(LIB_ARCHIVER_FLAGS) $@ $?
 	./generate_lib_header.sh $(SRC_DIR)
+	find $(RELEASE_OBJ_DIR) -type d -empty -delete
+	find $(DEP_DIR) -type d -empty -delete
+
 
 $(DEBUG_BIN_DIR) $(DEBUG_OBJ_TREE) $(RELEASE_BIN_DIR) $(RELEASE_OBJ_TREE) $(LIB_DIR) $(DEP_TREE):
 	@mkdir -p $@
 
 
-.PHONY: doxy
-doxy: clean-doxy
-	doxygen
-
 .PHONY: clean-debug
 clean-debug:
 	rm -rf $(DEBUG_OBJ_DIR) $(DEBUG_BIN_DIR) $(addsuffix /*debug.d, $(DEP_TREE))
+	find . -type d -name $(DEP_DIR) -empty -delete
+	find . -type d -name $(OBJ_DIR) -empty -delete
+	find . -type d -name $(BIN_DIR) -empty -delete
 
 .PHONY: clean-release
 clean-release:
 	rm -rf $(RELEASE_OBJ_DIR) $(RELEASE_BIN_DIR) $(addsuffix /*release.d, $(DEP_TREE))
+	find . -type d -name $(DEP_DIR) -empty -delete
+	find . -type d -name $(OBJ_DIR) -empty -delete
+	find . -type d -name $(BIN_DIR) -empty -delete
 
 .PHONY: clean-library
 clean-library:
