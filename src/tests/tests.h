@@ -1,8 +1,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
-#include <utility>
 #include <filesystem>
 #include <iostream>
 
@@ -12,99 +10,12 @@
 
 #include "../JpegDecoder.h"
 #include "../BlockWriter.h"
+#include "test-utils.h"
 
-
-struct Dimensions {
-    Dimensions(uint width_px, uint height_px) :
-        width_px(width_px),
-        height_px(height_px),
-        width_blk(width_px / 8),
-        height_blk(height_px / 8)
-        {}
-
-    uint width_px {};
-    uint height_px {};
-    uint width_blk {};
-    uint height_blk {};
-
-    bool is_8x8_multiple() const noexcept {
-        return (width_blk * 8 == width_px && height_blk * 8 == height_px);
-    }
-
-    std::string to_str() const noexcept {
-        return std::to_string(width_px) + "x" + std::to_string(height_px);
-    }
-};
-
-std::vector<std::filesystem::path> get_input_img_paths(const std::filesystem::path& input_base_dir, const Dimensions& dims);
-
-std::pair<uint8_t*, size_t> read_raw_jpeg_from_file(const std::filesystem::path& file_path);
-
-uint max_abs_error(const uint8_t* const array, const Dimensions& dims, const uint8_t value);
-
-bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* raw_image_data, const Dimensions& dims);
-
-void print_as_pgm(const uint8_t* const array, const Dimensions& dims);
 
 uint full_frame_decoding_tests(const std::filesystem::path input_base_dir, const Dimensions& dims);
-
 uint cropped_decoding_tests(const std::filesystem::path input_base_dir);
 
-template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-uint downscaling_decoding_test(std::filesystem::path input_base_dir) {
-
-    Dimensions src_dims {SRC_WIDTH_PX, SRC_HEIGHT_PX};
-    assert(src_dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
-
-    Dimensions dst_dims {DST_WIDTH_PX, DST_HEIGHT_PX};
-
-    const auto input_files_paths = get_input_img_paths(input_base_dir, src_dims);
-
-    uint tests_failed = 0;
-
-    for (const auto& file_path : input_files_paths) {
-
-        bool subtest_passed{true};
-
-        std::cout << "Running donwscaling decoding test on \"" << file_path.c_str() << "\""
-                  << " (" << src_dims.to_str() << " -> " << dst_dims.to_str() << ")";
-
-        const auto [buff, size] = read_raw_jpeg_from_file(file_path);
-        JpegDecoder decoder(buff, size);
-        DownscalingBlockWriter<DST_WIDTH_PX, DST_HEIGHT_PX> writer;
-
-        uint8_t decoded_img[DST_WIDTH_PX * DST_HEIGHT_PX] {};
-        if (decoder.luma_decode(decoded_img, 0, 0, SRC_WIDTH_PX / 8 , SRC_HEIGHT_PX / 8, writer)) {
-
-            std::filesystem::path output_dir = file_path.parent_path() / "downscaled";
-            std::filesystem::create_directory(output_dir);
-            std::filesystem::path output_file_path = output_dir / (std::string(file_path.stem()) + "_" + dst_dims.to_str() + ".pgm");
-
-            if (!write_as_pgm(output_file_path, decoded_img, dst_dims)) {
-
-                subtest_passed = false;
-                ++tests_failed;
-                std::cout << "  => FAILED writing output.\n";
-            }
-        }
-
-        else {
-
-            subtest_passed = false;
-            ++tests_failed;
-            std::cout << "  => FAILED decoding+downscaling JPEG.\n";
-        }
-
-        delete[] buff;
-
-        if (subtest_passed) {
-
-            std::cout << "  => passed?\n";
-        }
-    }
-
-    return tests_failed;
-}
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
 bool downscaling_test(const uint8_t fill_value) {
@@ -163,20 +74,6 @@ bool downscaling_test(const uint8_t fill_value) {
 }
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-uint recursive_downscaling_decoding_test(std::filesystem::path input_base_dir, uint tests_failed = 0) {
-
-    if constexpr (DST_WIDTH_PX && DST_HEIGHT_PX) {
-
-        tests_failed += recursive_downscaling_decoding_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX - 1, DST_HEIGHT_PX - 1>(
-            input_base_dir,
-            downscaling_decoding_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX, DST_HEIGHT_PX>(input_base_dir)
-        );
-    }
-
-    return tests_failed;
-}
-
-template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
 uint recursive_downscaling_test(const uint8_t fill_value, uint tests_failed = 0) {
 
     if constexpr (DST_WIDTH_PX && DST_HEIGHT_PX) {
@@ -184,6 +81,76 @@ uint recursive_downscaling_test(const uint8_t fill_value, uint tests_failed = 0)
         tests_failed += recursive_downscaling_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX - 1, DST_HEIGHT_PX - 1>(
             fill_value,
             !downscaling_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX, DST_HEIGHT_PX>(fill_value)
+        );
+    }
+
+    return tests_failed;
+}
+
+template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
+uint downscaling_decoding_test(std::filesystem::path input_base_dir) {
+
+    Dimensions src_dims {SRC_WIDTH_PX, SRC_HEIGHT_PX};
+    assert(src_dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
+
+    Dimensions dst_dims {DST_WIDTH_PX, DST_HEIGHT_PX};
+
+    const auto input_files_paths = get_input_img_paths(input_base_dir, src_dims);
+
+    uint tests_failed = 0;
+
+    for (const auto& file_path : input_files_paths) {
+
+        bool subtest_passed{true};
+
+        std::cout << "Running donwscaling decoding test on \"" << file_path.c_str() << "\""
+                  << " (" << src_dims.to_str() << " -> " << dst_dims.to_str() << ")";
+
+        const auto [buff, size] = read_raw_jpeg_from_file(file_path);
+        JpegDecoder decoder(buff, size);
+        DownscalingBlockWriter<DST_WIDTH_PX, DST_HEIGHT_PX> writer;
+
+        uint8_t decoded_img[DST_WIDTH_PX * DST_HEIGHT_PX] {};
+        if (decoder.luma_decode(decoded_img, 0, 0, SRC_WIDTH_PX / 8 , SRC_HEIGHT_PX / 8, writer)) {
+
+            std::filesystem::path output_dir = file_path.parent_path() / "downscaled";
+            std::filesystem::create_directory(output_dir);
+            std::filesystem::path output_file_path = output_dir / (std::string(file_path.stem()) + "_" + dst_dims.to_str() + ".pgm");
+
+            if (!write_as_pgm(output_file_path, decoded_img, dst_dims)) {
+
+                subtest_passed = false;
+                ++tests_failed;
+                std::cout << "  => FAILED writing output.\n";
+            }
+        }
+
+        else {
+
+            subtest_passed = false;
+            ++tests_failed;
+            std::cout << "  => FAILED decoding+downscaling JPEG.\n";
+        }
+
+        delete[] buff;
+
+        if (subtest_passed) {
+
+            std::cout << "  => passed?\n";
+        }
+    }
+
+    return tests_failed;
+}
+
+template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
+uint recursive_downscaling_decoding_test(std::filesystem::path input_base_dir, uint tests_failed = 0) {
+
+    if constexpr (DST_WIDTH_PX && DST_HEIGHT_PX) {
+
+        tests_failed += recursive_downscaling_decoding_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX - 1, DST_HEIGHT_PX - 1>(
+            input_base_dir,
+            downscaling_decoding_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX, DST_HEIGHT_PX>(input_base_dir)
         );
     }
 

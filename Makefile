@@ -42,7 +42,7 @@ RELEASE_OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(RELEASE_OBJ_DIR)/%.o)
 RELEASE_BIN = $(RELEASE_BIN_DIR)/$(MAIN_BASENAME).out
 
 
-LIBRARY_OBJS = $(filter-out %tests.o, $(RELEASE_OBJS))
+LIBRARY_OBJS = $(filter-out %tests.o %test-utils.o, $(RELEASE_OBJS))
 LIBRARY = $(LIB_DIR)/$(LIBRARY_BASENAME).a
 
 
