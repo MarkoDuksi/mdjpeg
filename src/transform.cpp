@@ -43,7 +43,7 @@ namespace IDCT {
 }  // anonymous namespace
 /// \endcond
 
-void transform::reverse_zig_zag(int (&block)[64]) noexcept {
+void mdjpeg_transform::reverse_zig_zag(int (&block)[64]) noexcept {
 
     int temp[64];
 
@@ -59,7 +59,7 @@ void transform::reverse_zig_zag(int (&block)[64]) noexcept {
 }
 
 /// \note AAN %IDCT implementation adapted from and contributed back to https://github.com/dannye/jed/blob/master/src/decoder.cpp.
-void transform::idct(int (&block)[64]) noexcept {
+void mdjpeg_transform::idct(int (&block)[64]) noexcept {
 
     float intermediate[64];
 
@@ -202,7 +202,7 @@ void transform::idct(int (&block)[64]) noexcept {
     }
 }
 
-void transform::range_normalize(int (&block)[64]) noexcept {
+void mdjpeg_transform::range_normalize(int (&block)[64]) noexcept {
 
     for (uint i = 0; i < 64; ++i) {
         

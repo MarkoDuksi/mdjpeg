@@ -62,9 +62,9 @@ bool JpegDecoder::luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint
             }
 
             m_dequantizer.transform(block_8x8);
-            transform::reverse_zig_zag(block_8x8);
-            transform::idct(block_8x8);
-            transform::range_normalize(block_8x8);
+            mdjpeg_transform::reverse_zig_zag(block_8x8);
+            mdjpeg_transform::idct(block_8x8);
+            mdjpeg_transform::range_normalize(block_8x8);
             writer.write(block_8x8);
         }
     }
