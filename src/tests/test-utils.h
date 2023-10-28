@@ -30,12 +30,12 @@ struct Dimensions {
     }
 };
 
-std::vector<std::filesystem::path> get_input_img_paths(const std::filesystem::path& input_base_dir, const Dimensions& dims);
+std::vector<std::filesystem::path> get_input_img_paths(const std::filesystem::path& input_dir);
 
 std::pair<uint8_t*, size_t> read_raw_jpeg_from_file(const std::filesystem::path& file_path);
 
 uint max_abs_error(const uint8_t* const array, const Dimensions& dims, const uint8_t value);
 
-bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* raw_image_data, const uint width_px, const uint height_px);
+bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* pixel_data, const uint width_px, const uint height_px);
 
-void print_as_pgm(const uint8_t* const array, const uint width_px, const uint height_px);
+void print_as_pgm(const uint8_t* pixel_data, const uint width_px, const uint height_px);

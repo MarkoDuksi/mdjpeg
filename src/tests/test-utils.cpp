@@ -8,9 +8,8 @@
 #include <fmt/core.h>
 
 
-std::vector<std::filesystem::path> get_input_img_paths(const std::filesystem::path& input_base_dir, const Dimensions& dims) {
+std::vector<std::filesystem::path> get_input_img_paths(const std::filesystem::path& input_dir) {
     
-    std::filesystem::path input_dir = input_base_dir / dims.to_str();
     std::vector<std::filesystem::path> input_files_paths;
 
     for (const auto& dir_entry : std::filesystem::directory_iterator(input_dir)) {
@@ -71,7 +70,7 @@ uint max_abs_error(const uint8_t* const array, const Dimensions& dims, const uin
     return max_absolute_error;
 }
 
-bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* raw_image_data, const uint width_px, const uint height_px) {
+bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* pixel_data, const uint width_px, const uint height_px) {
 
     std::ofstream file(file_path);
 
@@ -88,7 +87,7 @@ bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* raw_ima
 
         for (uint col = 0; col < width_px; ++col) {
 
-            file << static_cast<uint>(*raw_image_data++) << " ";
+            file << static_cast<uint>(*pixel_data++) << " ";
         }
 
         file << "\n";
@@ -100,7 +99,7 @@ bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* raw_ima
     return true;
 }
 
-void print_as_pgm(const uint8_t* const array, const uint width_px, const uint height_px) {
+void print_as_pgm(const uint8_t* pixel_data, const uint width_px, const uint height_px) {
 
     std::cout << "P2\n" << width_px << " " << height_px << " " << 255 << "\n";
 
@@ -118,7 +117,7 @@ void print_as_pgm(const uint8_t* const array, const uint width_px, const uint he
                 std::cout << " ";
             }
 
-            fmt::print("{:0>2} ", array[row * width_px + col]);
+            fmt::print("{:0>2} ", *pixel_data++);
         }
 
         std::cout << "\n";

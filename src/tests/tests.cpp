@@ -12,7 +12,7 @@ uint full_frame_dc_decoding_tests(const std::filesystem::path input_base_dir, co
 
     assert(dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
 
-    const auto input_files_paths = get_input_img_paths(input_base_dir, dims);
+    const auto input_files_paths = get_input_img_paths(input_base_dir / dims.to_str());
 
     uint tests_failed = 0;
 
@@ -63,7 +63,7 @@ uint full_frame_decoding_tests(const std::filesystem::path input_base_dir, const
 
     assert(dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
 
-    const auto input_files_paths = get_input_img_paths(input_base_dir, dims);
+    const auto input_files_paths = get_input_img_paths(input_base_dir / dims.to_str());
 
     uint tests_failed = 0;
 
@@ -120,7 +120,7 @@ uint cropped_decoding_tests(const std::filesystem::path input_base_dir) {
     constexpr uint dst_height_px = 200;
     const Dimensions dst_dims {dst_width_px, dst_height_px};
 
-    const auto input_files_paths = get_input_img_paths(input_base_dir, src_dims);
+    const auto input_files_paths = get_input_img_paths(input_base_dir / src_dims.to_str());
 
     uint tests_failed = 0;
 

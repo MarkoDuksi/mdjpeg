@@ -97,7 +97,7 @@ uint downscaling_decoding_test(std::filesystem::path input_base_dir) {
 
     Dimensions dst_dims {DST_WIDTH_PX, DST_HEIGHT_PX};
 
-    const auto input_files_paths = get_input_img_paths(input_base_dir, src_dims);
+    const auto input_files_paths = get_input_img_paths(input_base_dir / src_dims.to_str());
 
     uint tests_failed = 0;
 
