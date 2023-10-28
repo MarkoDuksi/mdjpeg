@@ -10,7 +10,7 @@
 
 std::vector<std::filesystem::path> get_input_img_paths(const std::filesystem::path& input_base_dir, const Dimensions& dims) {
     
-    std::string input_dir = input_base_dir / dims.to_str();
+    std::filesystem::path input_dir = input_base_dir / dims.to_str();
     std::vector<std::filesystem::path> input_files_paths;
 
     for (const auto& dir_entry : std::filesystem::directory_iterator(input_dir)) {
@@ -71,7 +71,7 @@ uint max_abs_error(const uint8_t* const array, const Dimensions& dims, const uin
     return max_absolute_error;
 }
 
-bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* raw_image_data, const Dimensions& dims) {
+bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* raw_image_data, const uint width_px, const uint height_px) {
 
     std::ofstream file(file_path);
 
@@ -82,11 +82,11 @@ bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* raw_ima
         return false;
     }
 
-    file << "P2\n" << dims.width_px << " " << dims.height_px << " " << 255 << "\n";
+    file << "P2\n" << width_px << " " << height_px << " " << 255 << "\n";
 
-    for (uint row = 0; row < dims.height_px; ++row) {
+    for (uint row = 0; row < height_px; ++row) {
 
-        for (uint col = 0; col < dims.width_px; ++col) {
+        for (uint col = 0; col < width_px; ++col) {
 
             file << static_cast<uint>(*raw_image_data++) << " ";
         }
@@ -100,25 +100,25 @@ bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* raw_ima
     return true;
 }
 
-void print_as_pgm(const uint8_t* const array, const Dimensions& dims) {
+void print_as_pgm(const uint8_t* const array, const uint width_px, const uint height_px) {
 
-    std::cout << "P2\n" << dims.width_px << " " << dims.height_px << " " << 255 << "\n";
+    std::cout << "P2\n" << width_px << " " << height_px << " " << 255 << "\n";
 
-    for (uint row = 0; row < dims.height_px; ++row) {
+    for (uint row = 0; row < height_px; ++row) {
 
             if (row % 8 == 0) {
 
                 std::cout << "\n";
             }
 
-        for (uint col = 0; col < dims.width_px; ++col) {
+        for (uint col = 0; col < width_px; ++col) {
 
             if (col && col % 8 == 0) {
 
                 std::cout << " ";
             }
 
-            fmt::print("{:0>2} ", array[row * dims.width_px + col]);
+            fmt::print("{:0>2} ", array[row * width_px + col]);
         }
 
         std::cout << "\n";

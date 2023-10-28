@@ -13,6 +13,7 @@
 #include "test-utils.h"
 
 
+uint full_frame_dc_decoding_tests(const std::filesystem::path input_base_dir, const Dimensions& dims);
 uint full_frame_decoding_tests(const std::filesystem::path input_base_dir, const Dimensions& dims);
 uint cropped_decoding_tests(const std::filesystem::path input_base_dir);
 
@@ -64,7 +65,7 @@ bool downscaling_test(const uint8_t fill_value, std::filesystem::path test_imgs_
                                src_dims.to_str() + "_to_" + dst_dims.to_str() +
                                "_with_fill_value_" + std::to_string(static_cast<uint>(fill_value)) + ".pgm";
         
-        if (!write_as_pgm(test_imgs_dir / filename, dst_array, dst_dims)) {
+        if (!write_as_pgm(test_imgs_dir / filename, dst_array, dst_dims.width_px, dst_dims.height_px)) {
 
             std::cout << "  => FAILED writing output.\n";
         }
@@ -118,7 +119,7 @@ uint downscaling_decoding_test(std::filesystem::path input_base_dir) {
             std::filesystem::create_directory(output_dir);
             std::filesystem::path output_file_path = output_dir / (std::string(file_path.stem()) + "_" + dst_dims.to_str() + ".pgm");
 
-            if (!write_as_pgm(output_file_path, decoded_img, dst_dims)) {
+            if (!write_as_pgm(output_file_path, decoded_img, dst_dims.width_px, dst_dims.height_px)) {
 
                 subtest_passed = false;
                 ++tests_failed;

@@ -8,6 +8,57 @@
 #include <sys/types.h>
 
 
+uint full_frame_dc_decoding_tests(const std::filesystem::path input_base_dir, const Dimensions& dims) {
+
+    assert(dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
+
+    const auto input_files_paths = get_input_img_paths(input_base_dir, dims);
+
+    uint tests_failed = 0;
+
+    for (const auto& file_path : input_files_paths) {
+
+        bool subtest_passed{true};
+
+        std::cout << "Running full-frame DC-only decoding test on \"" << file_path.c_str() << "\"";
+
+        const auto [buff, size] = read_raw_jpeg_from_file(file_path);
+        JpegDecoder decoder(buff, size);
+        uint8_t* decoded_img = new uint8_t[dims.width_blk * dims.height_blk];
+
+        if (decoder.dc_luma_decode(decoded_img, 0, 0, dims.width_blk, dims.height_blk)) {
+
+            std::filesystem::path output_dir = file_path.parent_path() / "full-frame_DC-only";
+            std::filesystem::create_directory(output_dir);
+            std::filesystem::path output_file_path = output_dir / file_path.filename().replace_extension("pgm");
+
+            if (!write_as_pgm(output_file_path, decoded_img, dims.width_blk, dims.height_blk)) {
+
+                subtest_passed = false;
+                ++tests_failed;
+                std::cout << "  => FAILED writing output.\n";
+            }
+        }
+
+        else {
+
+            subtest_passed = false;
+            ++tests_failed;
+            std::cout << "  => FAILED decoding JPEG.\n";
+        }
+
+        delete[] buff;
+        delete[] decoded_img;
+
+        if (subtest_passed) {
+
+            std::cout << "  => passed?\n";
+        }
+    }
+
+    return tests_failed;
+}
+
 uint full_frame_decoding_tests(const std::filesystem::path input_base_dir, const Dimensions& dims) {
 
     assert(dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
@@ -32,7 +83,7 @@ uint full_frame_decoding_tests(const std::filesystem::path input_base_dir, const
             std::filesystem::create_directory(output_dir);
             std::filesystem::path output_file_path = output_dir / file_path.filename().replace_extension("pgm");
 
-            if (!write_as_pgm(output_file_path, decoded_img, dims)) {
+            if (!write_as_pgm(output_file_path, decoded_img, dims.width_px, dims.height_px)) {
 
                 subtest_passed = false;
                 ++tests_failed;
@@ -77,7 +128,7 @@ uint cropped_decoding_tests(const std::filesystem::path input_base_dir) {
 
         bool subtest_passed{true};
 
-        std::cout << "Running cropped decoding test on \"" << file_path.c_str() << "\"\n";
+        std::cout << "Running cropped decoding test on \"" << file_path.c_str() << "\"";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder(buff, size);
@@ -96,7 +147,7 @@ uint cropped_decoding_tests(const std::filesystem::path input_base_dir) {
                     std::filesystem::create_directory(output_dir);
                     std::filesystem::path output_file_path = output_dir / (std::string(file_path.stem()) + "_" + quadrants[quadrant_idx] + ".pgm");
 
-                    if (!write_as_pgm(output_file_path, decoded_img, dst_dims)) {
+                    if (!write_as_pgm(output_file_path, decoded_img, dst_dims.width_px, dst_dims.height_px)) {
 
                         subtest_passed = false;
                         ++tests_failed;

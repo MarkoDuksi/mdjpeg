@@ -82,8 +82,18 @@ int main(int argc, char** argv) {
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
+    // synthetic test images (small size, tracked by git)
+    failed_batched_tests_count = full_frame_dc_decoding_tests(test_imgs_dir, {160, 120});
+    std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
+    total_failed_tests_count += failed_batched_tests_count;
+
     // synthetic test image (medium size, tracked by git)
-    failed_batched_tests_count = cropped_decoding_tests(test_imgs_dir);  // 800x800
+    failed_batched_tests_count = full_frame_dc_decoding_tests(test_imgs_dir, {800, 800});
+    std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
+    total_failed_tests_count += failed_batched_tests_count;
+
+    // synthetic test image (medium size, tracked by git)
+    failed_batched_tests_count = cropped_decoding_tests(test_imgs_dir);  // 800x800 implicit
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
