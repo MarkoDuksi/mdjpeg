@@ -18,7 +18,7 @@ uint cropped_decoding_tests(const std::filesystem::path input_base_dir);
 
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-bool downscaling_test(const uint8_t fill_value) {
+bool downscaling_test(const uint8_t fill_value, std::filesystem::path test_imgs_dir) {
 
     const Dimensions src_dims {SRC_WIDTH_PX, SRC_HEIGHT_PX};
     assert(src_dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
@@ -64,7 +64,7 @@ bool downscaling_test(const uint8_t fill_value) {
                                src_dims.to_str() + "_to_" + dst_dims.to_str() +
                                "_with_fill_value_" + std::to_string(static_cast<uint>(fill_value)) + ".pgm";
         
-        if (!write_as_pgm(filename, dst_array, dst_dims)) {
+        if (!write_as_pgm(test_imgs_dir / filename, dst_array, dst_dims)) {
 
             std::cout << "  => FAILED writing output.\n";
         }
@@ -74,13 +74,14 @@ bool downscaling_test(const uint8_t fill_value) {
 }
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-uint recursive_downscaling_test(const uint8_t fill_value, uint tests_failed = 0) {
+uint recursive_downscaling_test(const uint8_t fill_value, std::filesystem::path test_imgs_dir, uint tests_failed = 0) {
 
     if constexpr (DST_WIDTH_PX && DST_HEIGHT_PX) {
 
         tests_failed += recursive_downscaling_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX - 1, DST_HEIGHT_PX - 1>(
             fill_value,
-            !downscaling_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX, DST_HEIGHT_PX>(fill_value)
+            test_imgs_dir,
+            !downscaling_test<SRC_WIDTH_PX, SRC_HEIGHT_PX, DST_WIDTH_PX, DST_HEIGHT_PX>(fill_value, test_imgs_dir)
         );
     }
 

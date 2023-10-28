@@ -23,45 +23,45 @@ int main(int argc, char** argv) {
 
     /////////////////////////
     // start non-visual tests
-    // - non-visual tests cover the DownscalingBlockWriter imlpementation
+    // - non-visual tests cover the DownscalingBlockWriter implementation
     // - variable parameters include original and downscaled image resolution
-    //   as well as fill value for all pixels in mocked original image
+    //   as well as a single fill value for all pixels in mocked original image
     // - the "failed" or "passed" status is definite
     // - in case of failure, downscaled output is written as PGM image for manual inspection
     
-    failed_batched_tests_count = recursive_downscaling_test<120, 120, 120, 120>(0);
+    failed_batched_tests_count = recursive_downscaling_test<120, 120, 120, 120>(0, test_imgs_dir);
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
-    failed_batched_tests_count = recursive_downscaling_test<120, 120, 120, 120>(1);
+    failed_batched_tests_count = recursive_downscaling_test<120, 120, 120, 120>(1, test_imgs_dir);
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
-    failed_batched_tests_count = recursive_downscaling_test<120, 120, 120, 120>(127);
+    failed_batched_tests_count = recursive_downscaling_test<120, 120, 120, 120>(127, test_imgs_dir);
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
-    failed_batched_tests_count = recursive_downscaling_test<120, 120, 120, 120>(254);
+    failed_batched_tests_count = recursive_downscaling_test<120, 120, 120, 120>(254, test_imgs_dir);
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
-    failed_batched_tests_count = recursive_downscaling_test<120, 120, 120, 120>(255);
+    failed_batched_tests_count = recursive_downscaling_test<120, 120, 120, 120>(255, test_imgs_dir);
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
-    failed_batched_tests_count = recursive_downscaling_test<800, 800, 800, 800>(0);
+    failed_batched_tests_count = recursive_downscaling_test<800, 800, 800, 800>(0, test_imgs_dir);
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
-    failed_batched_tests_count = recursive_downscaling_test<800, 800, 800, 800>(1);
+    failed_batched_tests_count = recursive_downscaling_test<800, 800, 800, 800>(1, test_imgs_dir);
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
-    failed_batched_tests_count = recursive_downscaling_test<800, 800, 800, 800>(127);
+    failed_batched_tests_count = recursive_downscaling_test<800, 800, 800, 800>(127, test_imgs_dir);
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
-    failed_batched_tests_count = recursive_downscaling_test<800, 800, 800, 800>(255);
+    failed_batched_tests_count = recursive_downscaling_test<800, 800, 800, 800>(255, test_imgs_dir);
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
