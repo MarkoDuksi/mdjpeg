@@ -235,7 +235,7 @@ class DownscalingBlockWriter : public BlockWriter {
 
                 // determine fraction (proportion) of src col (partially) overlaying western dst col
                 const float north_fraction = floor_south == floor_north || floor_south == south ?
-                                             1.0f : (static_cast<float>(floor_south) - north) / m_vert_scaling_factor;
+                                             1.0f : (floor_south - north) / m_vert_scaling_factor;
 
                 // if src and dst rows are aligned along their north borders or if starting new block
                 if (floor_north == north || row == 0) {
@@ -268,11 +268,11 @@ class DownscalingBlockWriter : public BlockWriter {
                     const uint floor_east = static_cast<uint>(east);
 
                     // total src pixel value to be weight-distributed across up to 4 dst pixels that it potentially overlays
-                    const float val = static_cast<float>(src_block[src_idx++]);
+                    const float val = src_block[src_idx++];
 
                     // determine fraction (proportion) of src col (partially) overlaying western dst col
                     const float west_fraction = floor_east == floor_west ?
-                                                1.0f : (static_cast<float>(floor_east) - west) / m_horiz_scaling_factor;
+                                                1.0f : (floor_east - west) / m_horiz_scaling_factor;
 
                     // distribute value horizontally
                     const float west_val = west_fraction * val;
