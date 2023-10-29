@@ -36,7 +36,7 @@ class JpegDecoder {
         /// \brief Constructor.
         /// \param buff  Start of memory segment containing JFIF data.
         /// \param size  Length of the memory segment in bytes.
-        JpegDecoder(const uint8_t* const buff, const size_t size) noexcept;
+        JpegDecoder(const uint8_t* buff, const size_t size) noexcept;
         
         /// \brief Decompresses the luma channel, writing to raw pixel buffer via BasicBlockWriter by default.
         /// \param dst     Raw pixel buffer for decompressed output, min size is `64 * (x2_blk - x1_blk) * (y2_blk - y1_blk)`.

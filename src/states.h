@@ -113,7 +113,7 @@ class State {
             m_decoder(decoder)
             {}
 
-        virtual ~State() {}
+        virtual ~State() = default;
 
         /// \brief Checks if the current ConcreteState is a final state.
         bool is_final_state() const noexcept {

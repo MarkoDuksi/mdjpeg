@@ -16,7 +16,7 @@ class JpegReader {
         ///
         /// \param buff  Start of memory segment containing JFIF data.
         /// \param size  Length of the memory segment in bytes.
-        JpegReader(const uint8_t* const buff, const size_t size) noexcept;
+        JpegReader(const uint8_t* buff, const size_t size) noexcept;
         
         /// \brief Stores the cursor position as the start of ECS.
         void mark_start_of_ecs() noexcept;

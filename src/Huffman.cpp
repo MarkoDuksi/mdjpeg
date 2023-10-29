@@ -50,7 +50,7 @@ size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept 
             std::cout << "(length: code -> symbol)\n";
         #endif
 
-        // generate Huffman codes for DC coeff length symbols
+        // generate Huffman codes for DC DCT coefficient length symbols
         uint curr_huff_code = 0;
         uint idx = 0;
 
@@ -88,7 +88,7 @@ size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept 
             std::cout << "(length: code -> symbol)\n";
         #endif
 
-        // generate Huffman codes for AC coeff length symbols
+        // generate Huffman codes for AC DCT coefficient length symbols
         uint curr_huff_code = 0;
         uint idx = 0;
 
@@ -219,7 +219,7 @@ int16_t Huffman::get_dct_coeff(JpegReader& reader, const uint length) const noex
     return dct_coeff;
 }
 
-bool Huffman::decode_luma_block(JpegReader& reader, int (&dst_block)[64], const uint luma_block_idx, uint horiz_chroma_subs_factor) noexcept {
+bool Huffman::decode_luma_block(JpegReader& reader, int (&dst_block)[64], const uint luma_block_idx, const uint horiz_chroma_subs_factor) noexcept {
 
     // if already beyond the requested `luma_block_idx`
     if (m_luma_block_idx > luma_block_idx) {

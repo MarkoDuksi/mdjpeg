@@ -9,7 +9,7 @@
 #endif
 
 
-JpegDecoder::JpegDecoder(const uint8_t* const buff, const size_t size) noexcept :
+JpegDecoder::JpegDecoder(const uint8_t* buff, const size_t size) noexcept :
     m_state(ConcreteState<StateID::ENTRY>(this)),
     m_istate(&m_state),
     m_reader(buff, size)
@@ -45,8 +45,8 @@ bool JpegDecoder::luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint
     }
 
     int block_8x8[64] {0};
-    uint src_width_px = 8 * (x2_blk - x1_blk);
-    uint src_height_px = 8 * (y2_blk - y1_blk);
+    const uint src_width_px = 8 * (x2_blk - x1_blk);
+    const uint src_height_px = 8 * (y2_blk - y1_blk);
 
     writer.init(dst, src_width_px, src_height_px);
 
@@ -94,7 +94,7 @@ bool JpegDecoder::dc_luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, u
         return false;
     }
 
-    uint dst_width_px = x2_blk - x1_blk;
+    const uint dst_width_px = x2_blk - x1_blk;
     int block_8x8[64] {0};
 
     for (uint row_blk = y1_blk; row_blk < y2_blk; ++row_blk) {

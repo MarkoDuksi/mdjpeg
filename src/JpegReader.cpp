@@ -3,10 +3,10 @@
 #include "ReadError.h"
 
 
-JpegReader::JpegReader(const uint8_t* const buff, const size_t size) noexcept :
+JpegReader::JpegReader(const uint8_t* buff, const size_t size) noexcept :
     m_buff_start(buff),
     m_buff_end(m_buff_start + size),
-    m_buff_current_byte(const_cast<const uint8_t*>(buff))
+    m_buff_current_byte(m_buff_start)
     {}
 
 void JpegReader::mark_start_of_ecs() noexcept {

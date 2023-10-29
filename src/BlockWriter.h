@@ -377,7 +377,7 @@ class DownscalingBlockWriter : public BlockWriter {
         float m_edge_buffer {};
 
         // snap floating point input to integer grid if within `m_epsilon_horiz` proximity
-        float snap_to_horiz_grid(float input) {
+        float snap_to_horiz_grid(float input) const {
 
             const uint floored = static_cast<uint>(input + m_epsilon_horiz);
 
@@ -385,7 +385,7 @@ class DownscalingBlockWriter : public BlockWriter {
         }
 
         // snap floating point input to integer grid if within `m_epsilon_vert` proximity
-        float snap_to_vert_grid(float input) {
+        float snap_to_vert_grid(float input) const {
 
             const uint floored = static_cast<uint>(input + m_epsilon_vert);
 

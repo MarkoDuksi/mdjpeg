@@ -22,7 +22,7 @@ class Huffman {
         bool is_set() const noexcept;
 
         /// \brief Decodes a luma block by its index.
-        bool decode_luma_block(JpegReader& reader, int (&dst_block)[64], const uint luma_block_idx, uint horiz_chroma_subs_factor) noexcept;
+        bool decode_luma_block(JpegReader& reader, int (&dst_block)[64], const uint luma_block_idx, const uint horiz_chroma_subs_factor) noexcept;
 
     private:
 
