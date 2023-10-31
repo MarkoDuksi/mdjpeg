@@ -94,10 +94,10 @@ void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) noexcept {
         std::cout << "Entered state APP0\n";
     #endif
 
-    const auto segment_size = reader.read_segment_size();
+    const uint16_t segment_size = reader.read_segment_size();
 
     // seek to the end of segment
-    if (!segment_size || !reader.seek(*segment_size)) {
+    if (!reader.seek(segment_size)) {
 
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
@@ -157,17 +157,17 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept {
         std::cout << "Entered state DQT\n";
     #endif
 
-    auto segment_size = reader.read_segment_size();
+    uint16_t segment_size = reader.read_segment_size();
 
-    if (!segment_size || *segment_size > reader.size_remaining()) {
+    if (segment_size > reader.size_remaining()) {
 
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
-    while (*segment_size) {
+    while (segment_size) {
 
-        const uint qtable_size = m_decoder->m_dequantizer.set_qtable(reader, *segment_size);
+        const uint qtable_size = m_decoder->m_dequantizer.set_qtable(reader, segment_size);
 
         // any invalid `qtable_size` gets returned as 0
         if (!qtable_size) {
@@ -176,9 +176,9 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept {
             return;
         }
 
-        // any valid `qtable_size` is *always* lte `*segment_size`
+        // any valid `qtable_size` is *always* lte `segment_size`
         // no integer overflow possible
-        *segment_size -= qtable_size;
+        segment_size -= qtable_size;
     }
 
     const auto next_marker = reader.read_marker();
@@ -244,17 +244,17 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept {
         std::cout << "Entered state DHT\n";
     #endif
 
-    auto segment_size = reader.read_segment_size();
+    uint16_t segment_size = reader.read_segment_size();
 
-    if (!segment_size || *segment_size > reader.size_remaining()) {
+    if (segment_size > reader.size_remaining()) {
 
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
-    while (*segment_size) {
+    while (segment_size) {
 
-        const uint htable_size = m_decoder->m_huffman.set_htable(reader, *segment_size);
+        const uint htable_size = m_decoder->m_huffman.set_htable(reader, segment_size);
 
         // any invalid `htable_size` gets returned as 0
         if (!htable_size) {
@@ -263,9 +263,9 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept {
             return;
         }
 
-        // any valid `htable_size` is *always* lte `*segment_size`
+        // any valid `htable_size` is *always* lte `segment_size`
         // no integer overflow possible
-        *segment_size -= htable_size;
+        segment_size -= htable_size;
     }
 
     const auto next_marker = reader.read_marker();
@@ -331,16 +331,16 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
         std::cout << "Entered state SOF0\n";
     #endif
 
-    const auto segment_size = reader.read_segment_size();
+    const uint16_t segment_size = reader.read_segment_size();
 
-    if (!segment_size || *segment_size > reader.size_remaining()) {
+    if (segment_size > reader.size_remaining()) {
 
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
     // only the 3-component Y'CrCb color space is supported
-    if (*segment_size != 15) {
+    if (segment_size != 15) {
 
         SET_NEXT_STATE(StateID::ERROR_UPAR);
         return;
@@ -466,16 +466,16 @@ void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) noexcept {
         return;
     }
 
-    const auto segment_size = reader.read_segment_size();
+    const uint16_t segment_size = reader.read_segment_size();
 
-    if (!segment_size || *segment_size > reader.size_remaining()) {
+    if (segment_size > reader.size_remaining()) {
 
         SET_NEXT_STATE(StateID::ERROR_PEOB);
         return;
     }
 
     // only the 3-component Y'CrCb color space is supported
-    if (*segment_size != 10) {
+    if (segment_size != 10) {
 
         SET_NEXT_STATE(StateID::ERROR_UPAR);
         return;

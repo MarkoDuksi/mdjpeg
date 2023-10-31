@@ -46,7 +46,7 @@ class JpegReader {
         std::optional<uint16_t> read_marker() noexcept;
 
         /// \brief Get segment size from buffer at cursor, advance cursor.
-        std::optional<uint16_t> read_segment_size() noexcept;
+        uint16_t read_segment_size() noexcept;
 
         /// \brief Get next bit from buffer at cursor, applying rules for reading ECS, advance cursor.
         int read_bit() noexcept;

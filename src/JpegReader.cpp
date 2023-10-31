@@ -47,44 +47,39 @@ bool JpegReader::seek(const size_t rel_pos) noexcept {
 
 std::optional<uint8_t> JpegReader::peek(const size_t rel_pos) const noexcept {
 
+    std::optional<uint8_t> result {};
+
     if (rel_pos < size_remaining()) {
 
-        return m_buff_current_byte[rel_pos];
+        result.emplace(m_buff_current_byte[rel_pos]);
     }
 
-    else {
-
-        return {};
-    }
+    return result;
 }
 
 std::optional<uint8_t> JpegReader::read_uint8() noexcept {
 
+    std::optional<uint8_t> result {};
+
     if (size_remaining() > 0) {
 
-        return *(m_buff_current_byte++);
+        result.emplace(*(m_buff_current_byte++));
     }
 
-    else {
-
-        return {};
-    }
+    return result;
 }
 
 std::optional<uint16_t> JpegReader::read_uint16() noexcept {
 
+    std::optional<uint16_t> result {};
+
     if (size_remaining() >= 2) {
 
-        const uint16_t result = m_buff_current_byte[0] << 8 | m_buff_current_byte[1];
+        result.emplace(m_buff_current_byte[0] << 8 | m_buff_current_byte[1]);
         m_buff_current_byte += 2;
-
-        return result;
     }
 
-    else {
-
-        return {};
-    }
+    return result;
 }
 
 std::optional<uint16_t> JpegReader::read_marker() noexcept {
@@ -95,31 +90,28 @@ std::optional<uint16_t> JpegReader::read_marker() noexcept {
 
         if (const auto next_byte = read_uint8()) {
 
-            *result = *result & *next_byte;
+            result.emplace(*result & *next_byte);
         }
 
         else {
 
-            result = {};
+            result = std::nullopt;
         }
     }
 
     return result;
 }
 
-std::optional<uint16_t> JpegReader::read_segment_size() noexcept {
+uint16_t JpegReader::read_segment_size() noexcept {
 
-    const auto result = read_uint16();
+    auto result = read_uint16();
 
     if (result && *result >= 2) {
 
         return *result - 2;
     }
 
-    else {
-
-        return {};
-    }
+    return 0;
 }
 
 int JpegReader::read_bit() noexcept {
