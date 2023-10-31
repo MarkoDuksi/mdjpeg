@@ -151,7 +151,7 @@ uint cropped_decoding_tests(const std::filesystem::path input_base_dir) {
 
                         subtest_passed = false;
                         ++tests_failed;
-                        std::cout << "  => FAILED writing output for quadrant \"" << quadrants[quadrant_idx] << "\".\n";
+                        std::cout << "\n  => FAILED writing output for quadrant \"" << quadrants[quadrant_idx] << "\".";
                     }
                 }
 
@@ -159,7 +159,7 @@ uint cropped_decoding_tests(const std::filesystem::path input_base_dir) {
 
                     subtest_passed = false;
                     ++tests_failed;
-                    std::cout << "  => FAILED decoding JPEG for quadrant \"" << quadrants[quadrant_idx] << "\".\n";
+                    std::cout << "\n  => FAILED decoding JPEG for quadrant \"" << quadrants[quadrant_idx] << "\".";
                 }
 
                 ++quadrant_idx;
@@ -171,6 +171,11 @@ uint cropped_decoding_tests(const std::filesystem::path input_base_dir) {
         if (subtest_passed) {
 
             std::cout << "  => passed?\n";
+        }
+
+        else {
+
+            std::cout << "\n";
         }
     }
 

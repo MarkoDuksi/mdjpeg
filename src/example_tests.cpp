@@ -102,11 +102,11 @@ int main(int argc, char** argv) {
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
-    // real ESP32-CAM images (large size, not tracked by git)
+    // // real ESP32-CAM images (large size, not tracked by git)
     // failed_batched_tests_count = full_frame_decoding_tests(test_imgs_dir, {1280, 1024});
     // std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
 
-    // real ESP32-CAM images (large size, not tracked by git)
+    // // real ESP32-CAM images (large size, not tracked by git)
     // failed_batched_tests_count = full_frame_decoding_tests(test_imgs_dir, {1600, 1200});
     // std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
 
