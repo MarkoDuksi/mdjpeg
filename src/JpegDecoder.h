@@ -32,11 +32,17 @@ class JpegDecoder {
 
     public:
 
-        
-        /// \brief Constructor.
+        /// \brief Sets its view on a compressed image data.
+        ///
         /// \param buff  Start of memory segment containing JFIF data.
         /// \param size  Length of the memory segment in bytes.
-        JpegDecoder(const uint8_t* buff, const size_t size) noexcept;
+        ///
+        /// \attention:
+        /// No data copying or ownership transfer takes place. The caller is
+        /// responsible for
+        /// - image data integrity for as long as it needs JpegDecoder to operate on it
+        /// - making sure that the memory is not leaked afterwards if allocated on the heap.
+        void assign(const uint8_t* buff, const size_t size) noexcept;
         
         /// \brief Decompresses the luma channel, writing to raw pixel buffer via BasicBlockWriter by default.
         /// \param dst     Raw pixel buffer for decompressed output, min size is `64 * (x2_blk - x1_blk) * (y2_blk - y1_blk)`.
@@ -75,12 +81,12 @@ class JpegDecoder {
     private:
 
         // initial state for the state machine that parses header information from JFIF header
-        ConcreteState<StateID::ENTRY> m_state;
+        ConcreteState<StateID::ENTRY> m_state {ConcreteState<StateID::ENTRY>(this)};
 
-        // polymorphic handle, also used as properly aligned pointer for changing `m_state` via placement new
-        State* m_istate;
+        // polymorphic handle, used as properly aligned pointer for transitioning through states via placement new
+        State* m_istate {&m_state};
 
-        JpegReader m_reader;
+        JpegReader m_reader {};
         Huffman m_huffman {};
         Dequantizer m_dequantizer {};
 

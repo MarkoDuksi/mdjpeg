@@ -9,11 +9,11 @@
 #endif
 
 
-JpegDecoder::JpegDecoder(const uint8_t* buff, const size_t size) noexcept :
-    m_state(ConcreteState<StateID::ENTRY>(this)),
-    m_istate(&m_state),
-    m_reader(buff, size)
-    {}
+void JpegDecoder::assign(const uint8_t* buff, const size_t size) noexcept {
+
+    m_reader.set(buff, size);
+    set_state<StateID::ENTRY>();
+}
 
 bool JpegDecoder::luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) {
 

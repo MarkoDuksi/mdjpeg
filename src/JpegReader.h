@@ -12,16 +12,16 @@ class JpegReader {
 
     public:
 
-        /// \brief Constructor.
+        /// \brief Stores the start, end and current memory locations for the JFIF data segment.
         ///
         /// \param buff  Start of memory segment containing JFIF data.
         /// \param size  Length of the memory segment in bytes.
-        JpegReader(const uint8_t* buff, const size_t size) noexcept;
-        
-        /// \brief Stores the cursor position as the start of ECS.
+        void set(const uint8_t* buff, const size_t size) noexcept;
+
+        /// \brief Stores the current cursor position as the start of ECS.
         void mark_start_of_ecs() noexcept;
 
-        /// \brief Sets the cursor position to the start of ECS.
+        /// \brief Restores the cursor position to the start of ECS.
         void restart_ecs() noexcept;
 
         /// \brief Get the length of buffer available after the cursor.
@@ -53,9 +53,9 @@ class JpegReader {
         
     private:
 
-        const uint8_t* const m_buff_start {nullptr};
-        const uint8_t* const m_buff_end {nullptr};
+        const uint8_t* m_buff_start {nullptr};
+        const uint8_t* m_buff_end {nullptr};
         const uint8_t* m_buff_start_of_ECS {nullptr};
         const uint8_t* m_buff_current_byte {nullptr};
-        uint m_current_bit_pos {7};  // zero-index of the current bit (highest by default) of the byte at cursor
+        uint m_current_bit_pos {};
 };

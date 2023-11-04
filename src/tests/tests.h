@@ -109,7 +109,8 @@ uint downscaling_decoding_test(std::filesystem::path input_base_dir) {
                   << " (" << src_dims.to_str() << " -> " << dst_dims.to_str() << ")";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
-        JpegDecoder decoder(buff, size);
+        JpegDecoder decoder;
+        decoder.assign(buff, size);
         DownscalingBlockWriter<DST_WIDTH_PX, DST_HEIGHT_PX> writer;
 
         uint8_t decoded_img[DST_WIDTH_PX * DST_HEIGHT_PX] {};

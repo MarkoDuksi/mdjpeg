@@ -23,7 +23,8 @@ uint full_frame_dc_decoding_tests(const std::filesystem::path input_base_dir, co
         std::cout << "Running full-frame DC-only decoding test on \"" << file_path.c_str() << "\"";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
-        JpegDecoder decoder(buff, size);
+        JpegDecoder decoder;
+        decoder.assign(buff, size);
         uint8_t* decoded_img = new uint8_t[dims.width_blk * dims.height_blk];
 
         if (decoder.dc_luma_decode(decoded_img, 0, 0, dims.width_blk, dims.height_blk)) {
@@ -74,7 +75,8 @@ uint full_frame_decoding_tests(const std::filesystem::path input_base_dir, const
         std::cout << "Running full-frame decoding test on \"" << file_path.c_str() << "\"";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
-        JpegDecoder decoder(buff, size);
+        JpegDecoder decoder;
+        decoder.assign(buff, size);
         uint8_t* decoded_img = new uint8_t[dims.width_px * dims.height_px];
 
         if (decoder.luma_decode(decoded_img, 0, 0, dims.width_blk, dims.height_blk)) {
@@ -131,7 +133,7 @@ uint cropped_decoding_tests(const std::filesystem::path input_base_dir) {
         std::cout << "Running cropped decoding test on \"" << file_path.c_str() << "\"";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
-        JpegDecoder decoder(buff, size);
+        JpegDecoder decoder;    decoder.assign(buff, size);
         uint8_t decoded_img[dst_width_px * dst_height_px] {};
 
         uint quadrant_idx = 0;
