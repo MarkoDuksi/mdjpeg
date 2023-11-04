@@ -42,7 +42,7 @@ class BlockWriter {
 
 
 /// \brief Implements BlockWriter for block-wise writing of input to output in 1:1 scale.
-class BasicBlockWriter : public BlockWriter {
+class BasicBlockWriter final : public BlockWriter {
 
     public:
 
@@ -121,7 +121,7 @@ template <uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
 // purposes the two template parameters are interdependent and no additional
 // template instantiation occurs in normal use just because of the extra
 // parameter.
-class DownscalingBlockWriter : public BlockWriter {
+class DownscalingBlockWriter final : public BlockWriter {
 
     public:
 

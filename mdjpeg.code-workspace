@@ -26,7 +26,9 @@
 			"string_view": "cpp",
 			"deque": "cpp",
 			"string": "cpp",
-			"unordered_map": "cpp"
+			"unordered_map": "cpp",
+			"random": "cpp",
+			"algorithm": "cpp"
 		},
 		"C_Cpp.default.includePath": [
 			"include"

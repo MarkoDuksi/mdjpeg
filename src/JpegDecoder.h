@@ -108,4 +108,11 @@ class JpegDecoder {
 
         // step function for the state machine that parses JFIF header
         StateID parse_header();
+
+        // set a specific state for the state machine that parses JFIF header
+        template<StateID state_id>
+        void set_state() noexcept {
+
+            m_istate = new (m_istate) ConcreteState<state_id>(this);
+        }
 };

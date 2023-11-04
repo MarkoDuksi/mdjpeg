@@ -18,10 +18,6 @@
     #define ERROR_CORR ERROR_GEN
 #endif
 
-// shorthand that takes its full effect only after returning from the caller
-// note: the caller should return IMMEDIATELY after its use
-#define SET_NEXT_STATE(state_id) m_decoder->m_istate = new (m_decoder->m_istate) ConcreteState<state_id>(m_decoder)
-
 
 template<>
 void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) noexcept {
@@ -34,7 +30,7 @@ void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) noexcept {
 
     if (!next_marker) {
 
-        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        m_decoder->set_state<StateID::ERROR_PEOB>();
         return;
     }
 
@@ -46,7 +42,7 @@ void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: SOI (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::SOI);
+            m_decoder->set_state<StateID::SOI>();
             break;
 
         default:
@@ -55,7 +51,7 @@ void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
             #endif
 
-            SET_NEXT_STATE(StateID::ERROR_UUM);
+            m_decoder->set_state<StateID::ERROR_UUM>();
     }
 }
 
@@ -74,7 +70,7 @@ void ConcreteState<StateID::SOI>::parse_header(JpegReader& reader) noexcept {
             std::cout << "\nFound marker: APPN (0x" << std::hex << *next_marker << ")\n";
         #endif
 
-        SET_NEXT_STATE(StateID::APP0);
+        m_decoder->set_state<StateID::APP0>();
     }
 
     else {
@@ -83,7 +79,7 @@ void ConcreteState<StateID::SOI>::parse_header(JpegReader& reader) noexcept {
             std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
         #endif
 
-        SET_NEXT_STATE(StateID::ERROR_UUM);
+        m_decoder->set_state<StateID::ERROR_UUM>();
     }
 }
 
@@ -99,7 +95,7 @@ void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) noexcept {
     // seek to the end of segment
     if (!reader.seek(segment_size)) {
 
-        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        m_decoder->set_state<StateID::ERROR_PEOB>();
         return;
     }
 
@@ -107,7 +103,7 @@ void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) noexcept {
 
     if (!next_marker) {
 
-        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        m_decoder->set_state<StateID::ERROR_PEOB>();
         return;
     }
 
@@ -119,7 +115,7 @@ void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: DQT (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::DQT);
+            m_decoder->set_state<StateID::DQT>();
             break;
 
         case StateID::DHT:
@@ -128,7 +124,7 @@ void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: DHT (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::DHT);
+            m_decoder->set_state<StateID::DHT>();
             break;
 
         case StateID::SOF0:
@@ -137,7 +133,7 @@ void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: SOF0 (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::SOF0);
+            m_decoder->set_state<StateID::SOF0>();
             break;
 
         default:
@@ -146,7 +142,7 @@ void ConcreteState<StateID::APP0>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
             #endif
 
-            SET_NEXT_STATE(StateID::ERROR_UUM);
+            m_decoder->set_state<StateID::ERROR_UUM>();
     }
 }
 
@@ -161,7 +157,7 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept {
 
     if (segment_size > reader.size_remaining()) {
 
-        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        m_decoder->set_state<StateID::ERROR_PEOB>();
         return;
     }
 
@@ -172,7 +168,7 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept {
         // any invalid `qtable_size` gets returned as 0
         if (!qtable_size) {
 
-            SET_NEXT_STATE(StateID::ERROR_CORR);
+            m_decoder->set_state<StateID::ERROR_CORR>();
             return;
         }
 
@@ -185,7 +181,7 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept {
 
     if (!next_marker) {
 
-        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        m_decoder->set_state<StateID::ERROR_PEOB>();
         return;
     }
 
@@ -197,7 +193,7 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: DQT (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::DQT);
+            m_decoder->set_state<StateID::DQT>();
             break;
 
         case StateID::DHT:
@@ -206,7 +202,7 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: DHT (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::DHT);
+            m_decoder->set_state<StateID::DHT>();
             break;
 
         case StateID::SOF0:
@@ -215,7 +211,7 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: SOF0 (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::SOF0);
+            m_decoder->set_state<StateID::SOF0>();
             break;
 
         case StateID::SOS:
@@ -224,7 +220,7 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: SOS (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::SOS);
+            m_decoder->set_state<StateID::SOS>();
             break;
 
         default:
@@ -233,7 +229,7 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
             #endif
 
-            SET_NEXT_STATE(StateID::ERROR_UUM);
+            m_decoder->set_state<StateID::ERROR_UUM>();
     }
 }
 
@@ -248,7 +244,7 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept {
 
     if (segment_size > reader.size_remaining()) {
 
-        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        m_decoder->set_state<StateID::ERROR_PEOB>();
         return;
     }
 
@@ -259,7 +255,7 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept {
         // any invalid `htable_size` gets returned as 0
         if (!htable_size) {
 
-            SET_NEXT_STATE(StateID::ERROR_CORR);
+            m_decoder->set_state<StateID::ERROR_CORR>();
             return;
         }
 
@@ -272,7 +268,7 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept {
 
     if (!next_marker) {
 
-        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        m_decoder->set_state<StateID::ERROR_PEOB>();
         return;
     }
 
@@ -284,7 +280,7 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: DHT (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::DHT);
+            m_decoder->set_state<StateID::DHT>();
             break;
 
         case StateID::DQT:
@@ -293,7 +289,7 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: DQT (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::DQT);
+            m_decoder->set_state<StateID::DQT>();
             break;
 
         case StateID::SOF0:
@@ -302,7 +298,7 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: SOF0 (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::SOF0);
+            m_decoder->set_state<StateID::SOF0>();
             break;
 
         case StateID::SOS:
@@ -311,7 +307,7 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: SOS (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::SOS);
+            m_decoder->set_state<StateID::SOS>();
             break;
 
         default:
@@ -320,7 +316,7 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
             #endif
 
-            SET_NEXT_STATE(StateID::ERROR_UUM);
+            m_decoder->set_state<StateID::ERROR_UUM>();
     }
 }
 
@@ -335,14 +331,14 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
 
     if (segment_size > reader.size_remaining()) {
 
-        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        m_decoder->set_state<StateID::ERROR_PEOB>();
         return;
     }
 
     // only the 3-component Y'CrCb color space is supported
     if (segment_size != 15) {
 
-        SET_NEXT_STATE(StateID::ERROR_UPAR);
+        m_decoder->set_state<StateID::ERROR_UPAR>();
         return;
     }
 
@@ -355,7 +351,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
                        || !width_px
                        || components_count != 3) {
 
-        SET_NEXT_STATE(StateID::ERROR_UPAR);
+        m_decoder->set_state<StateID::ERROR_UPAR>();
         return;
     }
 
@@ -370,7 +366,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
         // supported component IDs: 1, 2 and 3 (Y', Cr and Cb channel, respectively)
         if (component_id == 0 || component_id > 3 ) {
 
-            SET_NEXT_STATE(StateID::ERROR_UPAR);
+            m_decoder->set_state<StateID::ERROR_UPAR>();
             return;
         }
 
@@ -379,14 +375,14 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
             // component 1 must use qtable ID 0
             if (qtable_id != 0) {
 
-                SET_NEXT_STATE(StateID::ERROR_UPAR);
+                m_decoder->set_state<StateID::ERROR_UPAR>();
                 return;
             }
 
             // component 1 must use sampling factors 0x11 or 0x21
             if (sampling_factor != 0x11 && sampling_factor != 0x21 ) {
 
-                SET_NEXT_STATE(StateID::ERROR_UPAR);
+                m_decoder->set_state<StateID::ERROR_UPAR>();
                 return;
             }
 
@@ -399,7 +395,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
         // components 2 and 3 must use sampling factors 0x11
         if (component_id > 1 && sampling_factor != 0x11) {
 
-            SET_NEXT_STATE(StateID::ERROR_UPAR);
+            m_decoder->set_state<StateID::ERROR_UPAR>();
             return;
         }
     }
@@ -408,7 +404,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
 
     if (!next_marker) {
 
-        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        m_decoder->set_state<StateID::ERROR_PEOB>();
         return;
     }
 
@@ -420,7 +416,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: DQT (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::DQT);
+            m_decoder->set_state<StateID::DQT>();
             break;
 
         case StateID::DHT:
@@ -429,7 +425,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: DHT (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::DHT);
+            m_decoder->set_state<StateID::DHT>();
             break;
 
         case StateID::SOS:
@@ -438,7 +434,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nFound marker: SOS (0x" << std::hex << *next_marker << ")\n";
             #endif
 
-            SET_NEXT_STATE(StateID::SOS);
+            m_decoder->set_state<StateID::SOS>();
             break;
 
         default:
@@ -447,7 +443,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
                 std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
             #endif
 
-            SET_NEXT_STATE(StateID::ERROR_UUM);
+            m_decoder->set_state<StateID::ERROR_UUM>();
     }
 }
 
@@ -462,7 +458,7 @@ void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) noexcept {
     if (!m_decoder->m_dequantizer.is_set() || !m_decoder->m_huffman.is_set()
                                            || !m_decoder->m_frame_info.is_set()) {
 
-        SET_NEXT_STATE(StateID::ERROR_UUM);
+        m_decoder->set_state<StateID::ERROR_UUM>();
         return;
     }
 
@@ -470,14 +466,14 @@ void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) noexcept {
 
     if (segment_size > reader.size_remaining()) {
 
-        SET_NEXT_STATE(StateID::ERROR_PEOB);
+        m_decoder->set_state<StateID::ERROR_PEOB>();
         return;
     }
 
     // only the 3-component Y'CrCb color space is supported
     if (segment_size != 10) {
 
-        SET_NEXT_STATE(StateID::ERROR_UPAR);
+        m_decoder->set_state<StateID::ERROR_UPAR>();
         return;
     }
 
@@ -485,7 +481,7 @@ void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) noexcept {
 
     if (*components_count != 3) {
 
-        SET_NEXT_STATE(StateID::ERROR_UPAR);
+        m_decoder->set_state<StateID::ERROR_UPAR>();
         return;
     }
 
@@ -499,7 +495,7 @@ void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) noexcept {
                          && dc_ac_table_ids
                          && *dc_ac_table_ids != 0 ) {
 
-            SET_NEXT_STATE(StateID::ERROR_UPAR);
+            m_decoder->set_state<StateID::ERROR_UPAR>();
             return;
         }
     }
@@ -512,11 +508,11 @@ void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) noexcept {
     if (start_of_selection != 0 || end_of_selection != 63
                                 || successive_approximation != 0) {
 
-            SET_NEXT_STATE(StateID::ERROR_UPAR);
+            m_decoder->set_state<StateID::ERROR_UPAR>();
             return;
     }
 
     reader.mark_start_of_ecs();
 
-    SET_NEXT_STATE(StateID::HEADER_OK);
+    m_decoder->set_state<StateID::HEADER_OK>();
 }
