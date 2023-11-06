@@ -12,6 +12,8 @@
 void JpegDecoder::assign(const uint8_t* buff, const size_t size) noexcept {
 
     m_reader.set(buff, size);
+    m_dequantizer.clear();
+    m_huffman.clear();
     set_state<StateID::ENTRY>();
 }
 

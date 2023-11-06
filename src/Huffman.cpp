@@ -127,6 +127,14 @@ bool Huffman::is_set() const noexcept {
                                    && m_htables[1].ac.is_set);
 }
 
+void Huffman::clear() noexcept {
+    m_htables[0].dc.is_set = false;
+    m_htables[0].ac.is_set = false;
+    m_htables[1].dc.is_set = false;
+    m_htables[1].ac.is_set = false;
+
+}
+
 uint8_t Huffman::get_dc_symbol(JpegReader& reader, const uint table_id) const noexcept {
 
     uint curr_code = 0;

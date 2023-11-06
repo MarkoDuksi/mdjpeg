@@ -40,6 +40,11 @@ bool Dequantizer::is_set() const noexcept {
     return m_qtable;
 }
 
+void Dequantizer::clear() noexcept {
+
+    m_qtable = nullptr;
+}
+
 void Dequantizer::transform(int (&block)[64]) const noexcept {
 
     for (uint i = 0; i < 64; ++i) {

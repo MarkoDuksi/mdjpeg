@@ -18,8 +18,11 @@ class Dequantizer {
         /// \brief Populates quantization table from \c reader buffer starting at cursor.
         size_t set_qtable(JpegReader& reader, const size_t max_read_length) noexcept;
 
-        /// \brief Checks if the quantization table is populated.
+        /// \brief Checks if the quantization table is validly set.
         bool is_set() const noexcept;
+
+        /// \brief Invalidates quantization table.
+        void clear() noexcept;
 
         /// \brief Dequantizes a block of DCT coefficients (in place).
         void transform(int (&block)[64]) const noexcept;

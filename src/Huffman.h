@@ -18,8 +18,11 @@ class Huffman {
         /// \brief Populates %Huffman tables starting at \c reader cursor.
         size_t set_htable(JpegReader& reader, size_t max_read_length) noexcept;
 
-        /// \brief Checks if all DC/AC-luma/chroma %Huffman tables are populated.
+        /// \brief Checks if all DC/AC-luma/chroma %Huffman tables are validly set.
         bool is_set() const noexcept;
+
+        /// \brief Invalidates all DC/AC-luma/chroma %Huffman tables even if populated.
+        void clear() noexcept;
 
         /// \brief Decodes a luma block by its index.
         bool decode_luma_block(JpegReader& reader, int (&dst_block)[64], const uint luma_block_idx, const uint horiz_chroma_subs_factor) noexcept;
