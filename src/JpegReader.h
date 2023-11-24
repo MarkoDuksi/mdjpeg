@@ -12,43 +12,52 @@ class JpegReader {
 
     public:
 
-        /// \brief Stores the start, end and current memory locations for the JFIF data segment.
+        /// \brief Sets its view on the JFIF data memory block.
         ///
-        /// \param buff  Start of memory segment containing JFIF data.
-        /// \param size  Length of the memory segment in bytes.
-        void set(const uint8_t* buff, const size_t size) noexcept;
+        /// \param buff  Start of memory block containing JFIF data.
+        /// \param size  Size of the memory block in bytes.
+        void set(const uint8_t* buff, size_t size) noexcept;
 
-        /// \brief Stores the current cursor position as the start of ECS.
+        /// \brief   Stores the current cursor position as the start of ECS.
         void mark_start_of_ecs() noexcept;
 
-        /// \brief Restores the cursor position to the start of ECS.
+        /// \brief   Restores the cursor position to the start of ECS.
         void restart_ecs() noexcept;
 
-        /// \brief Get the length of buffer available after the cursor.
-        size_t size_remaining() const noexcept;
+        /// \brief   Calculates the size in bytes of the buffer available after the cursor.
+        size_t size_remaining() const noexcept {
 
-        /// \brief Accessor for the pointer to cursor.
-        const uint8_t* tell_ptr() const noexcept;
+            return m_buff_end - m_buff_current_byte;
+        }
 
-        /// \brief Advance the cursor relative to current position. 
-        bool seek(const size_t rel_pos) noexcept;
+        /// \brief   Accessor for the pointer to cursor.
+        const uint8_t* tell_ptr() const noexcept {
 
-        /// \brief Get raw value from buffer at a specific position relative to cursor.
-        std::optional<uint8_t> peek(const size_t rel_pos = 0) const noexcept;
+            return m_buff_current_byte;
+        }
 
-        /// \brief Get raw value from buffer at cursor, advance cursor.
+        /// \brief   Advances the cursor relative to current position. 
+        /// \retval  true on success.
+        /// \retval  false on failure.
+        bool seek(size_t rel_pos) noexcept;
+
+        /// \brief   Gets raw value from buffer at a specific position relative to cursor.
+        std::optional<uint8_t> peek(size_t rel_pos = 0) const noexcept;
+
+        /// \brief   Gets raw value from buffer at cursor, advances the cursor.
         std::optional<uint8_t> read_uint8() noexcept;
 
-        /// \brief Get 2-byte big-endian value from buffer at cursor, advance cursor.
+        /// \brief   Gets 2-byte big-endian value from buffer at cursor, advances the cursor.
         std::optional<uint16_t> read_uint16() noexcept;
 
-        /// \brief Get JFIF marker value from buffer at cursor, applying rules for reading markers, advance cursor.
+        /// \brief   Gets JFIF marker value from buffer at cursor, applying rules for reading markers, advances the cursor.
         std::optional<uint16_t> read_marker() noexcept;
 
-        /// \brief Get segment size from buffer at cursor, advance cursor.
+        /// \brief   Gets JFIF segment size from buffer at cursor, advances the cursor.
         uint16_t read_segment_size() noexcept;
 
-        /// \brief Get next bit from buffer at cursor, applying rules for reading ECS, advance cursor.
+        /// \brief   Gets next bit from buffer at cursor, applying rules for reading ECS, advances the cursor.
+        /// \return  Bit value on success, static_cast<int>(ReadError::ECS_BIT) otherwise.
         int read_bit() noexcept;
         
     private:

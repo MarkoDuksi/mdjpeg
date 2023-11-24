@@ -4,44 +4,40 @@
 #include "transform.h"
 
 
-#ifdef PRINT_STATES_FLOW
-    #include <iostream>
-#endif
-
-
-void JpegDecoder::assign(const uint8_t* buff, const size_t size) noexcept {
+bool JpegDecoder::assign(const uint8_t* const buff, const size_t size) noexcept {
 
     m_reader.set(buff, size);
+
     m_dequantizer.clear();
     m_huffman.clear();
+    m_frame_info.clear();
+
     set_state<StateID::ENTRY>();
+    m_has_valid_header = parse_header() == StateID::HEADER_OK;
+
+    if (!m_has_valid_header) {
+
+        m_frame_info.clear();
+    }
+
+    return m_has_valid_header;
 }
 
-bool JpegDecoder::luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) {
+bool JpegDecoder::luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) noexcept {
 
     BasicBlockWriter writer;
 
     return luma_decode(dst, x1_blk, y1_blk, x2_blk, y2_blk, writer);
 }
 
-bool JpegDecoder::luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk, BlockWriter& writer) {
+bool JpegDecoder::luma_decode(uint8_t* const dst, const uint x1_blk, const uint y1_blk, const uint x2_blk, const uint y2_blk, BlockWriter& writer) noexcept {
 
-    if (parse_header() == StateID::HEADER_OK) {
-
-        #ifdef PRINT_STATES_FLOW
-            std::cout << "\nFinished in state HEADER_OK\n\n";
-        #endif
-    }
-
-    else {
+    if (!m_has_valid_header) {
 
         return false;
     }
-    
-    // check bounds
-    if (x1_blk >= x2_blk || y1_blk >= y2_blk
-                         || x2_blk - x1_blk > m_frame_info.width_blk
-                         || y2_blk - y1_blk > m_frame_info.height_blk) {
+
+    if (!validate_bounds(x1_blk, y1_blk, x2_blk, y2_blk)) {
 
         return false;
     }
@@ -74,24 +70,14 @@ bool JpegDecoder::luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint
     return true;
 }
 
-bool JpegDecoder::dc_luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) {
+bool JpegDecoder::dc_luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) noexcept {
 
-    if (parse_header() == StateID::HEADER_OK) {
-
-        #ifdef PRINT_STATES_FLOW
-            std::cout << "\nFinished in state HEADER_OK\n\n";
-        #endif
-    }
-
-    else {
+    if (!m_has_valid_header) {
 
         return false;
     }
     
-    // check bounds
-    if (x1_blk >= x2_blk || y1_blk >= y2_blk
-                         || x2_blk - x1_blk > m_frame_info.width_blk
-                         || y2_blk - y1_blk > m_frame_info.height_blk) {
+    if (!validate_bounds(x1_blk, y1_blk, x2_blk, y2_blk)) {
 
         return false;
     }
@@ -123,7 +109,7 @@ bool JpegDecoder::dc_luma_decode(uint8_t* const dst, uint x1_blk, uint y1_blk, u
     return true;
 }
 
-StateID JpegDecoder::parse_header() {
+StateID JpegDecoder::parse_header() noexcept {
 
     while (!m_istate->is_final_state()) {
 
@@ -131,4 +117,20 @@ StateID JpegDecoder::parse_header() {
     }
 
     return m_istate->getID();
+}
+
+bool JpegDecoder::validate_bounds(const uint x1_blk, const uint y1_blk, const uint x2_blk, const uint y2_blk) const noexcept {
+
+    return (x1_blk < x2_blk && y1_blk < y2_blk
+                            && x2_blk <= m_frame_info.width_blk
+                            && y2_blk <= m_frame_info.height_blk);
+}
+
+void JpegDecoder::FrameInfo::set(const uint16_t height_px, const uint16_t width_px, const uint8_t horiz_chroma_subs_factor) noexcept {
+
+    this->height_px = height_px;
+    this->width_px = width_px;
+    height_blk = (height_px + 7) / 8;
+    width_blk = (width_px + 7) / 8;
+    this->horiz_chroma_subs_factor = horiz_chroma_subs_factor;
 }

@@ -15,17 +15,20 @@ class Huffman {
 
     public:
 
-        /// \brief Populates %Huffman tables starting at \c reader cursor.
+        /// \brief   Populates %Huffman tables starting at \c reader cursor.
+        /// \return  Number of bytes read through from the JFIF segment
         size_t set_htable(JpegReader& reader, size_t max_read_length) noexcept;
 
-        /// \brief Checks if all DC/AC-luma/chroma %Huffman tables are validly set.
+        /// \brief   Checks if all (DC/AC-luma/chroma) %Huffman tables are validly set.
         bool is_set() const noexcept;
 
-        /// \brief Invalidates all DC/AC-luma/chroma %Huffman tables even if populated.
+        /// \brief   Invalidates all (DC/AC-luma/chroma) %Huffman tables even if populated.
         void clear() noexcept;
 
-        /// \brief Decodes a luma block by its index.
-        bool decode_luma_block(JpegReader& reader, int (&dst_block)[64], const uint luma_block_idx, const uint horiz_chroma_subs_factor) noexcept;
+        /// \brief   Decodes a luma block by its index.
+        /// \retval  true on success.
+        /// \retval  false on failure.
+        bool decode_luma_block(JpegReader& reader, int (&dst_block)[64], uint luma_block_idx, uint horiz_chroma_subs_factor) noexcept;
 
     private:
 
@@ -49,10 +52,10 @@ class Huffman {
 
         HuffmanTables m_htables[2];
 
-        uint8_t get_dc_symbol(JpegReader& reader, const uint table_id) const noexcept;
-        uint8_t get_ac_symbol(JpegReader& reader, const uint table_id) const noexcept;
-        int16_t get_dct_coeff(JpegReader& reader, const uint length) const noexcept;
+        uint8_t get_dc_symbol(JpegReader& reader, uint table_id) const noexcept;
+        uint8_t get_ac_symbol(JpegReader& reader, uint table_id) const noexcept;
+        static int16_t get_dct_coeff(JpegReader& reader, uint length) noexcept;
 
         // decodes next block from the ECS, be it luma or chroma (specified via `table_id`)
-        bool decode_next_block(JpegReader& reader, int (&dst_block)[64], const uint table_id) const noexcept;
+        bool decode_next_block(JpegReader& reader, int (&dst_block)[64], uint table_id) const noexcept;
 };

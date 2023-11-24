@@ -40,7 +40,7 @@ namespace IDCT {
     const float s7 = std::cos(7.0 / 16.0 * M_PI) / 2.0;
 }  // namespace IDCT
 
-}  // anonymous namespace
+}  // namespace
 /// \endcond
 
 void mdjpeg_transform::reverse_zig_zag(int (&block)[64]) noexcept {

@@ -107,13 +107,19 @@ class JpegReader;
 /// \brief Abstract base class for ConcreteState of the state machine.
 class State {
 
+    protected:
+        ~State() = default;
+
     public:
 
-        State(JpegDecoder* const decoder) noexcept :
+        explicit State(JpegDecoder* decoder) noexcept :
             m_decoder(decoder)
             {}
 
-        virtual ~State() = default;
+        State(const State& other) = delete;
+        State& operator=(const State& other) = delete;
+        State(State&& other) = delete;
+        State& operator=(State&& other) = delete;
 
         /// \brief Checks if the current ConcreteState is a final state.
         bool is_final_state() const noexcept {
@@ -125,7 +131,7 @@ class State {
         virtual StateID getID() const noexcept = 0;
 
         /// \brief Dispatches parsing step to the current ConcreteState.
-        virtual void parse_header(JpegReader& reader) = 0;
+        virtual void parse_header(JpegReader& reader) noexcept = 0;
 
     protected:
 
@@ -143,16 +149,16 @@ class State {
 /// readability. For better overview check the raw comments in the source code of
 /// states.h.
 template <StateID state_id>
-class ConcreteState final : public State {
+class ConcreteState : public State {
 
     public:
 
-        ConcreteState(JpegDecoder* const decoder) noexcept :
+        explicit ConcreteState(JpegDecoder* decoder) noexcept :
             State(decoder)
             {}
 
         /// \brief Gets the actual StateID when called through State::getID.
-        StateID getID() const noexcept final {
+        StateID getID() const noexcept override {
 
             return state_id;
         }
@@ -161,7 +167,7 @@ class ConcreteState final : public State {
         ///
         /// \note Empty body is provided only to satisfy the linker but otherwise
         /// not useful unless \ref temp_specs "specialized" to a particular StateID.
-        void parse_header([[maybe_unused]] JpegReader& reader) noexcept final {}
+        void parse_header([[maybe_unused]] JpegReader& reader) noexcept override {}
 };
 
 

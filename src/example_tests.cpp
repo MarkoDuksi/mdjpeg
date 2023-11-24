@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
 
         std::cout << "usage: " << argv[0] << " test_images_directory\n";
 
-        exit(1);
+        return 1;
     }
 
     std::filesystem::path test_imgs_dir = argv[1];

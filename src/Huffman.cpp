@@ -197,7 +197,7 @@ uint8_t Huffman::get_ac_symbol(JpegReader& reader, const uint table_id) const no
     return static_cast<uint8_t>(ReadError::HUFF_SYMBOL);
 }
 
-int16_t Huffman::get_dct_coeff(JpegReader& reader, const uint length) const noexcept {
+int16_t Huffman::get_dct_coeff(JpegReader& reader, const uint length) noexcept {
 
     if (length > 16) {
 
@@ -269,21 +269,21 @@ bool Huffman::decode_next_block(JpegReader& reader, int (&dst_block)[64], const 
 
     // process DC DCT coefficient
 
-    const uint huff_symbol = get_dc_symbol(reader, table_id);
+    const uint dc_huff_symbol = get_dc_symbol(reader, table_id);
 
-    if (huff_symbol > 11) {  // DC DCT coefficient length out of range
-
-        return false;
-    }
-
-    const int dct_coeff = get_dct_coeff(reader, huff_symbol);
-
-    if (dct_coeff == static_cast<int16_t>(ReadError::DCT_COEF)) {
+    if (dc_huff_symbol > 11) {  // DC DCT coefficient length out of range
 
         return false;
     }
 
-    dst_block[0] = dct_coeff;
+    const int dc_dct_coeff = get_dct_coeff(reader, dc_huff_symbol);
+
+    if (dc_dct_coeff == static_cast<int16_t>(ReadError::DCT_COEF)) {
+
+        return false;
+    }
+
+    dst_block[0] = dc_dct_coeff;
 
     // process AC DCT coefficient
 
@@ -292,26 +292,26 @@ bool Huffman::decode_next_block(JpegReader& reader, int (&dst_block)[64], const 
     while (idx < 64) {
 
         uint pre_zeros_count;
-        const uint huff_symbol = get_ac_symbol(reader, table_id);
+        const uint ac_huff_symbol = get_ac_symbol(reader, table_id);
 
-        if (huff_symbol == static_cast<uint8_t>(ReadError::HUFF_SYMBOL)) {
+        if (ac_huff_symbol == static_cast<uint8_t>(ReadError::HUFF_SYMBOL)) {
 
             return false;
         }
 
-        else if (huff_symbol == 0x00) {  // the rest of coefficients are 0
+        if (ac_huff_symbol == 0x00) {  // the rest of coefficients are 0
 
             break;
         }
 
-        else if (huff_symbol == 0xf0) {
+        if (ac_huff_symbol == 0xf0) {
 
             pre_zeros_count = 16;
         }
 
         else {
 
-            pre_zeros_count = huff_symbol >> 4;
+            pre_zeros_count = ac_huff_symbol >> 4;
         }
 
         if (idx + pre_zeros_count >= 64) {  // prevent `dst_block` overflow
@@ -324,26 +324,26 @@ bool Huffman::decode_next_block(JpegReader& reader, int (&dst_block)[64], const 
             dst_block[idx++] = 0;
         }
 
-        if (huff_symbol == 0xf0) {  // done with this symbol
+        if (ac_huff_symbol == 0xf0) {  // done with this symbol
 
             continue;
         }
 
-        const uint dct_coeff_length = huff_symbol & 0xf;
+        const uint ac_dct_coeff_length = ac_huff_symbol & 0xf;
 
-        if (dct_coeff_length > 10) {  // AC DCT coefficient length out of range
-
-            return false;
-        }
-
-        const int dct_coeff = get_dct_coeff(reader, dct_coeff_length);
-
-        if (dct_coeff == static_cast<int16_t>(ReadError::DCT_COEF)) {
+        if (ac_dct_coeff_length > 10) {  // AC DCT coefficient length out of range
 
             return false;
         }
 
-        dst_block[idx++] = dct_coeff;
+        const int ac_dct_coeff = get_dct_coeff(reader, ac_dct_coeff_length);
+
+        if (ac_dct_coeff == static_cast<int16_t>(ReadError::DCT_COEF)) {
+
+            return false;
+        }
+
+        dst_block[idx++] = ac_dct_coeff;
     }
 
     while (idx < 64) {

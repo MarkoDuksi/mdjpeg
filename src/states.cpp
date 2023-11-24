@@ -1,10 +1,10 @@
 #include "states.h"
 
+#include <sys/types.h>
+
 #ifdef PRINT_STATES_FLOW
     #include <iostream>
 #endif
-
-#include <sys/types.h>
 
 #include "JpegReader.h"
 #include "JpegDecoder.h"
@@ -355,8 +355,6 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
         return;
     }
 
-    m_decoder->m_frame_info.set_dims(height_px, width_px);
-
     while ((components_count)--) {
 
         const uint8_t component_id = *reader.read_uint8();
@@ -386,10 +384,7 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept {
                 return;
             }
 
-            else {
-
-                m_decoder->m_frame_info.horiz_chroma_subs_factor = sampling_factor >> 4;
-            }
+            m_decoder->m_frame_info.set(height_px, width_px, sampling_factor >> 4);
         }
 
         // components 2 and 3 must use sampling factors 0x11

@@ -7,29 +7,37 @@
 /// \brief Abstract base class for block-wise writing of image data to memory.
 class BlockWriter {
 
+    protected:
+
+        ~BlockWriter() = default;
+
     public:
 
-        virtual ~BlockWriter() = default;
+        BlockWriter() = default;
+        BlockWriter(const BlockWriter& other) = delete;
+        BlockWriter& operator=(const BlockWriter& other) = delete;
+        BlockWriter(BlockWriter&& other) = delete;
+        BlockWriter& operator=(BlockWriter&& other) = delete;
 
         /// \brief Dispatches initialization.
-        ///
-        /// Every implementation should use this function's override to:
-        /// - register a destination for their output
-        /// - register basic information relevant to their task
-        /// - (re)set initial conditions relevant to their task.
         ///
         /// \param dst            Raw pixel buffer for writing output to, min size
         ///                       depending on particular implementation.
         /// \param src_width_px   Width of the region of interest expressed in pixels.
         /// \param src_height_px  Height of the region of interest expressed in pixels.
-        virtual void init(uint8_t* const dst, uint src_width_px, [[maybe_unused]] uint src_height_px) = 0;
+        ///
+        /// Every implementation should use this function's override to:
+        /// - register a destination for their output
+        /// - register basic information relevant to their task
+        /// - (re)set initial conditions relevant to their task.
+        virtual void init(uint8_t* dst, uint src_width_px, [[maybe_unused]] uint src_height_px) noexcept = 0;
         
         /// \brief Dispathes a single block write.
         ///
+        /// \param src_block  Input block.
+        ///
         /// Every implementation should use this function's override to iteratively
         /// perform the task of writing input blocks to their output destination.
-        ///
-        /// \param src_block  Input block.
         ///
         /// \note
         /// - Blocks from a particular region of interest are presumed served in the
@@ -37,12 +45,12 @@ class BlockWriter {
         /// - It is not required for the writes to be unbuffered providing that all
         ///   expected output is written to the destination by the time the function
         ///   finishes with its last input block.
-        virtual void write(int (&src_block)[64]) = 0;
+        virtual void write(int (&src_block)[64]) noexcept = 0;
 };
 
 
 /// \brief Implements BlockWriter for block-wise writing of input to output in 1:1 scale.
-class BasicBlockWriter final : public BlockWriter {
+class BasicBlockWriter : public BlockWriter {
 
     public:
 
@@ -56,7 +64,7 @@ class BasicBlockWriter final : public BlockWriter {
         ///                       minimum size is `src_width_px * src_height_px`.
         /// \param src_width_px   Width of the region of interest expressed in pixels.
         /// \param src_height_px  Height of the region of interest expressed in pixels.
-        void init(uint8_t* const dst, uint src_width_px, [[maybe_unused]] uint src_height_px) final {
+        void init(uint8_t* const dst, const uint src_width_px, [[maybe_unused]] const uint src_height_px) noexcept override {
 
             m_dst = dst;
             m_src_width_px = src_width_px;
@@ -74,7 +82,7 @@ class BasicBlockWriter final : public BlockWriter {
         /// \note
         /// - Blocks from a particular region of interest are presumed served in the
         ///   order in which they appear in the entropy-coded segment.
-        void write(int (&src_block)[64]) final {
+        void write(int (&src_block)[64]) noexcept override {
 
             uint offset = m_block_y * m_src_width_px + m_block_x;
             uint src_idx = 0;
@@ -121,7 +129,7 @@ template <uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
 // purposes the two template parameters are interdependent and no additional
 // template instantiation occurs in normal use just because of the extra
 // parameter.
-class DownscalingBlockWriter final : public BlockWriter {
+class DownscalingBlockWriter : public BlockWriter {
 
     public:
 
@@ -136,12 +144,12 @@ class DownscalingBlockWriter final : public BlockWriter {
         /// \param src_width_px   Width of the region of interest expressed in pixels.
         /// \param src_height_px  Height of the region of interest expressed in pixels.
         ///
-        /// \note Both src dimensions must be at least as big as the corresponding
+        /// \attention Both src dimensions must be at least as big as the corresponding
         /// destination dimensions. Otherwise it would not be a task of downscaling but
         /// rather upscaling. Additionally, since writing is done in blocks, both source
         /// dimensions must be multiples of 8 pixels.
         // `[[maybe_unused]]` added only to satisfy Doxygen (in fact, the parameter is allways used)
-        void init(uint8_t* const dst, uint src_width_px, [[maybe_unused]] uint src_height_px) final {
+        void init(uint8_t* const dst, const uint src_width_px, [[maybe_unused]] const uint src_height_px) noexcept override {
 
             m_dst = dst;
             m_src_width_px = src_width_px;
@@ -187,7 +195,7 @@ class DownscalingBlockWriter final : public BlockWriter {
         ///   order in which they appear in the entropy-coded segment.
         /// - All expected output is written to the destination by the time the function
         ///   finishes with its last input block.
-        void write(int (&src_block)[64]) final {
+        void write(int (&src_block)[64]) noexcept override {
 
             // src block west border X-coord expressed in dst pixels
             float block_west = m_horiz_scaling_factor * m_block_x;
@@ -377,7 +385,7 @@ class DownscalingBlockWriter final : public BlockWriter {
         float m_edge_buffer {};
 
         // snap floating point input to integer grid if within `m_epsilon_horiz` proximity
-        float snap_to_horiz_grid(float input) const {
+        float snap_to_horiz_grid(const float input) const noexcept {
 
             const uint floored = static_cast<uint>(input + m_epsilon_horiz);
 
@@ -385,7 +393,7 @@ class DownscalingBlockWriter final : public BlockWriter {
         }
 
         // snap floating point input to integer grid if within `m_epsilon_vert` proximity
-        float snap_to_vert_grid(float input) const {
+        float snap_to_vert_grid(const float input) const noexcept {
 
             const uint floored = static_cast<uint>(input + m_epsilon_vert);
 

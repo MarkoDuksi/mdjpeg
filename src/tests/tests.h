@@ -1,25 +1,26 @@
 #pragma once
 
+#include <stdint.h>
+#include <sys/types.h>
+#include <cassert>
 #include <string>
 #include <filesystem>
 #include <iostream>
-
-#include <cassert>
-#include <stdint.h>
-#include <sys/types.h>
 
 #include "../JpegDecoder.h"
 #include "../BlockWriter.h"
 #include "test-utils.h"
 
 
-uint full_frame_dc_decoding_tests(const std::filesystem::path input_base_dir, const Dimensions& dims);
-uint full_frame_decoding_tests(const std::filesystem::path input_base_dir, const Dimensions& dims);
-uint cropped_decoding_tests(const std::filesystem::path input_base_dir);
+uint full_frame_dc_decoding_tests(const std::filesystem::path& input_base_dir, const mdjpeg_test_utils::Dimensions& dims);
+uint full_frame_decoding_tests(const std::filesystem::path& input_base_dir, const mdjpeg_test_utils::Dimensions& dims);
+uint cropped_decoding_tests(const std::filesystem::path& input_base_dir);
 
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-bool downscaling_test(const uint8_t fill_value, std::filesystem::path test_imgs_dir) {
+bool downscaling_test(const uint8_t fill_value, std::filesystem::path& test_imgs_dir) {
+
+    using namespace mdjpeg_test_utils;
 
     const Dimensions src_dims {SRC_WIDTH_PX, SRC_HEIGHT_PX};
     assert(src_dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
@@ -50,7 +51,7 @@ bool downscaling_test(const uint8_t fill_value, std::filesystem::path test_imgs_
               << src_dims.to_str() << " -> " << dst_dims.to_str()
               << " / fill value = " << static_cast<uint>(fill_value) << ")";
 
-    int error = max_abs_error(dst_array, dst_dims, fill_value);
+    const int error = max_abs_error(dst_array, dst_dims, fill_value);
 
     if (error == 0) {
 
@@ -75,7 +76,7 @@ bool downscaling_test(const uint8_t fill_value, std::filesystem::path test_imgs_
 }
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-uint recursive_downscaling_test(const uint8_t fill_value, std::filesystem::path test_imgs_dir, uint tests_failed = 0) {
+uint recursive_downscaling_test(const uint8_t fill_value, std::filesystem::path& test_imgs_dir, uint tests_failed = 0) {
 
     if constexpr (DST_WIDTH_PX && DST_HEIGHT_PX) {
 
@@ -90,12 +91,14 @@ uint recursive_downscaling_test(const uint8_t fill_value, std::filesystem::path 
 }
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-uint downscaling_decoding_test(std::filesystem::path input_base_dir) {
+uint downscaling_decoding_test(std::filesystem::path& input_base_dir) {
 
-    Dimensions src_dims {SRC_WIDTH_PX, SRC_HEIGHT_PX};
+    using namespace mdjpeg_test_utils;
+
+    const Dimensions src_dims {SRC_WIDTH_PX, SRC_HEIGHT_PX};
     assert(src_dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
 
-    Dimensions dst_dims {DST_WIDTH_PX, DST_HEIGHT_PX};
+    const Dimensions dst_dims {DST_WIDTH_PX, DST_HEIGHT_PX};
 
     const auto input_files_paths = get_input_img_paths(input_base_dir / src_dims.to_str());
 
@@ -147,7 +150,7 @@ uint downscaling_decoding_test(std::filesystem::path input_base_dir) {
 }
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-uint recursive_downscaling_decoding_test(std::filesystem::path input_base_dir, uint tests_failed = 0) {
+uint recursive_downscaling_decoding_test(std::filesystem::path& input_base_dir, uint tests_failed = 0) {
 
     if constexpr (DST_WIDTH_PX && DST_HEIGHT_PX) {
 

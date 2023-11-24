@@ -1,12 +1,13 @@
 #pragma once
 
+#include <stdint.h>
+#include <sys/types.h>
 #include <vector>
 #include <utility>
 #include <filesystem>
 
-#include <stdint.h>
-#include <sys/types.h>
 
+namespace mdjpeg_test_utils {
 
 struct Dimensions {
     Dimensions(uint width_px, uint height_px) :
@@ -34,8 +35,10 @@ std::vector<std::filesystem::path> get_input_img_paths(const std::filesystem::pa
 
 std::pair<uint8_t*, size_t> read_raw_jpeg_from_file(const std::filesystem::path& file_path);
 
-uint max_abs_error(const uint8_t* const array, const Dimensions& dims, const uint8_t value);
+uint max_abs_error(const uint8_t* array, const Dimensions& dims, uint8_t value);
 
-bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* pixel_data, const uint width_px, const uint height_px);
+bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* pixel_data, uint width_px, uint height_px);
 
-void print_as_pgm(const uint8_t* pixel_data, const uint width_px, const uint height_px);
+void print_as_pgm(const uint8_t* pixel_data, uint width_px, uint height_px);
+
+}  // namespace mdjpeg_test_utils

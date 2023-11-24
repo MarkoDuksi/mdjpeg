@@ -3,7 +3,7 @@
 #include "ReadError.h"
 
 
-void JpegReader::set(const uint8_t *buff, const size_t size) noexcept {
+void JpegReader::set(const uint8_t* const buff, const size_t size) noexcept {
 
     m_buff_start = buff;
     m_buff_end = m_buff_start + size;
@@ -20,16 +20,6 @@ void JpegReader::restart_ecs() noexcept {
 
     m_buff_current_byte = m_buff_start_of_ECS;
     m_current_bit_pos = 7;  // zero-index of the current bit (7 => highest by default) of the byte at cursor
-}
-
-size_t JpegReader::size_remaining() const noexcept {
-
-    return m_buff_end - m_buff_current_byte;
-}
-
-const uint8_t* JpegReader::tell_ptr() const noexcept {
-
-    return m_buff_current_byte;
 }
 
 bool JpegReader::seek(const size_t rel_pos) noexcept {
