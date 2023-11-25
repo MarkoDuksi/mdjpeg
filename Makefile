@@ -42,7 +42,7 @@ RELEASE_OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(RELEASE_OBJ_DIR)/%.o)
 RELEASE_BIN = $(RELEASE_BIN_DIR)/$(MAIN_BASENAME).out
 
 
-LIBRARY_OBJS = $(filter-out %tests.o %test-utils.o, $(RELEASE_OBJS))
+LIBRARY_OBJS = $(filter-out %tests.o, $(RELEASE_OBJS))
 LIBRARY = $(LIB_DIR)/$(LIBRARY_BASENAME).a
 
 
@@ -85,7 +85,7 @@ $(RELEASE_OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEP_DIR)/%.$$(BUILD_TYPE).d
 	$(POSTCOMPILE)
 
 
-$(LIBRARY): $(LIBRARY_OBJS) | $(LIB_DIR)
+$(LIBRARY): $(LIBRARY_OBJS) src/protoapi.h | $(LIB_DIR)
 	$(LIB_ARCHIVER) $(LIB_ARCHIVER_FLAGS) $@ $?
 	./generate_lib_header.sh $(SRC_DIR)
 
