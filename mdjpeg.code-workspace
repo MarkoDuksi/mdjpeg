@@ -28,7 +28,8 @@
 			"string": "cpp",
 			"unordered_map": "cpp",
 			"random": "cpp",
-			"algorithm": "cpp"
+			"algorithm": "cpp",
+			"chrono": "cpp"
 		},
 		"C_Cpp.default.includePath": [
 			"include"

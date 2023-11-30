@@ -18,7 +18,7 @@ uint cropped_decoding_tests(const std::filesystem::path& input_base_dir);
 
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-bool downscaling_test(const uint8_t fill_value, std::filesystem::path& test_imgs_dir) {
+bool downscaling_test(const uint8_t fill_value, const std::filesystem::path& test_imgs_dir) {
 
     using namespace mdjpeg_test_utils;
 
@@ -76,7 +76,7 @@ bool downscaling_test(const uint8_t fill_value, std::filesystem::path& test_imgs
 }
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-uint recursive_downscaling_test(const uint8_t fill_value, std::filesystem::path& test_imgs_dir, uint tests_failed = 0) {
+uint recursive_downscaling_test(const uint8_t fill_value, const std::filesystem::path& test_imgs_dir, uint tests_failed = 0) {
 
     if constexpr (DST_WIDTH_PX && DST_HEIGHT_PX) {
 
@@ -91,7 +91,7 @@ uint recursive_downscaling_test(const uint8_t fill_value, std::filesystem::path&
 }
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-uint downscaling_decoding_test(std::filesystem::path& input_base_dir) {
+uint downscaling_decoding_test(const std::filesystem::path& input_base_dir) {
 
     using namespace mdjpeg_test_utils;
 
@@ -150,7 +150,7 @@ uint downscaling_decoding_test(std::filesystem::path& input_base_dir) {
 }
 
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
-uint recursive_downscaling_decoding_test(std::filesystem::path& input_base_dir, uint tests_failed = 0) {
+uint recursive_downscaling_decoding_test(const std::filesystem::path& input_base_dir, uint tests_failed = 0) {
 
     if constexpr (DST_WIDTH_PX && DST_HEIGHT_PX) {
 

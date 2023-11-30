@@ -106,7 +106,7 @@ uint16_t JpegReader::read_segment_size() noexcept {
     return 0;
 }
 
-int JpegReader::read_bit() noexcept {
+int8_t JpegReader::read_bit() noexcept {
 
     // current byte is always valid, read current bit if not last (lowest, at position 0)
     if (m_current_bit_pos) {
@@ -134,7 +134,7 @@ int JpegReader::read_bit() noexcept {
     if (*m_buff_current_byte == 0xff) {
 
         m_current_bit_pos = 7;
-        const int temp = *m_buff_current_byte & 1;
+        const int8_t temp = *m_buff_current_byte & 1;
         m_buff_current_byte += 2;
 
         return temp;
@@ -148,5 +148,5 @@ int JpegReader::read_bit() noexcept {
     }
 
     // else reading last bit before invalid marker
-    return static_cast<int>(ReadError::ECS_BIT);
+    return static_cast<int8_t>(ReadError::ECS_BIT);
 }

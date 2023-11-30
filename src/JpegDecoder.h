@@ -51,14 +51,14 @@ class JpegDecoder {
 
         /// \brief   Queries image width as read from the JFIF header.
         /// \return  Width in pixels if JFIF header is valid, 0 otherwise.
-        uint get_width() const noexcept {
+        uint16_t get_width() const noexcept {
 
            return m_has_valid_header ? m_frame_info.width_px : 0;
         }
 
         /// \brief   Queries image height as read from the JFIF header.
         /// \return  Height in pixels if JFIF header is valid, 0 otherwise.
-        uint get_height() const noexcept {
+        uint16_t get_height() const noexcept {
 
             return m_has_valid_header ? m_frame_info.height_px : 0;
         }
@@ -72,7 +72,7 @@ class JpegDecoder {
         /// \param y2_blk  Y-coordinate of the bottom-right corner of the region of interest expressed in 8x8 blocks.
         /// \retval        true on success.
         /// \retval        false on failure.
-        bool luma_decode(uint8_t* dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) noexcept;
+        bool luma_decode(uint8_t* dst, uint16_t x1_blk, uint16_t y1_blk, uint16_t x2_blk, uint16_t y2_blk) noexcept;
 
         /// \brief Decompresses the luma channel writing to raw pixel buffer via specified BlockWriter.
         ///
@@ -84,7 +84,7 @@ class JpegDecoder {
         /// \param writer  Specific implementation to use for writing decompressed data to raw pixel buffer.
         /// \retval        true on success.
         /// \retval        false on failure.
-        bool luma_decode(uint8_t* dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk, BlockWriter& writer) noexcept;
+        bool luma_decode(uint8_t* dst, uint16_t x1_blk, uint16_t y1_blk, uint16_t x2_blk, uint16_t y2_blk, BlockWriter& writer) noexcept;
 
         /// \brief Decompresses 1:8 scaled-down luma channel to raw pixel buffer using DC DCT coefficients only.
         ///
@@ -95,7 +95,7 @@ class JpegDecoder {
         /// \param y2_blk  Y-coordinate of the bottom-right corner of the region of interest expressed in 8x8 blocks.
         /// \retval        true on success.
         /// \retval        false on failure.
-        bool dc_luma_decode(uint8_t* dst, uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) noexcept;
+        bool dc_luma_decode(uint8_t* dst, uint16_t x1_blk, uint16_t y1_blk, uint16_t x2_blk, uint16_t y2_blk) noexcept;
 
         template <StateID ANY>
         friend class ConcreteState;
@@ -129,7 +129,7 @@ class JpegDecoder {
         } m_frame_info {};
 
         // initial state for the state machine that parses header information from JFIF header
-        ConcreteState<StateID::ENTRY> m_state {ConcreteState<StateID::ENTRY>(this)};
+        ConcreteState<StateID::ENTRY> m_state{this};
 
         // polymorphic handle, used as properly aligned pointer for transitioning through states via placement new
         State* m_istate {&m_state};
@@ -152,5 +152,5 @@ class JpegDecoder {
             m_istate = new (m_istate) ConcreteState<state_id>(this);
         }
 
-        bool validate_bounds(uint x1_blk, uint y1_blk, uint x2_blk, uint y2_blk) const noexcept;
+        bool validate_bounds(uint16_t x1_blk, uint16_t y1_blk, uint16_t x2_blk, uint16_t y2_blk) const noexcept;
 };

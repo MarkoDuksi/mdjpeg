@@ -76,7 +76,7 @@ uint mdjpeg_test_utils::max_abs_error(const uint8_t* const array, const Dimensio
     return max_absolute_error;
 }
 
-bool mdjpeg_test_utils::write_as_pgm(const std::filesystem::path& file_path, const uint8_t* const pixel_data, const uint width_px, const uint height_px) {
+bool mdjpeg_test_utils::write_as_pgm(const std::filesystem::path& file_path, const uint8_t* const pixel_data, const uint16_t width_px, const uint16_t height_px) {
 
     std::ofstream file(file_path);
 
@@ -106,7 +106,7 @@ bool mdjpeg_test_utils::write_as_pgm(const std::filesystem::path& file_path, con
     return true;
 }
 
-void mdjpeg_test_utils::print_as_pgm(const uint8_t* const pixel_data, const uint width_px, const uint height_px) {
+void mdjpeg_test_utils::print_as_pgm(const uint8_t* const pixel_data, const uint16_t width_px, const uint16_t height_px) {
 
     std::cout << "P2\n" << width_px << " " << height_px << " " << 255 << "\n";
 

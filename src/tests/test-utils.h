@@ -10,17 +10,17 @@
 namespace mdjpeg_test_utils {
 
 struct Dimensions {
-    Dimensions(uint width_px, uint height_px) :
+    Dimensions(uint16_t width_px, uint16_t height_px) :
         width_px(width_px),
         height_px(height_px),
         width_blk(width_px / 8),
         height_blk(height_px / 8)
         {}
 
-    uint width_px {};
-    uint height_px {};
-    uint width_blk {};
-    uint height_blk {};
+    uint16_t width_px {};
+    uint16_t height_px {};
+    uint16_t width_blk {};
+    uint16_t height_blk {};
 
     bool is_8x8_multiple() const noexcept {
         return (width_blk * 8 == width_px && height_blk * 8 == height_px);
@@ -37,8 +37,8 @@ std::pair<uint8_t*, size_t> read_raw_jpeg_from_file(const std::filesystem::path&
 
 uint max_abs_error(const uint8_t* array, const Dimensions& dims, uint8_t value);
 
-bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* pixel_data, uint width_px, uint height_px);
+bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* pixel_data, uint16_t width_px, uint16_t height_px);
 
-void print_as_pgm(const uint8_t* pixel_data, uint width_px, uint height_px);
+void print_as_pgm(const uint8_t* pixel_data, uint16_t width_px, uint16_t height_px);
 
 }  // namespace mdjpeg_test_utils

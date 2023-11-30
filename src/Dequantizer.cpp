@@ -3,13 +3,13 @@
 #include "JpegReader.h"
 
 
-size_t Dequantizer::set_qtable(JpegReader& reader, const size_t max_read_length) noexcept {
+uint8_t Dequantizer::set_qtable(JpegReader& reader, const uint16_t max_read_length) noexcept {
 
-    const uint next_byte = *reader.read_uint8();
+    const uint8_t next_byte = *reader.read_uint8();
 
-    const uint precision = 1 + bool(next_byte >> 4);  // in bytes, not bits
-    const uint table_id  = next_byte & 0xf;
-    const uint table_size = 64 * precision;
+    const uint8_t precision = 1 + bool(next_byte >> 4);  // in bytes, not bits
+    const uint8_t table_id  = next_byte & 0xf;
+    const uint8_t table_size = 64 * precision;
 
     if (1 + table_size > max_read_length) {
 

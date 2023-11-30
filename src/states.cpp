@@ -163,7 +163,7 @@ void ConcreteState<StateID::DQT>::parse_header(JpegReader& reader) noexcept {
 
     while (segment_size) {
 
-        const uint qtable_size = m_decoder->m_dequantizer.set_qtable(reader, segment_size);
+        const uint8_t qtable_size = m_decoder->m_dequantizer.set_qtable(reader, segment_size);
 
         // any invalid `qtable_size` gets returned as 0
         if (!qtable_size) {
@@ -250,7 +250,7 @@ void ConcreteState<StateID::DHT>::parse_header(JpegReader& reader) noexcept {
 
     while (segment_size) {
 
-        const uint htable_size = m_decoder->m_huffman.set_htable(reader, segment_size);
+        const uint16_t htable_size = m_decoder->m_huffman.set_htable(reader, segment_size);
 
         // any invalid `htable_size` gets returned as 0
         if (!htable_size) {
@@ -495,9 +495,9 @@ void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) noexcept {
         }
     }
 
-    const uint start_of_selection = *reader.read_uint8();
-    const uint end_of_selection = *reader.read_uint8();
-    const uint successive_approximation = *reader.read_uint8();
+    const uint8_t start_of_selection = *reader.read_uint8();
+    const uint8_t end_of_selection = *reader.read_uint8();
+    const uint8_t successive_approximation = *reader.read_uint8();
 
     // only baseline JPEG is supported
     if (start_of_selection != 0 || end_of_selection != 63

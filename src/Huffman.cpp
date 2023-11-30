@@ -9,13 +9,13 @@
 #include "ReadError.h"
 
 
-size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept {
+uint16_t Huffman::set_htable(JpegReader& reader, uint16_t max_read_length) noexcept {
 
-    const uint next_byte = *reader.read_uint8();
+    const uint8_t next_byte = *reader.read_uint8();
     --max_read_length;
 
-    const bool is_dc = !(next_byte >> 4);
-    const uint table_id = next_byte & 0xf;
+    const uint8_t is_ac = next_byte >> 4;
+    const uint8_t table_id = next_byte & 0xf;
 
     uint symbols_count = 0;
 
@@ -32,88 +32,59 @@ size_t Huffman::set_htable(JpegReader& reader, size_t max_read_length) noexcept 
 
     if (table_id > 1 || max_read_length == 0
                      || symbols_count == 0
-                     || (is_dc && symbols_count > 12)
+                     || (!is_ac && symbols_count > 12)
                      || symbols_count > 162
                      || symbols_count > max_read_length) {
 
         return 0;
     }
 
-    if (is_dc) {
+    HuffmanTable& huff_table = m_htables[table_id][is_ac];
+    huff_table.histogram = reader.tell_ptr();
+    reader.seek(16);
+    huff_table.symbols = reader.tell_ptr();
 
-        m_htables[table_id].dc.histogram = reader.tell_ptr();
-        reader.seek(16);
-        m_htables[table_id].dc.symbols = reader.tell_ptr();
+    #ifdef PRINT_HUFFMAN_TABLES
+        std::cout << "\nHuffman table id " << (int)table_id;
 
-        #ifdef PRINT_HUFFMAN_TABLES
-            std::cout << "\nHuffman table id " << (int)table_id << " (DC):\n";
-            std::cout << "(length: code -> symbol)\n";
-        #endif
+        if (is_ac) {
 
-        // generate Huffman codes for DC DCT coefficient length symbols
-        uint curr_huff_code = 0;
-        uint idx = 0;
-
-        for (uint i = 0; i < 16; ++i) {
-
-            curr_huff_code <<= 1;
-
-            for (uint j = 0; j < m_htables[table_id].dc.histogram[i]; ++j) {
-
-                m_htables[table_id].dc.codes[idx] = curr_huff_code;
-
-                #ifdef PRINT_HUFFMAN_TABLES
-                    fmt::print("  {: >2}: {:0>{}b} -> 0x{:0>2x}\n",
-                                i + 1,
-                                curr_huff_code, i + 1,
-                                m_htables[table_id].dc.symbols[idx]);
-                #endif
-
-                ++idx;
-                ++curr_huff_code;
-            }
+        std::cout << " (AC):\n";
         }
 
-        m_htables[table_id].dc.is_set = true;
-    }
+        else {
 
-    else {
-
-        m_htables[table_id].ac.histogram = reader.tell_ptr();
-        reader.seek(16);
-        m_htables[table_id].ac.symbols = reader.tell_ptr();
-
-        #ifdef PRINT_HUFFMAN_TABLES
-            std::cout << "\nHuffman table id " << (int)table_id << " (AC):\n";
-            std::cout << "(length: code -> symbol)\n";
-        #endif
-
-        // generate Huffman codes for AC DCT coefficient length symbols
-        uint curr_huff_code = 0;
-        uint idx = 0;
-
-        for (uint i = 0; i < 16; ++i) {
-
-            curr_huff_code <<= 1;
-
-            for (uint j = 0; j < m_htables[table_id].ac.histogram[i]; ++j) {
-
-                m_htables[table_id].ac.codes[idx] = curr_huff_code;
-
-                #ifdef PRINT_HUFFMAN_TABLES
-                    fmt::print("  {: >2}: {:0>{}b} -> 0x{:0>2x}\n",
-                                i + 1,
-                                curr_huff_code, i + 1,
-                                m_htables[table_id].ac.symbols[idx]);
-                #endif
-
-                ++idx;
-                ++curr_huff_code;                
-            }
+        std::cout << " (DC):\n";
         }
 
-        m_htables[table_id].ac.is_set = true;
+        std::cout << "(length: code -> symbol)\n";
+    #endif
+
+    // generate Huffman codes for DCT coefficient length symbols
+    uint16_t curr_huff_code = 0;
+    uint idx = 0;
+
+    for (uint i = 0; i < 16; ++i) {
+
+        curr_huff_code <<= 1;
+
+        for (uint j = 0; j < huff_table.histogram[i]; ++j) {
+
+            huff_table.codes[idx] = curr_huff_code;
+
+            #ifdef PRINT_HUFFMAN_TABLES
+                fmt::print("  {: >2}: {:0>{}b} -> 0x{:0>2x}\n",
+                            i + 1,
+                            curr_huff_code, i + 1,
+                            huff_table.symbols[idx]);
+            #endif
+
+            ++idx;
+            ++curr_huff_code;
+        }
     }
+
+    huff_table.is_set = true;
 
     reader.seek(symbols_count);
 
@@ -135,59 +106,30 @@ void Huffman::clear() noexcept {
 
 }
 
-uint8_t Huffman::get_dc_symbol(JpegReader& reader, const uint table_id) const noexcept {
+uint8_t Huffman::get_symbol(JpegReader& reader, const uint8_t table_id, const uint8_t is_ac) const noexcept {
 
-    uint curr_code = 0;
+    const HuffmanTable& huff_table = m_htables[table_id][is_ac];
+    const uint8_t symbols_count = is_ac > 0 ? 162 : 12;
+
+    uint16_t curr_code = 0;
     uint idx = 0;
 
     for (uint i = 0; i < 16; ++i) {
 
-        const int next_bit = reader.read_bit();
+        const int8_t next_bit = reader.read_bit();
 
-        if (next_bit == static_cast<int>(ReadError::ECS_BIT)) {
-
-            return static_cast<uint8_t>(ReadError::HUFF_SYMBOL);
-        }
-
-        curr_code |= next_bit;
-
-        for (uint j = 0; j < m_htables[table_id].dc.histogram[i] && idx < 12; ++j) {
-
-            if (curr_code == m_htables[table_id].dc.codes[idx]) {
-
-                return m_htables[table_id].dc.symbols[idx];
-            }
-
-            ++idx;
-        }
-
-        curr_code <<= 1;
-    }
-
-    return static_cast<uint8_t>(ReadError::HUFF_SYMBOL);
-}
-
-uint8_t Huffman::get_ac_symbol(JpegReader& reader, const uint table_id) const noexcept {
-
-    uint curr_code = 0;
-    uint idx = 0;
-
-    for (uint i = 0; i < 16; ++i) {
-
-        const int next_bit = reader.read_bit();
-
-        if (next_bit == static_cast<int>(ReadError::ECS_BIT)) {
+        if (next_bit == static_cast<int8_t>(ReadError::ECS_BIT)) {
 
             return static_cast<uint8_t>(ReadError::HUFF_SYMBOL);
         }
 
         curr_code = curr_code << 1 | next_bit;
 
-        for (uint j = 0; j < m_htables[table_id].ac.histogram[i] && idx < 162; ++j) {
+        for (uint j = 0; j < huff_table.histogram[i] && idx < symbols_count; ++j) {
 
-            if (curr_code == m_htables[table_id].ac.codes[idx]) {
+            if (curr_code == huff_table.codes[idx]) {
 
-                return m_htables[table_id].ac.symbols[idx];
+                return huff_table.symbols[idx];
             }
 
             ++idx;
@@ -197,20 +139,20 @@ uint8_t Huffman::get_ac_symbol(JpegReader& reader, const uint table_id) const no
     return static_cast<uint8_t>(ReadError::HUFF_SYMBOL);
 }
 
-int16_t Huffman::get_dct_coeff(JpegReader& reader, const uint length) noexcept {
+int16_t Huffman::get_dct_coeff(JpegReader& reader, const uint8_t length) noexcept {
 
     if (length > 16) {
 
         return static_cast<int16_t>(ReadError::DCT_COEF);
     }
 
-    int dct_coeff = 0;
+    int16_t dct_coeff = 0;
 
     for (uint i = 0; i < length; ++i) {
 
-        const int next_bit = reader.read_bit();
+        const int8_t next_bit = reader.read_bit();
 
-        if (next_bit == static_cast<int>(ReadError::ECS_BIT)) {
+        if (next_bit == static_cast<int8_t>(ReadError::ECS_BIT)) {
 
             return static_cast<int16_t>(ReadError::DCT_COEF);
         }
@@ -227,7 +169,7 @@ int16_t Huffman::get_dct_coeff(JpegReader& reader, const uint length) noexcept {
     return dct_coeff;
 }
 
-bool Huffman::decode_luma_block(JpegReader& reader, int (&dst_block)[64], const uint luma_block_idx, const uint horiz_chroma_subs_factor) noexcept {
+bool Huffman::decode_luma_block(JpegReader& reader, int (&dst_block)[64], const uint32_t luma_block_idx, const uint8_t horiz_chroma_subs_factor) noexcept {
 
     // if already beyond the requested `luma_block_idx`
     if (m_luma_block_idx > luma_block_idx) {
@@ -265,18 +207,23 @@ bool Huffman::decode_luma_block(JpegReader& reader, int (&dst_block)[64], const 
     return true;
 }
 
-bool Huffman::decode_next_block(JpegReader& reader, int (&dst_block)[64], const uint table_id) const noexcept {
+bool Huffman::decode_next_block(JpegReader& reader, int (&dst_block)[64], const uint8_t table_id) const noexcept {
 
-    // process DC DCT coefficient
+    const uint8_t dc = 0;
+    const uint8_t ac = 1;
 
-    const uint dc_huff_symbol = get_dc_symbol(reader, table_id);
+    ////////////////////////////////
+    // process DC DCT coefficient //
 
-    if (dc_huff_symbol > 11) {  // DC DCT coefficient length out of range
+    const uint8_t dc_huff_symbol = get_symbol(reader, table_id, dc);
+
+    // DC DCT coefficient length out of range
+    if (dc_huff_symbol > 11) {
 
         return false;
     }
 
-    const int dc_dct_coeff = get_dct_coeff(reader, dc_huff_symbol);
+    const int16_t dc_dct_coeff = get_dct_coeff(reader, dc_huff_symbol);
 
     if (dc_dct_coeff == static_cast<int16_t>(ReadError::DCT_COEF)) {
 
@@ -285,36 +232,30 @@ bool Huffman::decode_next_block(JpegReader& reader, int (&dst_block)[64], const 
 
     dst_block[0] = dc_dct_coeff;
 
-    // process AC DCT coefficient
+    /////////////////////////////////
+    // process AC DCT coefficients //
 
     uint idx = 1;
 
     while (idx < 64) {
 
-        uint pre_zeros_count;
-        const uint ac_huff_symbol = get_ac_symbol(reader, table_id);
+        const uint8_t ac_huff_symbol = get_symbol(reader, table_id, ac);
 
         if (ac_huff_symbol == static_cast<uint8_t>(ReadError::HUFF_SYMBOL)) {
 
             return false;
         }
 
-        if (ac_huff_symbol == 0x00) {  // the rest of coefficients are 0
+        // 0x00 means the rest of coefficients are 0
+        if (ac_huff_symbol == 0x00) {
 
             break;
         }
 
-        if (ac_huff_symbol == 0xf0) {
+        uint8_t pre_zeros_count = ac_huff_symbol == 0xf0 ? 16 : ac_huff_symbol >> 4;
 
-            pre_zeros_count = 16;
-        }
-
-        else {
-
-            pre_zeros_count = ac_huff_symbol >> 4;
-        }
-
-        if (idx + pre_zeros_count >= 64) {  // prevent `dst_block` overflow
+        // prevent `dst_block` overflow
+        if (idx + pre_zeros_count >= 64) {
 
             return false;
         }
@@ -324,19 +265,21 @@ bool Huffman::decode_next_block(JpegReader& reader, int (&dst_block)[64], const 
             dst_block[idx++] = 0;
         }
 
-        if (ac_huff_symbol == 0xf0) {  // done with this symbol
+        // nothing more to do for 0xf0
+        if (ac_huff_symbol == 0xf0) {
 
             continue;
         }
 
-        const uint ac_dct_coeff_length = ac_huff_symbol & 0xf;
+        const uint8_t ac_dct_coeff_length = ac_huff_symbol & 0xf;
 
-        if (ac_dct_coeff_length > 10) {  // AC DCT coefficient length out of range
+        // AC DCT coefficient length out of range
+        if (ac_dct_coeff_length > 10) {
 
             return false;
         }
 
-        const int ac_dct_coeff = get_dct_coeff(reader, ac_dct_coeff_length);
+        const int16_t ac_dct_coeff = get_dct_coeff(reader, ac_dct_coeff_length);
 
         if (ac_dct_coeff == static_cast<int16_t>(ReadError::DCT_COEF)) {
 
@@ -346,6 +289,7 @@ bool Huffman::decode_next_block(JpegReader& reader, int (&dst_block)[64], const 
         dst_block[idx++] = ac_dct_coeff;
     }
 
+    // zero-fill the rest of the block after 0x00
     while (idx < 64) {
 
         dst_block[idx++] = 0;

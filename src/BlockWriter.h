@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <sys/types.h>
+#include <cmath>
 
 
 /// \brief Abstract base class for block-wise writing of image data to memory.
@@ -30,7 +31,7 @@ class BlockWriter {
         /// - register a destination for their output
         /// - register basic information relevant to their task
         /// - (re)set initial conditions relevant to their task.
-        virtual void init(uint8_t* dst, uint src_width_px, [[maybe_unused]] uint src_height_px) noexcept = 0;
+        virtual void init(uint8_t* dst, uint16_t src_width_px, [[maybe_unused]] uint16_t src_height_px) noexcept = 0;
         
         /// \brief Dispathes a single block write.
         ///
@@ -58,13 +59,13 @@ class BasicBlockWriter : public BlockWriter {
         ///
         /// It is called before write() is called for the first input block of every
         /// new region of interest and should not be called again until the last block
-        /// of that region has been written to destination memory.
+        /// of that region has been written to destination buffer.
         ///
         /// \param dst            Raw pixel buffer for writing output to,
         ///                       minimum size is `src_width_px * src_height_px`.
         /// \param src_width_px   Width of the region of interest expressed in pixels.
         /// \param src_height_px  Height of the region of interest expressed in pixels.
-        void init(uint8_t* const dst, const uint src_width_px, [[maybe_unused]] const uint src_height_px) noexcept override {
+        void init(uint8_t* const dst, const uint16_t src_width_px, [[maybe_unused]] const uint16_t src_height_px) noexcept override {
 
             m_dst = dst;
             m_src_width_px = src_width_px;
@@ -75,7 +76,7 @@ class BasicBlockWriter : public BlockWriter {
         /// \brief Performs a single block write.
         ///
         /// Each call performs an unbuffered write of all input block pixels to
-        /// destination memory.
+        /// destination buffer.
         ///
         /// \param src_block  Input block.
         ///
@@ -84,7 +85,7 @@ class BasicBlockWriter : public BlockWriter {
         ///   order in which they appear in the entropy-coded segment.
         void write(int (&src_block)[64]) noexcept override {
 
-            uint offset = m_block_y * m_src_width_px + m_block_x;
+            uint32_t offset = m_block_y * m_src_width_px + m_block_x;
             uint src_idx = 0;
 
             for (uint row = 0; row < 8; ++row) {
@@ -109,9 +110,9 @@ class BasicBlockWriter : public BlockWriter {
     private:
 
         uint8_t* m_dst {nullptr};
-        uint m_src_width_px {};
-        uint m_block_x {};
-        uint m_block_y {};
+        uint16_t m_src_width_px {};
+        uint16_t m_block_x {};
+        uint16_t m_block_y {};
 };
 
 /// \brief Implements BlockWriter for block-wise writing with donwscaling.
@@ -122,7 +123,7 @@ class BasicBlockWriter : public BlockWriter {
 /// \note Output dimensions defined by these parameters need not be multiples of
 /// 8 pixels. They must be greater than zero and no greater than corresponding
 /// dimensions of source region of interest (see parameters to init()).
-template <uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
+template <uint16_t DST_WIDTH_PX, uint16_t DST_HEIGHT_PX>
 // DST_HEIGHT_PX could have been passed as a regular parameter to `init`
 // but is kept bundled here instead because of its close relation to
 // DST_WIDTH_PX and no relation to `init` parameters. For all intended
@@ -137,7 +138,7 @@ class DownscalingBlockWriter : public BlockWriter {
         ///
         /// It is called before write() is called for the first input block of every
         /// new region of interest and should not be called again until the last block
-        /// of that region has been written to destination memory.
+        /// of that region has been written to destination buffer.
         ///
         /// \param dst            Raw pixel buffer for writing output to,
         ///                       minimum size is `DST_WIDTH_PX * DST_HEIGHT_PX`.
@@ -149,7 +150,7 @@ class DownscalingBlockWriter : public BlockWriter {
         /// rather upscaling. Additionally, since writing is done in blocks, both source
         /// dimensions must be multiples of 8 pixels.
         // `[[maybe_unused]]` added only to satisfy Doxygen (in fact, the parameter is allways used)
-        void init(uint8_t* const dst, const uint src_width_px, [[maybe_unused]] const uint src_height_px) noexcept override {
+        void init(uint8_t* const dst, const uint16_t src_width_px, [[maybe_unused]] const uint16_t src_height_px) noexcept override {
 
             m_dst = dst;
             m_src_width_px = src_width_px;
@@ -177,7 +178,7 @@ class DownscalingBlockWriter : public BlockWriter {
         /// \brief Performs a single block write with downscaling.
         ///
         /// Each call performs a partially buffered write of input block pixels to
-        /// destination memory, downscaling the output according to specified
+        /// destination buffer, downscaling the output according to specified
         /// source and destination dimensions. No source information is discarded
         /// in the downscaling process.
         ///
@@ -207,16 +208,16 @@ class DownscalingBlockWriter : public BlockWriter {
             north = snap_to_vert_grid(north);
 
             // 1D index (0-63) of pixels within 8x8 src block
-            uint src_idx = 0;
+            uint8_t src_idx = 0;
 
             // column buffer index used for dst block's easternmost pixels' partial values
-            uint col_buff_idx = 0;
+            uint8_t col_buff_idx = 0;
 
             // correct minor floating point error
             block_west = snap_to_horiz_grid(block_west);
 
             // index of first pixel in row buffer relevant to the current src block
-            const uint floor_block_west = static_cast<uint>(block_west);
+            const auto floor_block_west = static_cast<uint16_t>(block_west);
 
             for (uint row = 0; row < 8; ++row) {
 
@@ -224,10 +225,10 @@ class DownscalingBlockWriter : public BlockWriter {
                 float west = block_west;
 
                 // dst row index overlayed by north portion of src row
-                const int floor_north = static_cast<uint>(north);
+                const auto floor_north = static_cast<uint16_t>(north);
 
                 // current dst row index offset from start of array
-                const int vert_offset = DST_WIDTH_PX * floor_north;
+                const uint32_t vert_offset = DST_WIDTH_PX * floor_north;
 
                 // south border of src row expressed in dst pixels
                 float south = north + m_vert_scaling_factor;
@@ -236,7 +237,7 @@ class DownscalingBlockWriter : public BlockWriter {
                 south = snap_to_vert_grid(south);
 
                 // dst row index overlayed by south portion of src row
-                const int floor_south = static_cast<uint>(south);
+                const auto floor_south = static_cast<uint16_t>(south);
 
                 // rows alignment
                 const bool src_row_spans_next_dst_row = floor_south != floor_north;
@@ -267,13 +268,13 @@ class DownscalingBlockWriter : public BlockWriter {
                     float east = west + m_horiz_scaling_factor;
 
                     // X-coord of dst column overlayed by west portion of src column
-                    const uint floor_west = static_cast<uint>(west);
+                    const auto floor_west = static_cast<uint16_t>(west);
 
                     // correct minor floating point error
                     east = snap_to_horiz_grid(east);
 
                     // X-coord of dst column overlayed by east portion of src column
-                    const uint floor_east = static_cast<uint>(east);
+                    const auto floor_east = static_cast<uint16_t>(east);
 
                     // total src pixel value to be weight-distributed across up to 4 dst pixels that it potentially overlays
                     const float val = src_block[src_idx++];
@@ -298,7 +299,7 @@ class DownscalingBlockWriter : public BlockWriter {
                     // east-aligned columns *and* src row reaches up to or into next dst row
                     if (east == floor_east && src_row_spans_next_dst_row) {
 
-                        const int dst_val = static_cast<int>(0.5f + m_row_buffer[floor_west] * m_val_norm_factor);
+                        const uint dst_val = std::lround(m_row_buffer[floor_west] * m_val_norm_factor);
                         m_dst[vert_offset + floor_west] = dst_val <= 255 ? dst_val : 255;
                         m_row_buffer[floor_west] = m_edge_buffer;
                         m_edge_buffer = 0.0f;
@@ -330,7 +331,7 @@ class DownscalingBlockWriter : public BlockWriter {
 
                         if (src_row_spans_next_dst_row) {
 
-                            const int dst_val = static_cast<int>(0.5f + m_row_buffer[floor_west] * m_val_norm_factor);
+                            const uint dst_val = std::lround(m_row_buffer[floor_west] * m_val_norm_factor);
                             m_dst[vert_offset + floor_west] = dst_val <= 255 ? dst_val : 255;
                             m_row_buffer[floor_west] = m_edge_buffer;
                         }
@@ -370,9 +371,9 @@ class DownscalingBlockWriter : public BlockWriter {
     private:
 
         uint8_t* m_dst {nullptr};
-        uint m_src_width_px {};
-        uint m_block_x {};
-        uint m_block_y {};
+        uint16_t m_src_width_px {};
+        uint16_t m_block_x {};
+        uint16_t m_block_y {};
 
         float m_horiz_scaling_factor {};
         float m_vert_scaling_factor {};
@@ -384,18 +385,18 @@ class DownscalingBlockWriter : public BlockWriter {
         float m_column_buffer[9] {};  // size is 9 because it's one greater than block height in pixels
         float m_edge_buffer {};
 
-        // snap floating point input to integer grid if within `m_epsilon_horiz` proximity
+        // snap floating point input to integer grid within `m_epsilon_horiz` proximity
         float snap_to_horiz_grid(const float input) const noexcept {
 
-            const uint floored = static_cast<uint>(input + m_epsilon_horiz);
+            const auto floored = static_cast<uint16_t>(input + m_epsilon_horiz);
 
             return (input != floored && input - floored < m_epsilon_horiz) ? floored : input;
         }
 
-        // snap floating point input to integer grid if within `m_epsilon_vert` proximity
+        // snap floating point input to integer grid within `m_epsilon_vert` proximity
         float snap_to_vert_grid(const float input) const noexcept {
 
-            const uint floored = static_cast<uint>(input + m_epsilon_vert);
+            const auto floored = static_cast<uint16_t>(input + m_epsilon_vert);
 
             return (input != floored && input - floored < m_epsilon_vert) ? floored : input;
         }
