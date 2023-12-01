@@ -108,45 +108,47 @@ uint16_t JpegReader::read_segment_size() noexcept {
 
 int8_t JpegReader::read_bit() noexcept {
 
-    // current byte is always valid, read current bit if not last (lowest, at position 0)
-    if (m_current_bit_pos) {
+    //////////////////////////////////////////////////////////
+    // looking at a byte that has previously been read from //
+    
+    // read bit 0 (advance current byte)
+    // mostly false (true on every 8-th evaluation)
+    if (m_current_bit_pos == 0) {
+
+        m_current_bit_pos = 7;
+
+        return *m_buff_current_byte++ & 1;
+    }
+
+    // read bit 1, 2, 3, 4, 5 or 6
+    // mostly true (false on every 7-th evaluation)
+    if (m_current_bit_pos != 7) {
 
         return *m_buff_current_byte >> m_current_bit_pos-- & 1;
     }
 
-    // validate next byte before advancing current byte (next most common scenario)
-    if (*m_buff_current_byte != 0xff && m_buff_current_byte[1] != 0xff) {
+    //////////////////////////////////////////////////////////
+    // otherwise, looking at a new byte (validation needed) //
 
-        m_current_bit_pos = 7;
+    // skip current (0x00) byte if previous one is 0xff
+    // (if looking at the very first byte of ECS, previous byte is always 0x00)
+    m_buff_current_byte += *(m_buff_current_byte - 1) == 0xff;
 
-        return *m_buff_current_byte++ & 1;
+    // any valid byte must be followed by at least two more bytes
+    // almost always false (true if ECS is corrupted)
+    if (size_remaining() < 2) {
+
+        return static_cast<int8_t>(ReadError::ECS_BIT);
     }
 
-    // allow reading next 0xff if byte-stuffed with 0x00
-    if (m_buff_current_byte[1] == 0xff && m_buff_current_byte[2] == 0x00) {
+    // read bit 7 if current byte is not 0xff or is followed by 0x00
+    // almost always true (false if looking at a marker)
+    if ((m_buff_current_byte[0] << 8 | m_buff_current_byte[1]) <= 0xff00) {
 
-        m_current_bit_pos = 7;
-
-        return *m_buff_current_byte++ & 1;
+        return *m_buff_current_byte >> m_current_bit_pos-- & 1;
     }
 
-    // skip 0x00 after reading 0xff
-    if (*m_buff_current_byte == 0xff) {
-
-        m_current_bit_pos = 7;
-        const int8_t temp = *m_buff_current_byte & 1;
-        m_buff_current_byte += 2;
-
-        return temp;
-    }
-
-
-    // if reading last bit before expected EOI marker
-    if (size_remaining() == 3) {
-
-        return *m_buff_current_byte++ & 1;
-    }
-
-    // else reading last bit before invalid marker
+    // otherwise looking at EOI or some invalid marker
+    // almost never reached (unless ECS is corrupted)
     return static_cast<int8_t>(ReadError::ECS_BIT);
 }
