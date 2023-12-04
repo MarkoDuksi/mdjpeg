@@ -8,7 +8,7 @@
 #include <iostream>
 
 #include "../JpegDecoder.h"
-#include "../BlockWriter.h"
+#include "../DownscalingBlockWriter.h"
 #include "test-utils.h"
 
 

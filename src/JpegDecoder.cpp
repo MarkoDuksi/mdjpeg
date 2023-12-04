@@ -1,6 +1,6 @@
 #include "JpegDecoder.h"
 
-#include "BlockWriter.h"
+#include "BasicBlockWriter.h"
 #include "transform.h"
 
 
