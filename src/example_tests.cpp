@@ -21,8 +21,9 @@ int main(int argc, char** argv) {
     uint failed_batched_tests_count = 0;
     uint total_failed_tests_count = 0;
 
-    /////////////////////////
-    // start non-visual tests
+    ////////////////////////////
+    // start non-visual tests //
+
     // - non-visual tests cover the DownscalingBlockWriter implementation
     // - variable parameters include original and downscaled image resolution
     //   as well as a single fill value for all pixels in mocked original image
@@ -68,20 +69,38 @@ int main(int argc, char** argv) {
     // end non-visual tests
     ///////////////////////
 
-    /////////////////////
-    // start visual tests
+    ////////////////////////
+    // start visual tests //
+
     // - visual tests cover various modes of decompressing images
     // - the "failed" status is definite but "passed?" is not
     // - for definite confirmation of passing a test visual inspection
     //   is needed
-    // - alternatively, output of initial rounds can be saved as a
+    // - alternatively, output of initial rounds can be saved as
     //   reference for diffing with output of future iterations
 
+    // full frame decoding //
+    
     // synthetic test images (small size, tracked by git)
     failed_batched_tests_count = full_frame_decoding_tests(test_imgs_dir, {160, 120});
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
+    // synthetic test image (medium size, tracked by git)
+    failed_batched_tests_count = full_frame_decoding_tests(test_imgs_dir, {800, 800});
+    std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
+    total_failed_tests_count += failed_batched_tests_count;
+
+    // real ESP32-CAM images (large size, not tracked by git)
+    failed_batched_tests_count = full_frame_decoding_tests(test_imgs_dir, {1280, 1024});
+    std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
+
+    // real ESP32-CAM images (large size, not tracked by git)
+    failed_batched_tests_count = full_frame_decoding_tests(test_imgs_dir, {1600, 1200});
+    std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
+
+    // full frame DC-only decoding //
+    
     // synthetic test images (small size, tracked by git)
     failed_batched_tests_count = full_frame_dc_decoding_tests(test_imgs_dir, {160, 120});
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
@@ -92,23 +111,27 @@ int main(int argc, char** argv) {
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
+    // real ESP32-CAM images (large size, not tracked by git)
+    failed_batched_tests_count = full_frame_dc_decoding_tests(test_imgs_dir, {1280, 1024});
+    std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
+
+    // real ESP32-CAM images (large size, not tracked by git)
+    failed_batched_tests_count = full_frame_dc_decoding_tests(test_imgs_dir, {1600, 1200});
+    std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
+
+    // cropped decoding //
+
     // synthetic test image (medium size, tracked by git)
     failed_batched_tests_count = cropped_decoding_tests(test_imgs_dir);  // 800x800 implicit
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
 
+    // downscaling decoding //
+
     // synthetic test image (medium size, tracked by git)
-    failed_batched_tests_count = recursive_downscaling_decoding_test<800, 800, 800, 800>(test_imgs_dir);
+    failed_batched_tests_count = recursive_downscaling_decoding_test<800, 800, 799, 799>(test_imgs_dir);
     std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
-
-    // // real ESP32-CAM images (large size, not tracked by git)
-    // failed_batched_tests_count = full_frame_decoding_tests(test_imgs_dir, {1280, 1024});
-    // std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
-
-    // // real ESP32-CAM images (large size, not tracked by git)
-    // failed_batched_tests_count = full_frame_decoding_tests(test_imgs_dir, {1600, 1200});
-    // std::cout << "failed tests count for this batch: " << failed_batched_tests_count << "\n\n";
 
     // end visual tests
     ///////////////////

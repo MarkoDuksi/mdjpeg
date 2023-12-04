@@ -87,6 +87,7 @@ class Huffman {
         HuffmanTables m_htables[2];
 
         uint8_t get_symbol(JpegReader& reader, uint8_t table_id, uint8_t is_ac) const noexcept;
+
         static int16_t get_dct_coeff(JpegReader& reader, uint8_t length) noexcept;
 
         // decodes next block from the ECS, be it luma or chroma (specified via `table_id`)

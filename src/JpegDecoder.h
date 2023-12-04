@@ -8,6 +8,7 @@
 #include "JpegReader.h"
 #include "Huffman.h"
 #include "Dequantizer.h"
+#include "BoundingBox.h"
 
 
 class BlockWriter;
@@ -66,36 +67,27 @@ class JpegDecoder {
         /// \brief Decompresses the luma channel, writing to raw pixel buffer via BasicBlockWriter by default.
         ///
         /// \param dst     Raw pixel buffer for decompressed output, min size is `64 * (x2_blk - x1_blk) * (y2_blk - y1_blk)`.
-        /// \param x1_blk  X-coordinate of the top-left corner of the region of interest expressed in 8x8 blocks.
-        /// \param y1_blk  Y-coordinate of the top-left corner of the region of interest expressed in 8x8 blocks.
-        /// \param x2_blk  X-coordinate of the bottom-right corner of the region of interest expressed in 8x8 blocks.
-        /// \param y2_blk  Y-coordinate of the bottom-right corner of the region of interest expressed in 8x8 blocks.
+        /// \param roi_blk Coordinates for the region of interest expressed in 8x8 blocks.
         /// \retval        true on success.
         /// \retval        false on failure.
-        bool luma_decode(uint8_t* dst, uint16_t x1_blk, uint16_t y1_blk, uint16_t x2_blk, uint16_t y2_blk) noexcept;
+        bool luma_decode(uint8_t* dst, const BoundingBox& roi_blk) noexcept;
 
         /// \brief Decompresses the luma channel writing to raw pixel buffer via specified BlockWriter.
         ///
         /// \param dst     Raw pixel buffer for decompressed output, min size depending on particular BlockWriter.
-        /// \param x1_blk  X-coordinate of the top-left corner of the region of interest expressed in 8x8 blocks.
-        /// \param y1_blk  Y-coordinate of the top-left corner of the region of interest expressed in 8x8 blocks.
-        /// \param x2_blk  X-coordinate of the bottom-right corner of the region of interest expressed in 8x8 blocks.
-        /// \param y2_blk  Y-coordinate of the bottom-right corner of the region of interest expressed in 8x8 blocks.
+        /// \param roi_blk Coordinates for the region of interest expressed in 8x8 blocks.
         /// \param writer  Specific implementation to use for writing decompressed data to raw pixel buffer.
         /// \retval        true on success.
         /// \retval        false on failure.
-        bool luma_decode(uint8_t* dst, uint16_t x1_blk, uint16_t y1_blk, uint16_t x2_blk, uint16_t y2_blk, BlockWriter& writer) noexcept;
+        bool luma_decode(uint8_t* dst, const BoundingBox& roi_blk, BlockWriter& writer) noexcept;
 
         /// \brief Decompresses 1:8 scaled-down luma channel to raw pixel buffer using DC DCT coefficients only.
         ///
         /// \param dst     Raw pixel buffer for decompressed output, min size is `(x2_blk - x1_blk) * (y2_blk - y1_blk)`.
-        /// \param x1_blk  X-coordinate of the top-left corner of the region of interest expressed in 8x8 blocks.
-        /// \param y1_blk  Y-coordinate of the top-left corner of the region of interest expressed in 8x8 blocks.
-        /// \param x2_blk  X-coordinate of the bottom-right corner of the region of interest expressed in 8x8 blocks.
-        /// \param y2_blk  Y-coordinate of the bottom-right corner of the region of interest expressed in 8x8 blocks.
+        /// \param roi_blk Coordinates for the region of interest expressed in 8x8 blocks.
         /// \retval        true on success.
         /// \retval        false on failure.
-        bool dc_luma_decode(uint8_t* dst, uint16_t x1_blk, uint16_t y1_blk, uint16_t x2_blk, uint16_t y2_blk) noexcept;
+        bool dc_luma_decode(uint8_t* dst, const BoundingBox& roi_blk) noexcept;
 
         template <StateID ANY>
         friend class ConcreteState;
@@ -106,8 +98,6 @@ class JpegDecoder {
         struct FrameInfo {
             uint16_t height_px {};
             uint16_t width_px {};
-            uint16_t height_blk {};
-            uint16_t width_blk {};
             uint8_t  horiz_chroma_subs_factor {};
 
             void set(uint16_t height_px, uint16_t width_px, uint8_t horiz_chroma_subs_factor) noexcept;
@@ -121,8 +111,6 @@ class JpegDecoder {
 
                 height_px = 0;
                 width_px = 0;
-                height_blk = 0;
-                width_blk = 0;
                 horiz_chroma_subs_factor = 0;
             };
 
@@ -151,6 +139,4 @@ class JpegDecoder {
 
             m_istate = new (m_istate) ConcreteState<state_id>(this);
         }
-
-        bool validate_bounds(uint16_t x1_blk, uint16_t y1_blk, uint16_t x2_blk, uint16_t y2_blk) const noexcept;
 };

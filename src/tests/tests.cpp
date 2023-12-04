@@ -24,7 +24,7 @@ uint full_frame_dc_decoding_tests(const std::filesystem::path& input_base_dir, c
         decoder.assign(buff, size);
         std::unique_ptr<uint8_t[]> decoded_img = std::make_unique<uint8_t[]>(dims.width_blk * dims.height_blk);
 
-        if (decoder.dc_luma_decode(decoded_img.get(), 0, 0, dims.width_blk, dims.height_blk)) {
+        if (decoder.dc_luma_decode(decoded_img.get(), {0, 0, dims.width_blk, dims.height_blk})) {
 
             const std::filesystem::path output_dir = file_path.parent_path() / "full-frame_DC-only";
             std::filesystem::create_directory(output_dir);
@@ -77,7 +77,7 @@ uint full_frame_decoding_tests(const std::filesystem::path& input_base_dir, cons
         decoder.assign(buff, size);
         std::unique_ptr<uint8_t[]> decoded_img = std::make_unique<uint8_t[]>(dims.width_px * dims.height_px);
 
-        if (decoder.luma_decode(decoded_img.get(), 0, 0, dims.width_blk, dims.height_blk)) {
+        if (decoder.luma_decode(decoded_img.get(), {0, 0, dims.width_blk, dims.height_blk})) {
 
             const std::filesystem::path output_dir = file_path.parent_path() / "full-frame";
             std::filesystem::create_directory(output_dir);
@@ -139,11 +139,14 @@ uint cropped_decoding_tests(const std::filesystem::path& input_base_dir) {
         uint quadrant_idx = 0;
         const std::string quadrants[16] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
 
-        for (uint row_blk = 0; row_blk < src_dims.height_blk; row_blk += dst_dims.height_blk) {
+        for (uint16_t row_blk = 0; row_blk < src_dims.height_blk; row_blk += dst_dims.height_blk) {
 
-            for (uint col_blk = 0; col_blk < src_dims.width_blk; col_blk += dst_dims.width_blk) {
+            for (uint16_t col_blk = 0; col_blk < src_dims.width_blk; col_blk += dst_dims.width_blk) {
 
-                if (decoder.luma_decode(decoded_img, col_blk, row_blk, col_blk + dst_dims.width_blk, row_blk + dst_dims.height_blk)) {
+                if (decoder.luma_decode(decoded_img, {col_blk,
+                                                      row_blk,
+                                                      static_cast<uint16_t>(col_blk + dst_dims.width_blk),
+                                                      static_cast<uint16_t>(row_blk + dst_dims.height_blk)})) {
 
                     const std::filesystem::path output_dir = file_path.parent_path() / "cropped";
                     std::filesystem::create_directory(output_dir);

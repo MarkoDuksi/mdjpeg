@@ -117,7 +117,7 @@ uint downscaling_decoding_test(const std::filesystem::path& input_base_dir) {
         DownscalingBlockWriter<DST_WIDTH_PX, DST_HEIGHT_PX> writer;
 
         uint8_t decoded_img[DST_WIDTH_PX * DST_HEIGHT_PX] {};
-        if (decoder.luma_decode(decoded_img, 0, 0, SRC_WIDTH_PX / 8 , SRC_HEIGHT_PX / 8, writer)) {
+        if (decoder.luma_decode(decoded_img, {0, 0, SRC_WIDTH_PX / 8 , SRC_HEIGHT_PX / 8}, writer)) {
 
             std::filesystem::path output_dir = file_path.parent_path() / "downscaled";
             std::filesystem::create_directory(output_dir);

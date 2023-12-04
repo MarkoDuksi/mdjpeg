@@ -23,36 +23,32 @@ bool JpegDecoder::assign(const uint8_t* const buff, const size_t size) noexcept 
     return m_has_valid_header;
 }
 
-bool JpegDecoder::luma_decode(uint8_t* const dst, uint16_t x1_blk, uint16_t y1_blk, uint16_t x2_blk, uint16_t y2_blk) noexcept {
+bool JpegDecoder::luma_decode(uint8_t* const dst, const BoundingBox& roi_blk) noexcept {
 
     BasicBlockWriter writer;
 
-    return luma_decode(dst, x1_blk, y1_blk, x2_blk, y2_blk, writer);
+    return luma_decode(dst, roi_blk, writer);
 }
 
-bool JpegDecoder::luma_decode(uint8_t* const dst, const uint16_t x1_blk, const uint16_t y1_blk, const uint16_t x2_blk, const uint16_t y2_blk, BlockWriter& writer) noexcept {
+bool JpegDecoder::luma_decode(uint8_t* const dst, const BoundingBox& roi_blk, BlockWriter& writer) noexcept {
 
     if (!m_has_valid_header) {
 
         return false;
     }
 
-    if (!validate_bounds(x1_blk, y1_blk, x2_blk, y2_blk)) {
-
-        return false;
-    }
+    writer.init(dst, 8 * roi_blk.width(), 8 * roi_blk.height());
 
     int block_8x8[64] {0};
-    const uint16_t src_width_px = 8 * (x2_blk - x1_blk);
-    const uint16_t src_height_px = 8 * (y2_blk - y1_blk);
 
-    writer.init(dst, src_width_px, src_height_px);
+    const uint16_t src_width_blk = static_cast<uint16_t>(m_frame_info.width_px + 7) / 8;
+    uint32_t row_blk_idx = roi_blk.topleft_Y * src_width_blk + roi_blk.topleft_X;
 
-    for (uint16_t row_blk = y1_blk; row_blk < y2_blk; ++row_blk) {
+    for (uint16_t row = roi_blk.topleft_Y; row < roi_blk.bottomright_Y; ++row) {
 
-        uint32_t luma_block_idx = row_blk * m_frame_info.width_blk + x1_blk;
+        uint32_t luma_block_idx = row_blk_idx;
 
-        for (uint16_t col_blk = x1_blk; col_blk < x2_blk; ++col_blk, ++luma_block_idx) {
+        for (uint16_t col = roi_blk.topleft_X; col < roi_blk.bottomright_X; ++col, ++luma_block_idx) {
 
             if (!m_huffman.decode_luma_block(m_reader, block_8x8, luma_block_idx, m_frame_info.horiz_chroma_subs_factor)) {
 
@@ -65,32 +61,30 @@ bool JpegDecoder::luma_decode(uint8_t* const dst, const uint16_t x1_blk, const u
             mdjpeg_transform::range_normalize(block_8x8);
             writer.write(block_8x8);
         }
+
+        row_blk_idx += src_width_blk;
     }
 
     return true;
 }
 
-bool JpegDecoder::dc_luma_decode(uint8_t* const dst, uint16_t x1_blk, uint16_t y1_blk, uint16_t x2_blk, uint16_t y2_blk) noexcept {
+bool JpegDecoder::dc_luma_decode(uint8_t* const dst, const BoundingBox& roi_blk) noexcept {
 
     if (!m_has_valid_header) {
 
         return false;
     }
     
-    if (!validate_bounds(x1_blk, y1_blk, x2_blk, y2_blk)) {
-
-        return false;
-    }
-
-    const uint16_t dst_width_px = x2_blk - x1_blk;
     int block_8x8[64] {0};
 
-    for (uint16_t row_blk = y1_blk; row_blk < y2_blk; ++row_blk) {
+    const uint16_t src_width_blk = static_cast<uint16_t>(m_frame_info.width_px + 7) / 8;
+    uint32_t row_blk_idx = roi_blk.topleft_Y * src_width_blk + roi_blk.topleft_X;
 
-        uint32_t luma_block_idx = row_blk * m_frame_info.width_blk + x1_blk;
+    for (uint16_t row = roi_blk.topleft_Y; row < roi_blk.bottomright_Y; ++row) {
 
-        for (uint16_t col_blk = x1_blk; col_blk < x2_blk; ++col_blk, ++luma_block_idx) {
+        uint32_t luma_block_idx = row_blk_idx;
 
+        for (uint16_t col = roi_blk.topleft_X; col < roi_blk.bottomright_X; ++col, ++luma_block_idx) {
             if (!m_huffman.decode_luma_block(m_reader, block_8x8, luma_block_idx, m_frame_info.horiz_chroma_subs_factor)) {
 
                 return false;
@@ -102,8 +96,10 @@ bool JpegDecoder::dc_luma_decode(uint8_t* const dst, uint16_t x1_blk, uint16_t y
             // recover block-averaged luma value
             const int dc_luma = (block_8x8[0] + 1024) / 8;
 
-            dst[(row_blk - y1_blk) * dst_width_px + (col_blk - x1_blk)] = dc_luma <= 255 ? dc_luma : 255;
+            dst[(row - roi_blk.topleft_Y) * roi_blk.width() + (col - roi_blk.topleft_X)] = dc_luma <= 255 ? dc_luma : 255;
         }
+
+        row_blk_idx += src_width_blk;
     }
 
     return true;
@@ -119,18 +115,9 @@ StateID JpegDecoder::parse_header() noexcept {
     return m_istate->getID();
 }
 
-bool JpegDecoder::validate_bounds(const uint16_t x1_blk, const uint16_t y1_blk, const uint16_t x2_blk, const uint16_t y2_blk) const noexcept {
-
-    return (x1_blk < x2_blk && y1_blk < y2_blk
-                            && x2_blk <= m_frame_info.width_blk
-                            && y2_blk <= m_frame_info.height_blk);
-}
-
 void JpegDecoder::FrameInfo::set(const uint16_t height_px, const uint16_t width_px, const uint8_t horiz_chroma_subs_factor) noexcept {
 
     this->height_px = height_px;
     this->width_px = width_px;
-    height_blk = (height_px + 7) / 8;
-    width_blk = (width_px + 7) / 8;
     this->horiz_chroma_subs_factor = horiz_chroma_subs_factor;
 }
