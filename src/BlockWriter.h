@@ -47,4 +47,11 @@ class BlockWriter {
         ///   expected output is written to the destination by the time the function
         ///   finishes with its last input block.
         virtual void write(int (&src_block)[64]) noexcept = 0;
+
+    protected:
+
+        uint8_t* m_dst {nullptr};
+        uint16_t m_src_width_px {};
+        uint16_t m_block_x {};
+        uint16_t m_block_y {};
 };

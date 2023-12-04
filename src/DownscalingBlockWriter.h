@@ -259,20 +259,15 @@ class DownscalingBlockWriter : public BlockWriter {
 
     private:
 
-        uint8_t* m_dst {nullptr};
-        uint16_t m_src_width_px {};
-        uint16_t m_block_x {};
-        uint16_t m_block_y {};
-
         float m_horiz_scaling_factor {};
         float m_vert_scaling_factor {};
         float m_val_norm_factor {};
         float m_epsilon_horiz {};
         float m_epsilon_vert {};
 
-        float m_row_buffer[DST_WIDTH_PX] {};
-        float m_column_buffer[9] {};  // size is 9 because it's one greater than block height in pixels
         float m_edge_buffer {};
+        float m_column_buffer[9] {};  // size is 9 == one greater than block height in pixels
+        float m_row_buffer[DST_WIDTH_PX] {};
 
         // snap floating point input to integer grid within `m_epsilon_horiz` proximity
         float snap_to_horiz_grid(const float input) const noexcept {

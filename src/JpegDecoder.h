@@ -116,19 +116,19 @@ class JpegDecoder {
 
         } m_frame_info {};
 
+        // indication of successful assignment
+        bool m_has_valid_header {false};
+
         // initial state for the state machine that parses header information from JFIF header
-        ConcreteState<StateID::ENTRY> m_state{this};
+        ConcreteState<StateID::ENTRY> m_state{this};  // 1 ptr
 
         // polymorphic handle, used as properly aligned pointer for transitioning through states via placement new
         State* m_istate {&m_state};
 
         // misc decoding utilities
-        JpegReader m_reader {};
-        Huffman m_huffman {};
-        Dequantizer m_dequantizer {};
-
-        // indication of successful assignment
-        bool m_has_valid_header {false};
+        JpegReader m_reader {};        // 4 x ptr + 1 uint8
+        Dequantizer m_dequantizer {};  // 1 ptr
+        Huffman m_huffman {};          // large object (keep it last)
 
         // step function for the state machine that parses JFIF header
         StateID parse_header() noexcept;

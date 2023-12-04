@@ -31,11 +31,4 @@ class BasicBlockWriter : public BlockWriter {
         /// - Blocks from a particular region of interest are presumed served in the
         ///   order in which they appear in the entropy-coded segment.
         void write(int (&src_block)[64]) noexcept override;
-
-    private:
-
-        uint8_t* m_dst {nullptr};
-        uint16_t m_src_width_px {};
-        uint16_t m_block_x {};
-        uint16_t m_block_y {};
 };
