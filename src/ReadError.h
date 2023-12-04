@@ -1,6 +1,8 @@
 #pragma once
 
 
+namespace ReadError {
+
 /// \brief Error codes indicating failure when reading the ECS from buffer.
 ///
 /// ECS (entropy-coded segment) is read through JpegReader::read_bit which only
@@ -13,8 +15,10 @@
 /// the need for individually tailored error codes to be returned by different
 /// callers depending on which one was first to detected the error (even if the
 /// underlying cause was simply a corrupted ECS).
-enum class ReadError {
+enum ReadError {
     ECS_BIT = -1,        ///< Error code returned by JpegReader::read_bit
-    HUFF_SYMBOL = 0xff,  ///< Error code returned by Huffman::get_dc_symbol and Huffman::get_ac_symbol
+    HUFF_SYMBOL = 0xff,  ///< Error code returned by Huffman::get_symbol
     DCT_COEF = 0x2000    ///< Error code returned by Huffman::get_dct_coeff
 };
+
+}  // namespace ReadError

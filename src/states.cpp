@@ -34,25 +34,21 @@ void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) noexcept {
         return;
     }
 
-    switch (static_cast<StateID>(*next_marker)) {
+    if (static_cast<StateID>(*next_marker) == StateID::SOI) {
 
-        case StateID::SOI:
+        #ifdef PRINT_STATES_FLOW
+            std::cout << "\nFound marker: SOI (0x" << std::hex << *next_marker << ")\n";
+        #endif
 
-            #ifdef PRINT_STATES_FLOW
-                std::cout << "\nFound marker: SOI (0x" << std::hex << *next_marker << ")\n";
-            #endif
-
-            m_decoder->set_state<StateID::SOI>();
-            break;
-
-        default:
-
-            #ifdef PRINT_STATES_FLOW
-                std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
-            #endif
-
-            m_decoder->set_state<StateID::ERROR_UUM>();
+        m_decoder->set_state<StateID::SOI>();
+        return;
     }
+
+    #ifdef PRINT_STATES_FLOW
+        std::cout << "\nUnexpected or unrecognized marker: 0x" << std::hex << *next_marker << "\n";
+    #endif
+
+    m_decoder->set_state<StateID::ERROR_UUM>();
 }
 
 template<>

@@ -57,7 +57,7 @@ class JpegReader {
         uint16_t read_segment_size() noexcept;
 
         /// \brief   Gets next bit from buffer at cursor, applying rules for reading ECS, advances the cursor.
-        /// \return  Bit value on success, static_cast<int8_t>(ReadError::ECS_BIT) otherwise.
+        /// \return  Bit value on success, ReadError::ECS_BIT otherwise.
         int8_t read_bit() noexcept;
         
     private:

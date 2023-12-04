@@ -138,7 +138,7 @@ int8_t JpegReader::read_bit() noexcept {
     // almost always false (true if ECS is corrupted)
     if (size_remaining() < 2) {
 
-        return static_cast<int8_t>(ReadError::ECS_BIT);
+        return ReadError::ECS_BIT;
     }
 
     // read bit 7 if current byte is not 0xff or is followed by 0x00
@@ -150,5 +150,5 @@ int8_t JpegReader::read_bit() noexcept {
 
     // otherwise looking at EOI or some invalid marker
     // almost never reached (unless ECS is corrupted)
-    return static_cast<int8_t>(ReadError::ECS_BIT);
+    return ReadError::ECS_BIT;
 }

@@ -118,9 +118,9 @@ uint8_t Huffman::get_symbol(JpegReader& reader, const uint8_t table_id, const ui
 
         const int8_t next_bit = reader.read_bit();
 
-        if (next_bit == static_cast<int8_t>(ReadError::ECS_BIT)) {
+        if (next_bit == ReadError::ECS_BIT) {
 
-            return static_cast<uint8_t>(ReadError::HUFF_SYMBOL);
+            return ReadError::HUFF_SYMBOL;
         }
 
         curr_code = curr_code << 1 | next_bit;
@@ -136,14 +136,14 @@ uint8_t Huffman::get_symbol(JpegReader& reader, const uint8_t table_id, const ui
         }
     }
 
-    return static_cast<uint8_t>(ReadError::HUFF_SYMBOL);
+    return ReadError::HUFF_SYMBOL;
 }
 
 int16_t Huffman::get_dct_coeff(JpegReader& reader, const uint8_t length) noexcept {
 
     if (length > 16) {
 
-        return static_cast<int16_t>(ReadError::DCT_COEF);
+        return ReadError::DCT_COEF;
     }
 
     int16_t dct_coeff = 0;
@@ -152,9 +152,9 @@ int16_t Huffman::get_dct_coeff(JpegReader& reader, const uint8_t length) noexcep
 
         const int8_t next_bit = reader.read_bit();
 
-        if (next_bit == static_cast<int8_t>(ReadError::ECS_BIT)) {
+        if (next_bit == ReadError::ECS_BIT) {
 
-            return static_cast<int16_t>(ReadError::DCT_COEF);
+            return ReadError::DCT_COEF;
         }
 
         dct_coeff = dct_coeff << 1 | next_bit;
@@ -225,7 +225,7 @@ bool Huffman::decode_next_block(JpegReader& reader, int (&dst_block)[64], const 
 
     const int16_t dc_dct_coeff = get_dct_coeff(reader, dc_huff_symbol);
 
-    if (dc_dct_coeff == static_cast<int16_t>(ReadError::DCT_COEF)) {
+    if (dc_dct_coeff == ReadError::DCT_COEF) {
 
         return false;
     }
@@ -241,7 +241,7 @@ bool Huffman::decode_next_block(JpegReader& reader, int (&dst_block)[64], const 
 
         const uint8_t ac_huff_symbol = get_symbol(reader, table_id, ac);
 
-        if (ac_huff_symbol == static_cast<uint8_t>(ReadError::HUFF_SYMBOL)) {
+        if (ac_huff_symbol == ReadError::HUFF_SYMBOL) {
 
             return false;
         }
@@ -281,7 +281,7 @@ bool Huffman::decode_next_block(JpegReader& reader, int (&dst_block)[64], const 
 
         const int16_t ac_dct_coeff = get_dct_coeff(reader, ac_dct_coeff_length);
 
-        if (ac_dct_coeff == static_cast<int16_t>(ReadError::DCT_COEF)) {
+        if (ac_dct_coeff == ReadError::DCT_COEF) {
 
             return false;
         }
