@@ -1,5 +1,7 @@
 #include "JpegDecoder.h"
 
+#include <algorithm>
+
 #include "BasicBlockWriter.h"
 #include "transform.h"
 
@@ -94,9 +96,9 @@ bool JpegDecoder::dc_luma_decode(uint8_t* const dst, const BoundingBox& roi_blk)
             m_dequantizer.transform(block_8x8[0]);
 
             // recover block-averaged luma value
-            const int dc_luma = (block_8x8[0] + 1024) / 8;
+            const uint8_t dc_luma = std::min(255u, static_cast<uint>(std::max(0, block_8x8[0] + 1024)) / 8);
 
-            dst[(row - roi_blk.topleft_Y) * roi_blk.width() + (col - roi_blk.topleft_X)] = dc_luma <= 255 ? dc_luma : 255;
+            dst[(row - roi_blk.topleft_Y) * roi_blk.width() + (col - roi_blk.topleft_X)] = dc_luma;
         }
 
         row_blk_idx += src_width_blk;

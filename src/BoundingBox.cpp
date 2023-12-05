@@ -1,6 +1,5 @@
 #include "BoundingBox.h"
 
-#include <cmath>
 #include <algorithm>
 
 
@@ -25,7 +24,7 @@ bool BoundingBox::expand_to_square(const BoundingBox& outer_bounds) noexcept {
     // if width should match height
     if (width() < height()) {
 
-        topleft_X = std::max(0, static_cast<int>(topleft_X - std::lround((height() - width()) / 2.0f)));
+        topleft_X = std::max(0, topleft_X - (height() - width()) / 2);
         bottomright_X = std::min(static_cast<int>(outer_bounds.bottomright_X), topleft_X + height());
         topleft_X = bottomright_X - height();
     }
@@ -33,7 +32,7 @@ bool BoundingBox::expand_to_square(const BoundingBox& outer_bounds) noexcept {
     // if height should match width
     else if (height() < width()) {
 
-        topleft_Y = std::max(0, static_cast<int>(topleft_Y - std::lround((width() - height()) / 2.0f)));
+        topleft_Y = std::max(0, topleft_Y - (width() - height()) / 2);
         bottomright_Y = std::min(static_cast<int>(outer_bounds.bottomright_Y), topleft_Y + width());
         topleft_Y = bottomright_Y - width();
     }

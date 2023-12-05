@@ -15,26 +15,26 @@ class Dequantizer {
 
     public:
 
-        /// \brief   Populates quantization table from \c reader buffer starting at cursor.
+        /// \brief Populates quantization table from \c reader buffer starting at cursor.
         /// \return  Number of bytes read through from the JFIF segment
         uint8_t set_qtable(JpegReader& reader, uint16_t max_read_length) noexcept;
 
-        /// \brief   Checks if the quantization table is validly set.
+        /// \brief Checks if the quantization table is validly set.
         bool is_set() const noexcept {
 
             return m_qtable;
         }
 
-        /// \brief   Invalidates quantization table.
+        /// \brief Invalidates quantization table.
         void clear() noexcept {
 
             m_qtable = nullptr;
         }
 
-        /// \brief   Dequantizes a block of DCT coefficients (in place).
+        /// \brief Dequantizes a block of DCT coefficients (in place).
         void transform(int (&block)[64]) const noexcept;
 
-        /// \brief   Dequantizes a single (DC) DCT coefficient (in place).
+        /// \brief Dequantizes a single (DC) DCT coefficient (in place).
         void transform(int& dc_coeff) const noexcept;
 
     private:

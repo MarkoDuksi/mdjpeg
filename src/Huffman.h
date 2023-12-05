@@ -15,17 +15,17 @@ class Huffman {
 
     public:
 
-        /// \brief   Populates %Huffman tables starting at \c reader cursor.
+        /// \brief Populates %Huffman tables starting at \c reader cursor.
         /// \return  Number of bytes read through from the JFIF segment
         uint16_t set_htable(JpegReader& reader, uint16_t max_read_length) noexcept;
 
-        /// \brief   Checks if all (DC/AC-luma/chroma) %Huffman tables are validly set.
+        /// \brief Checks if all (DC/AC-luma/chroma) %Huffman tables are validly set.
         bool is_set() const noexcept;
 
-        /// \brief   Invalidates all (DC/AC-luma/chroma) %Huffman tables even if populated.
+        /// \brief Invalidates all (DC/AC-luma/chroma) %Huffman tables even if populated.
         void clear() noexcept;
 
-        /// \brief   Decodes a luma block by its index.
+        /// \brief Decodes a luma block by its index.
         /// \retval  true on success.
         /// \retval  false on failure.
         bool decode_luma_block(JpegReader& reader, int (&dst_block)[64], uint32_t luma_block_idx, uint8_t horiz_chroma_subs_factor) noexcept;

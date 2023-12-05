@@ -50,14 +50,14 @@ class JpegDecoder {
         /// - making sure that the memory is not leaked afterwards if allocated on the heap.
         bool assign(const uint8_t* buff, size_t size) noexcept;
 
-        /// \brief   Queries image width as read from the JFIF header.
+        /// \brief Queries image width as read from the JFIF header.
         /// \return  Width in pixels if JFIF header is valid, 0 otherwise.
         uint16_t get_width() const noexcept {
 
            return m_has_valid_header ? m_frame_info.width_px : 0;
         }
 
-        /// \brief   Queries image height as read from the JFIF header.
+        /// \brief Queries image height as read from the JFIF header.
         /// \return  Height in pixels if JFIF header is valid, 0 otherwise.
         uint16_t get_height() const noexcept {
 

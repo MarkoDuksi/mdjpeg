@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include <cstring>
+
 #include "BlockWriter.h"
 
 
@@ -51,17 +53,9 @@ class DownscalingBlockWriter : public BlockWriter {
             m_block_x = 0;
             m_block_y = 0;
 
-            for (uint i = 0; i < DST_WIDTH_PX; ++i) {
-
-                m_row_buffer[i] = 0.0f;
-            }
-
-            for (uint i = 0; i < 8; ++i) {
-
-                m_column_buffer[i] = 0.0f;
-            }
-
             m_edge_buffer = 0.0f;
+            std::memset(m_column_buffer, 0, 8 * sizeof(float));
+            std::memset(m_row_buffer, 0, DST_WIDTH_PX * sizeof(float));
         }
 
         /// \brief Performs a single block write with downscaling.
@@ -144,7 +138,7 @@ class DownscalingBlockWriter : public BlockWriter {
                 }
 
                 // if src row (partially) overlays 2 adjacent dst rows
-                if (north_fraction != 1) {
+                if (north_fraction != 1.0f) {
 
                     // carry over from south position in column buffer
                     m_edge_buffer = m_column_buffer[col_buff_idx + 1];
@@ -207,7 +201,7 @@ class DownscalingBlockWriter : public BlockWriter {
                                 m_edge_buffer = 0.0f;
                             }
 
-                            if (north_fraction != 1 && row == 7) {
+                            if (north_fraction != 1.0f && row == 7) {
 
                                 m_column_buffer[col_buff_idx] = m_row_buffer[floor_west];
                                 m_row_buffer[floor_west] = 0.0f;
@@ -272,7 +266,7 @@ class DownscalingBlockWriter : public BlockWriter {
         // snap floating point input to integer grid within `m_epsilon_horiz` proximity
         float snap_to_horiz_grid(const float input) const noexcept {
 
-            const auto floored = static_cast<uint16_t>(input + m_epsilon_horiz);
+            const auto floored = static_cast<int>(input + m_epsilon_horiz);
 
             return (input != floored && input - floored < m_epsilon_horiz) ? floored : input;
         }
@@ -280,7 +274,7 @@ class DownscalingBlockWriter : public BlockWriter {
         // snap floating point input to integer grid within `m_epsilon_vert` proximity
         float snap_to_vert_grid(const float input) const noexcept {
 
-            const auto floored = static_cast<uint16_t>(input + m_epsilon_vert);
+            const auto floored = static_cast<int>(input + m_epsilon_vert);
 
             return (input != floored && input - floored < m_epsilon_vert) ? floored : input;
         }
