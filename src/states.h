@@ -5,7 +5,7 @@
 
 /// \brief All the different state IDs for identifying state machine's various states.
 ///
-/// \note Marker values used for state IDs compiled from:
+/// \note Marker values used for state IDs compiled from
 /// - https://github.com/dannye/jed/blob/master/src/jpg.h
 /// - https://webdocs.cs.ualberta.ca/~jag/courses/ImProc/lectures2001/lec26/Lec26jpegCompr.PDF
 enum class StateID : uint16_t {

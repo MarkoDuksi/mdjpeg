@@ -24,7 +24,7 @@ class JpegReader {
         /// \brief Restores the cursor position to the start of ECS.
         void restart_ecs() noexcept;
 
-        /// \brief Calculates the size in bytes of the buffer available after the cursor.
+        /// \brief Computes the size in bytes of the buffer available after the cursor.
         size_t size_remaining() const noexcept {
 
             return m_buff_end - m_buff_current_byte;

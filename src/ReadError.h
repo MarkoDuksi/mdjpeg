@@ -13,8 +13,8 @@ namespace ReadError {
 /// sits outside of its valid return value domain. The caller can also fail due
 /// to being "successfully" served a bit from an otherwise corrupted ECS.
 /// Therefore the need for individually tailored error codes to be returned by
-/// different callers depending on which one was first to detected the error
-/// (even if the underlying cause was simply a corrupted ECS).
+/// different callers depending on which one was first to detect the error (even
+/// if the underlying cause was simply a corrupted ECS).
 enum ReadError {
     ECS_BIT = -1,        ///< Error code returned by JpegReader::read_bit
     HUFF_SYMBOL = 0xff,  ///< Error code returned by Huffman::get_symbol

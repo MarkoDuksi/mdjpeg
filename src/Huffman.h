@@ -17,7 +17,7 @@ class Huffman {
 
         /// \brief Populates %Huffman tables starting at \c reader cursor.
         ///
-        /// \return  Number of bytes read through from the JFIF segment
+        /// \return  Number of bytes read through from the JFIF segment.
         uint16_t set_htable(JpegReader& reader, uint16_t max_read_length) noexcept;
 
         /// \brief Checks if all (DC/AC-luma/chroma) %Huffman tables are validly set.
