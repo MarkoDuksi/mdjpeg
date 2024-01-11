@@ -34,7 +34,7 @@ class JpegDecoder {
 
     public:
 
-        /// \brief Sets its view on a compressed image data.
+        /// \brief Sets its view on a block of compressed image data.
         ///
         /// \param buff  Start of memory block containing JFIF data.
         /// \param size  Size of the memory block in bytes.
@@ -44,9 +44,9 @@ class JpegDecoder {
         /// Assignment is considered successful if and only if parsing of image
         /// JFIF header succeeds. Entropy-coded segment is not read during
         /// assignment.
-        /// \attention:
-        /// No data copying or ownership transfer takes place. The caller is
-        /// responsible for
+        ///
+        /// \attention No data copying or ownership transfer takes place. The
+        /// caller is responsible for
         /// - image data integrity for as long as it needs JpegDecoder to
         /// operate on it
         /// - making sure that the memory is not leaked afterwards (if allocated

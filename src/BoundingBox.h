@@ -60,13 +60,13 @@ struct BoundingBox {
             return std::min(width(), height()) > std::min(other.width(), other.height());
         }
 
-        /// \brief Calculates bounding box width.
+        /// \brief Computes bounding box width.
         uint16_t width() const noexcept {
 
             return bottomright_X - topleft_X;
         }
 
-        /// \brief Calculates bounding box height.
+        /// \brief Computes bounding box height.
         uint16_t height() const noexcept {
 
             return bottomright_Y - topleft_Y;
@@ -74,24 +74,24 @@ struct BoundingBox {
 
         /// \brief Expands bounding box to tightly fit around another.
         ///
+        /// \param other  The box to merge with / expand over.
+        ///
         /// The box is expanded as little as necessary for its new definition to
         /// tightly contain both original box and the one it expanded over. If
         /// the other box is already completely contained within the original
         /// one, it does nothing.
-        ///
-        /// \param other  The box to merge with / expand over.
         void merge(const BoundingBox& other) noexcept;
 
         /// \brief Expands a non-square bounding box into a square-shaped one.
+        ///
+        /// \param outer_bounds  Bounding box describing the allowed area to expand into.
+        /// \retval              true if the squared bounding box fits within `outer_bounds`.
+        /// \retval              false otherwise.
         ///
         /// The smaller of dimensions is increased to match the larger one,
         /// provided the resulting square fits within `outer_bounds`. Otherwise,
         /// does nothing. The center of the expanded bounding box is kept as
         /// close as possible to its original center but translated if necessary
         /// for the entire bounding box to fit within `outer_bounds`.
-        ///
-        /// \param outer_bounds  Bounding box describing the allowed area to expand into.
-        /// \retval              true if the squared bounding box fits within `outer_bounds`.
-        /// \retval              false otherwise.
         bool expand_to_square(const BoundingBox& outer_bounds) noexcept;
 };
