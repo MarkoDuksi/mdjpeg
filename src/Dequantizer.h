@@ -16,6 +16,7 @@ class Dequantizer {
     public:
 
         /// \brief Populates quantization table from \c reader buffer starting at cursor.
+        ///
         /// \return  Number of bytes read through from the JFIF segment
         uint8_t set_qtable(JpegReader& reader, uint16_t max_read_length) noexcept;
 

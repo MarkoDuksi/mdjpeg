@@ -5,7 +5,7 @@
 #include <optional>
 
 
-/// \brief Provides sequential reading facilites specific to JFIF data.
+/// \brief Provides sequential reading facilities specific to JFIF data.
 ///
 /// \note \e ECS in the following documentation refers to entropy-coded segment.
 class JpegReader {
@@ -36,7 +36,8 @@ class JpegReader {
             return m_buff_current_byte;
         }
 
-        /// \brief Advances the cursor relative to current position. 
+        /// \brief Advances the cursor relative to current position.
+        ///
         /// \retval  true on success.
         /// \retval  false on failure.
         bool seek(size_t rel_pos) noexcept;
@@ -57,6 +58,7 @@ class JpegReader {
         uint16_t read_segment_size() noexcept;
 
         /// \brief Gets next bit from buffer at cursor, applying rules for reading ECS, advances the cursor.
+        ///
         /// \return  Bit value on success, ReadError::ECS_BIT otherwise.
         int8_t read_bit() noexcept;
         

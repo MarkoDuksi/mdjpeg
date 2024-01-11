@@ -10,9 +10,10 @@ class BasicBlockWriter : public BlockWriter {
 
         /// \brief Performs initialization.
         ///
-        /// It is called before write() is called for the first input block of every
-        /// new region of interest and should not be called again until the last block
-        /// of that region has been written to destination buffer.
+        /// It is called before write() is called for the first input block of
+        /// every new region of interest and should not be called again until
+        /// the last block of that region has been written to destination
+        /// buffer.
         ///
         /// \param dst            Raw pixel buffer for writing output to,
         ///                       minimum size is `src_width_px * src_height_px`.
@@ -27,8 +28,8 @@ class BasicBlockWriter : public BlockWriter {
         ///
         /// \param src_block  Input block.
         ///
-        /// \note
-        /// - Blocks from a particular region of interest are presumed served in the
-        ///   order in which they appear in the entropy-coded segment.
+        /// \note Blocks from a particular region of interest are presumed
+        /// served in the order in which they appear in the entropy-coded
+        /// segment.
         void write(int (&src_block)[64]) noexcept override;
 };

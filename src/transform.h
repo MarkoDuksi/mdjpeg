@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 
-/// \brief Stateless block-level tranformation functions that don't need a class.
+/// \brief Stateless block-level transformation functions that don't need a class.
 namespace mdjpeg_transform {
 
 /// \brief Reverses zig-zag reordering of a block of values (in place).

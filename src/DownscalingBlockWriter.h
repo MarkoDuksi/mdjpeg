@@ -6,7 +6,7 @@
 #include "BlockWriter.h"
 
 
-/// \brief Implements BlockWriter for block-wise writing with donwscaling.
+/// \brief Implements BlockWriter for block-wise writing with downscaling.
 ///
 /// \tparam DST_WIDTH_PX   Width of the destination image in pixels.
 /// \tparam DST_HEIGHT_PX  Height of the destination image in pixels.
@@ -27,20 +27,23 @@ class DownscalingBlockWriter : public BlockWriter {
 
         /// \brief Performs initialization.
         ///
-        /// It is called before write() is called for the first input block of every
-        /// new region of interest and should not be called again until the last block
-        /// of that region has been written to destination buffer.
+        /// It is called before write() is called for the first input block of
+        /// every new region of interest and should not be called again until
+        /// the last block of that region has been written to destination
+        /// buffer.
         ///
         /// \param dst            Raw pixel buffer for writing output to,
         ///                       minimum size is `DST_WIDTH_PX * DST_HEIGHT_PX`.
         /// \param src_width_px   Width of the region of interest expressed in pixels.
         /// \param src_height_px  Height of the region of interest expressed in pixels.
         ///
-        /// \attention Both src dimensions must be at least as big as the corresponding
-        /// destination dimensions. Otherwise it would not be a task of downscaling but
-        /// rather upscaling. Additionally, since writing is done in blocks, both source
-        /// dimensions must be multiples of 8 pixels.
-        // `[[maybe_unused]]` added only to satisfy Doxygen (in fact, the parameter is allways used)
+        /// \attention Both src dimensions must be at least as big as the
+        /// corresponding destination dimensions. Otherwise it would not be a
+        /// task of downscaling but rather upscaling. Additionally, since
+        /// writing is done in blocks, both source dimensions must be multiples
+        /// of 8 pixels.
+        // `[[maybe_unused]]` is added only to satisfy Doxygen
+        // (in fact, the parameter is always used)
         void init(uint8_t* const dst, const uint16_t src_width_px, [[maybe_unused]] const uint16_t src_height_px) noexcept override {
 
             m_dst = dst;
@@ -60,25 +63,26 @@ class DownscalingBlockWriter : public BlockWriter {
 
         /// \brief Performs a single block write with downscaling.
         ///
-        /// Each call performs a partially buffered write of input block pixels to
-        /// destination buffer, downscaling the output according to specified
-        /// source and destination dimensions. No source information is discarded
-        /// in the downscaling process.
+        /// Each call performs a partially buffered write of input block pixels
+        /// to destination buffer, downscaling the output according to specified
+        /// source and destination dimensions. No source information is
+        /// discarded in the downscaling process.
         ///
         /// \par Implementation Details
         ///
-        /// Current downscaling algorithm is analogous to block-averaging but not
-        /// limited to integral downscaling factors. Instead, true rational downscaling
-        /// factors (horizontal and vertical separately) are approximated by floating
-        /// point values with corrections to rounding errors if necessary.
+        /// Current downscaling algorithm is analogous to block-averaging but
+        /// not limited to integral downscaling factors. Instead, true rational
+        /// downscaling factors (horizontal and vertical separately) are
+        /// approximated by floating point values with corrections to rounding
+        /// errors if necessary.
         ///
         /// \param src_block  Input block.
         ///
         /// \note
-        /// - Blocks from a particular region of interest are presumed served in the
-        ///   order in which they appear in the entropy-coded segment.
-        /// - All expected output is written to the destination by the time the function
-        ///   finishes with its last input block.
+        /// - Blocks from a particular region of interest are presumed served in
+        ///   the order in which they appear in the entropy-coded segment.
+        /// - All expected output is written to the destination by the time the
+        ///   function finishes with its last input block.
         void write(int (&src_block)[64]) noexcept override {
 
             // src block west border X-coord expressed in dst pixels

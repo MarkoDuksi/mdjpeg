@@ -21,7 +21,7 @@ class BlockWriter;
 /// functionalities. Supports decompressing only part of the frame specified
 /// by region of interest and allows per-block transformations on the fly
 /// without previously decompressing and buffering the intermediate subframe
-/// for the whole region of interest. Does not allocate memmory on the heap.
+/// for the whole region of interest. Does not allocate memory on the heap.
 ///
 /// \note
 /// - Supported mode is baseline JPEG.
@@ -41,13 +41,16 @@ class JpegDecoder {
         /// \retval      true on success.
         /// \retval      false on failure.
         ///
-        /// Assignment is considered successful if and only if parsing of image JFIF header
-        /// succeeds. Entropy-coded segment is not read during assignment.
+        /// Assignment is considered successful if and only if parsing of image
+        /// JFIF header succeeds. Entropy-coded segment is not read during
+        /// assignment.
         /// \attention:
         /// No data copying or ownership transfer takes place. The caller is
         /// responsible for
-        /// - image data integrity for as long as it needs JpegDecoder to operate on it
-        /// - making sure that the memory is not leaked afterwards if allocated on the heap.
+        /// - image data integrity for as long as it needs JpegDecoder to
+        /// operate on it
+        /// - making sure that the memory is not leaked afterwards (if allocated
+        /// on the heap).
         bool assign(const uint8_t* buff, size_t size) noexcept;
 
         /// \brief Queries image width as read from the JFIF header.
@@ -58,6 +61,7 @@ class JpegDecoder {
         }
 
         /// \brief Queries image height as read from the JFIF header.
+        ///
         /// \return  Height in pixels if JFIF header is valid, 0 otherwise.
         uint16_t get_height() const noexcept {
 

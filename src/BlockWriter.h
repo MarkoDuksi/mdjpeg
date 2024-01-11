@@ -33,19 +33,20 @@ class BlockWriter {
         /// - (re)set initial conditions relevant to their task.
         virtual void init(uint8_t* dst, uint16_t src_width_px, [[maybe_unused]] uint16_t src_height_px) noexcept = 0;
         
-        /// \brief Dispathes a single block write.
+        /// \brief Dispatches a single block write.
         ///
         /// \param src_block  Input block.
         ///
-        /// Every implementation should use this function's override to iteratively
-        /// perform the task of writing input blocks to their output destination.
+        /// Every implementation should use this function's override to
+        /// iteratively perform the task of writing input blocks to their output
+        /// destination.
         ///
         /// \note
-        /// - Blocks from a particular region of interest are presumed served in the
-        ///   order in which they appear in the entropy-coded segment.
-        /// - It is not required for the writes to be unbuffered providing that all
-        ///   expected output is written to the destination by the time the function
-        ///   finishes with its last input block.
+        /// - Blocks from a particular region of interest are presumed served in
+        ///   the order in which they appear in the entropy-coded segment.
+        /// - It is not required for the writes to be unbuffered providing that
+        ///   all expected output is written to the destination by the time the
+        ///   function finishes with its last input block.
         virtual void write(int (&src_block)[64]) noexcept = 0;
 
     protected:
