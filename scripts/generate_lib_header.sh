@@ -2,7 +2,9 @@
 
 set -e
 
-for file in $(find $1 -type f -name '*.h' -a \! -name 'tests.h')
+SRC_DIR="$1"
+
+for file in $(find ${SRC_DIR} -type f -name '*.h' -a \! -name 'tests.h')
 do
 	mkdir -p $(dirname api_h.tmp/$file)
 	grep -Ev '^(#include <|class\s+\w+;)' $file > api_h.tmp/$file
@@ -17,9 +19,9 @@ printf "// It is provided in compact form for convenience, not for editing.\n" >
 printf "// Based on commit: ${commit}\n\n" >> api_h.tmp/mdjpeg.h
 printf "#pragma once\n\n" >> api_h.tmp/mdjpeg.h
 
-find src -type f -name '*.h' -a \! -name 'tests.h' -exec grep -E '^#include <' '{}' \; | sort | uniq >> api_h.tmp/mdjpeg.h
+find src -type f -name '*.h' -a \! -name 'tests.h' -exec grep -E '^#include <' '{}' \; | sort --unique >> api_h.tmp/mdjpeg.h
 printf "\n\n" >> api_h.tmp/mdjpeg.h
-find src -type f -name '*.h' -a \! -name 'tests.h' -exec grep -E '^class\s+\w+;' '{}' \; | sort | uniq >> api_h.tmp/mdjpeg.h
+find src -type f -name '*.h' -a \! -name 'tests.h' -exec grep -E '^class\s+\w+;' '{}' \; | sort --unique >> api_h.tmp/mdjpeg.h
 
 g++ -E -P -C -nostdinc api_h.tmp/src/protoapi.h >> api_h.tmp/mdjpeg.h
 

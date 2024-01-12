@@ -14,7 +14,7 @@
 
 /// \brief Tests full frame, 1/8-scale (DC only) decompression on a batch of JPEG images.
 ///
-/// \param src_dims       Input images width and height, both must be multiples of 8. 
+/// \param src_dims       Input images width and height, both must be multiples of 8.
 /// \param test_imgs_dir  Base directory for test images.
 /// \param output_subdir  Subdirectory for diagnostic output.
 /// \return               Total count of failed tests in this batch.
@@ -24,19 +24,29 @@
 /// are processed individually by decompressing them directly to 1/8 of their
 /// original width and height. The resulting scaled-down luma-only images are
 /// written to "`test_imgs_dir`/`output_subdir`" in 8-bit ASCII PGM format. The
-/// output directory is created if it does not exist. Test on a particular image
-/// can fail either because decompression fails or because writing to the
-/// filesystem fails. The cause of the failure is reported to stdout per image
-/// basis and the failed tests counter is incremented by one. Otherwise, the
-/// test is considered passed and is reported to stdout as such.
+/// output directory is created if it does not exist.
 ///
-/// \note This test is intended for evaluating the quality of decompression and,
-/// more importantly, the quality of downscaling which greatly depends on the
-/// nature of captured motifs. The user of the library is advised to populate
-/// the test image directories with JPEG images of typical motifs for their
-/// intended use case. After running the test, output images written to the
-/// filesystem can be visually inspected and the quality judged as either
-/// applicable to intended purpose or not.
+/// \par PASSED/FAILED criteria, reporting
+/// A test can fail on a particular image either because decompression fails or
+/// because writing the output image to the filesystem fails. The cause of
+/// failure is reported to stdout per image basis and the failed tests counter
+/// is incremented by one. Otherwise, the test passes tentatively and is
+/// reported to stdout as such.
+///
+/// \par Example input images
+/// Example input images are provided along with checksums of expected output.
+/// Output of tests that passed tentatively should be validated against the
+/// checksums by running `make tests-validate` to obtain the final passed/failed
+/// verdict.
+///
+/// \par Custom input images
+/// The quality of downscaling depends on the nature of motifs captured in the
+/// images. Users can populate the test image directories with JPEG images of
+/// typical motifs in their use case. After running the tests, output images
+/// written to the filesystem can be visually inspected and the quality judged
+/// as either applicable to intended purpose or not. If checksums of the output
+/// images are desired as references for future validations, the checksums list
+/// can be updated by running `make tests-update`.
 uint full_frame_dc_decoding_tests(
     const mdjpeg_test_utils::Dimensions& src_dims,
     const std::filesystem::path& test_imgs_dir,
@@ -45,7 +55,7 @@ uint full_frame_dc_decoding_tests(
 
 /// \brief Tests full frame, 1:1 scale decompression on a batch of JPEG images.
 ///
-/// \param src_dims       Input images width and height, both must be multiples of 8. 
+/// \param src_dims       Input images width and height, both must be multiples of 8.
 /// \param test_imgs_dir  Base directory for test images.
 /// \param output_subdir  Subdirectory for diagnostic output.
 /// \return               Total count of failed tests in this batch.
@@ -55,19 +65,20 @@ uint full_frame_dc_decoding_tests(
 /// are processed individually by decompressing them in their full width and
 /// height. The resulting luma-only images are written to
 /// "`test_imgs_dir`/`output_subdir`" in 8-bit ASCII PGM format. The output
-/// directory is created if it does not exist. Test on a particular image can
-/// fail either because decompression fails or because writing to the filesystem
-/// fails. The cause of the failure is reported to stdout per image basis and
-/// the failed tests counter is incremented by one. Otherwise, the test for a
-/// particular image is considered passed and is reported to stdout as such.
+/// directory is created if it does not exist.
 ///
-/// \note This test is intended for evaluating the quality of decompression and,
-/// more importantly, the quality of downscaling which greatly depends on the
-/// nature of captured motifs. The user of the library is advised to populate
-/// the test image directories with JPEG images of typical motifs for their
-/// intended use case. After running the test, output images written to the
-/// filesystem can be visually inspected and the quality determined as either
-/// applicable to intended purpose or not.
+/// \par PASSED/FAILED criteria, reporting
+/// A test can fail on a particular image either because decompression fails or
+/// because writing the output image to the filesystem fails. The cause of
+/// failure is reported to stdout per image basis and the failed tests counter
+/// is incremented by one. Otherwise, the test passes tentatively and is
+/// reported to stdout as such.
+///
+/// \par Example input images
+/// Example input images are provided along with checksums of expected output.
+/// Output of tests that passed tentatively should be validated against the
+/// checksums by running `make tests-validate` to obtain the final passed/failed
+/// verdict.
 uint full_frame_decoding_tests(
     const mdjpeg_test_utils::Dimensions& src_dims,
     const std::filesystem::path& test_imgs_dir,
@@ -76,7 +87,7 @@ uint full_frame_decoding_tests(
 
 /// \brief Tests cropped frame, 1:1 scale decompression on a batch of JPEG images.
 ///
-/// \param src_dims       Input images width and height, both must be multiples of 8. 
+/// \param src_dims       Input images width and height, both must be multiples of 8.
 /// \param test_imgs_dir  Base directory for test images.
 /// \param output_subdir  Subdirectory for diagnostic output.
 /// \return               Total count of failed tests in this batch.
@@ -86,12 +97,21 @@ uint full_frame_decoding_tests(
 /// processed individually by decompressing each one into 16 subimages tiled on
 /// a 4 x 4 grid. The resulting luma-only subimages are written to
 /// "`test_imgs_dir`/`output_subdir`" in 8-bit ASCII PGM format. The output
-/// directory is created if it does not exist. Test on a particular subimage can
-/// fail either because decompression fails or because a decompressed subimage
-/// fails to get written to the filesystem. The cause of the failure is reported
-/// to stdout per subimage basis and the failed tests counter is incremented by
-/// one. Otherwise, the test for a particular subimage is considered passed and
-/// is reported to stdout as such.
+/// directory is created if it does not exist.
+///
+/// \par PASSED/FAILED criteria, reporting
+/// A test can fail on a particular subimage either because decompression fails
+/// or because writing the output subimage to the filesystem fails. The cause of
+/// failure is reported to stdout per subimage basis and the failed tests
+/// counter is incremented by one. For every image all 16 subimage tests are
+/// performed even in some fail early. If none of them fail the test for a
+/// particular image passes tentatively and is reported to stdout as such.
+///
+/// \par Example input image
+/// Example input image is provided along with checksums of expected output
+/// subimages. Output of tests that passed tentatively should be validated
+/// against the checksums by running `make tests-validate` to obtain the final
+/// passed/failed verdict.
 uint cropped_decoding_tests(
     const mdjpeg_test_utils::Dimensions& src_dims,
     const std::filesystem::path& test_imgs_dir,
@@ -110,19 +130,25 @@ uint cropped_decoding_tests(
 /// \retval                true if passed.
 /// \retval                false if failed.
 ///
-/// Specifically tests DownscalingBlockWriter<DST_WIDTH_PX, DST_HEIGHT_PX>. Test
-/// is considered failed if any of the downscaled frame buffer elements does not
-/// equal \c fill_value. If a test fails, the maximum absolute error is reported
-/// to stdout and the resulting (imperfectly) downscaled frame buffer written to
-/// "`test_imgs_dir`/`output_subdir`" in 8-bit ASCII PGM format. The output
-/// directory is created if it does not exist. Otherwise, the test is considered
-/// passed and is reported to stdout as such.
+/// Specifically tests DownscalingBlockWriter<DST_WIDTH_PX, DST_HEIGHT_PX>. A
+/// mocked frame buffer filled entirely with \c fill_value is used instead of
+/// decompressing a real image. If any of the output image elements differ from
+/// \c fill_value, the element-wise maximum absolute error (difference) is
+/// reported to stdout and the resulting (imperfectly) downscaled image written
+/// to "`test_imgs_dir`/`output_subdir`" in 8-bit ASCII PGM format. The output
+/// directory is created if it does not exist.
+///
+/// \par PASSED/FAILED criteria, reporting
+/// The test can fail if writing the output image to the filesystem fails which
+/// is reported to stdout. Otherwise, the test passes tentatively and is
+/// reported to stdout as such.
 ///
 /// \note Single precision floating point math used by DownscalingBlockWriter
 /// introduces sparse +/- 1 errors in values of some downscaled frame buffers.
 /// Extent of these errors depends on frame buffer dimensions and the magnitude
-/// of \c fill_value. Effects of these errors are insignificant compared to
-/// errors introduced beforehand by the lossiness of JPEG compression.
+/// of \c fill_value. Effects of these errors on real images are insignificant
+/// compared to errors introduced beforehand by the lossiness of JPEG
+/// compression.
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
 bool downscaling_test(const uint8_t fill_value,
                       const std::filesystem::path& test_imgs_dir,
@@ -153,7 +179,7 @@ bool downscaling_test(const uint8_t fill_value,
         writer.write(src_array);
     }
 
-    std::cout << "Running downscaling test ("
+    std::cout << "Downscaling test ("
               << src_dims.to_str() << " -> " << dst_dims.to_str()
               << " / fill value = " << static_cast<uint>(fill_value) << ")";
 
@@ -161,12 +187,12 @@ bool downscaling_test(const uint8_t fill_value,
 
     if (error == 0) {
 
-        std::cout << "  => passed.\n";
+        std::cout << ": PASSED\n";
     }
 
     else {
 
-        std::cout << "  => FAILED with max absolute error = " << error << "\n";
+        std::cout << ": PASSED (tentative, max abs err = " << error << ")\n";
 
         std::filesystem::create_directory(output_dir);
         const std::filesystem::path filename = "failed_downscaling_from_" +
@@ -179,11 +205,13 @@ bool downscaling_test(const uint8_t fill_value,
         
         if (!write_as_pgm(output_dir / filename, dst_array, dst_dims.width_px, dst_dims.height_px)) {
 
-            std::cout << "  => FAILED writing output.\n";
+            std::cout << ": FAILED writing output\n";
+
+            return false;
         }
     }
 
-    return error == 0;
+    return true;
 }
 
 /// \brief Runs a batched downscaling_test on fixed input dimensions over a range of output dimensions.
@@ -200,8 +228,15 @@ bool downscaling_test(const uint8_t fill_value,
 ///
 /// The range of output dimensions is a sequence starting with a pair of
 /// \c DST_WIDTH_PX and \c DST_HEIGHT_PX, decrementing each member by \c 1 as
-/// long as both are still greater than zero. The testing for a single pair of
+/// long as both are still greater than zero. The test for a single pair of
 /// output dimensions is described in downscaling_test.
+///
+/// \par Examples
+/// Examples are provided for some combinations of input dimensions and fill
+/// values across the entire applicable range of output dimensions along with
+/// checksums of expected output (see the Note for downscaling_test). Output of
+/// tests that passed tentatively should be validated against the checksums by
+/// running `make tests-validate` to obtain the final passed/failed verdict.
 ///
 /// \attention Recursive tests are both compile time and runtime resource
 /// intensive.
@@ -244,18 +279,20 @@ uint recursive_downscaling_test(const uint8_t fill_value,
 /// processed individually by decompressing them and downscaling accordingly.
 /// The resulting scaled-down luma-only images are written to
 /// "`test_imgs_dir`/`output_subdir`" in 8-bit ASCII PGM format. The output
-/// directory is created if it does not exist. Test on a particular image can
-/// fail either because decompression fails or because writing to the filesystem
-/// fails. The cause of the failure is reported to stdout per image basis and
-/// the failed tests counter is incremented by one.
+/// directory is created if it does not exist.
 ///
-/// \note This test is intended for evaluating the quality of decompression and,
-/// more importantly, the quality of downscaling which greatly depends on the
-/// nature of captured motifs. The user of the library is advised to populate
-/// the test image directories with JPEG images of typical motifs for their
-/// intended use case. After running the test, output images written to the filesystem can
-/// be visually inspected and the quality determined as either applicable to
-/// intended purpose or not.
+/// \par PASSED/FAILED criteria, reporting
+/// A test can fail on a particular image either because decompression fails or
+/// because writing the output image to the filesystem fails. The cause of
+/// failure is reported to stdout per image basis and the failed tests counter
+/// is incremented by one. Otherwise, the test passes tentatively and is
+/// reported to stdout as such.
+///
+/// \par Example input images
+/// Example input images are provided along with checksums of expected output.
+/// Output of tests that passed tentatively should be validated against the
+/// checksums by running `make tests-validate` to obtain the final passed/failed
+/// verdict.
 template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEIGHT_PX>
 uint downscaling_decoding_test(const std::filesystem::path& test_imgs_dir,
                                const std::filesystem::path& output_subdir = "decoded_downscaled") {
@@ -277,7 +314,7 @@ uint downscaling_decoding_test(const std::filesystem::path& test_imgs_dir,
 
         bool subtest_passed{true};
 
-        std::cout << "Running downscaling decoding test on \"" << file_path.c_str() << "\""
+        std::cout << "Running downscaling decoding test on \"" << file_path.filename().c_str() << "\""
                   << " (" << src_dims.to_str() << " -> " << dst_dims.to_str() << ")";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
@@ -295,7 +332,7 @@ uint downscaling_decoding_test(const std::filesystem::path& test_imgs_dir,
 
                 subtest_passed = false;
                 ++tests_failed;
-                std::cout << "  => FAILED writing output.\n";
+                std::cout << ": FAILED writing output\n";
             }
         }
 
@@ -303,14 +340,14 @@ uint downscaling_decoding_test(const std::filesystem::path& test_imgs_dir,
 
             subtest_passed = false;
             ++tests_failed;
-            std::cout << "  => FAILED decoding+downscaling JPEG.\n";
+            std::cout << ": FAILED decoding+downscaling JPEG\n";
         }
 
         delete[] buff;
 
         if (subtest_passed) {
 
-            std::cout << "  => passed.\n";
+            std::cout << ": PASSED (tentative)\n";
         }
     }
 
@@ -329,8 +366,15 @@ uint downscaling_decoding_test(const std::filesystem::path& test_imgs_dir,
 ///
 /// The range of output dimensions is a sequence starting with a pair of
 /// \c DST_WIDTH_PX and \c DST_HEIGHT_PX, decrementing each member by \c 1 as
-/// long as both are still greater than zero. The testing for a single pair of
+/// long as both are still greater than zero. The test for a single pair of
 /// output dimensions is described in downscaling_decoding_test.
+///
+/// \par Example
+/// An example is provided for decompressing an 800x800 input image with
+/// downscaling across the entire applicable range of output dimensions along
+/// with checksums of expected output. Output of tests that passed tentatively
+/// should be validated against the checksums by running `make tests-validate`
+/// to obtain the final passed/failed verdict.
 ///
 /// \attention Recursive tests are both compile time and runtime resource
 /// intensive.

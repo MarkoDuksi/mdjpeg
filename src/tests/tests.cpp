@@ -19,7 +19,7 @@ uint full_frame_dc_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
 
     for (const auto& file_path : input_files_paths) {
 
-        std::cout << "Running full-frame DC-only decoding test on \"" << file_path.c_str() << "\"";
+        std::cout << "Full-frame DC-only decoding test on \"" << file_path.filename().c_str() << "\"";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder;
@@ -34,19 +34,19 @@ uint full_frame_dc_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
             if (!write_as_pgm(output_dir / filename, decoded_img.get(), src_dims.width_blk, src_dims.height_blk)) {
 
                 ++tests_failed;
-                std::cout << "  => FAILED writing output.\n";
+                std::cout << ": FAILED writing output\n";
             }
 
             else {
 
-                std::cout << "  => passed.\n";
+                std::cout << ": PASSED (tentative)\n";
             }
         }
 
         else {
 
             ++tests_failed;
-            std::cout << "  => FAILED decoding JPEG.\n";
+            std::cout << ": FAILED decoding JPEG\n";
         }
 
         delete[] buff;
@@ -71,7 +71,7 @@ uint full_frame_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
 
     for (const auto& file_path : input_files_paths) {
 
-        std::cout << "Running full-frame decoding test on \"" << file_path.c_str() << "\"";
+        std::cout << "Full-frame decoding test on \"" << file_path.filename().c_str() << "\"";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder;
@@ -86,19 +86,19 @@ uint full_frame_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
             if (!write_as_pgm(output_dir / filename, decoded_img.get(), src_dims.width_px, src_dims.height_px)) {
 
                 ++tests_failed;
-                std::cout << "  => FAILED writing output.\n";
+                std::cout << ": FAILED writing output\n";
             }
 
             else {
 
-                std::cout << "  => passed.\n";
+                std::cout << ": PASSED (tentative)\n";
             }
         }
 
         else {
 
             ++tests_failed;
-            std::cout << "  => FAILED decoding JPEG.\n";
+            std::cout << ": FAILED decoding JPEG\n";
         }
 
         delete[] buff;
@@ -111,12 +111,15 @@ uint cropped_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
                             const std::filesystem::path& test_imgs_dir,
                             const std::filesystem::path& output_subdir) {
 
-    assert(src_dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
-
     using namespace mdjpeg_test_utils;
 
     const Dimensions dst_dims {static_cast<uint16_t>(src_dims.width_px / 4),
                                static_cast<uint16_t>(src_dims.height_px / 4)};
+
+    // since the region of interest is 1/4 the width and height of the full
+    // frame image, in order for its dimensions to still be multiples of 8, the
+    // full frame width and height must be multiples of 4 * 8 = 32
+    assert(dst_dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 32)");
 
     const auto input_files_dir = test_imgs_dir / src_dims.to_str();
     const auto input_files_paths = get_input_img_paths(input_files_dir);
@@ -128,7 +131,7 @@ uint cropped_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
 
         bool subtest_passed {true};
 
-        std::cout << "Running cropped decoding test on \"" << file_path.c_str() << "\"";
+        std::cout << "Cropped decoding test on \"" << file_path.filename().c_str() << "\"";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
         JpegDecoder decoder;
@@ -154,7 +157,7 @@ uint cropped_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
 
                         subtest_passed = false;
                         ++tests_failed;
-                        std::cout << "\n  => FAILED writing output for quadrant \"" << quadrants[quadrant_idx] << "\".";
+                        std::cout << "\n: FAILED writing output for quadrant \"" << quadrants[quadrant_idx] << "\"";
                     }
                 }
 
@@ -162,7 +165,7 @@ uint cropped_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
 
                     subtest_passed = false;
                     ++tests_failed;
-                    std::cout << "\n  => FAILED decoding JPEG for quadrant \"" << quadrants[quadrant_idx] << "\".";
+                    std::cout << "\n: FAILED decoding JPEG for quadrant \"" << quadrants[quadrant_idx] << "\"";
                 }
 
                 ++quadrant_idx;
@@ -173,7 +176,7 @@ uint cropped_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
 
         if (subtest_passed) {
 
-            std::cout << "  => passed.\n";
+            std::cout << ": PASSED (tentative)\n";
         }
 
         else {

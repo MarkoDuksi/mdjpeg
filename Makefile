@@ -58,10 +58,6 @@ release: $(RELEASE_BIN)
 .PHONY: library
 library: $(LIBRARY)
 
-.PHONY: doxy
-doxy: clean-doxy
-	doxygen
-
 
 $(DEBUG_BIN): $(DEBUG_OBJS) | $(DEBUG_BIN_DIR)
 	$(CXX) $(CXX_DEBUG_FLAGS) $(CXX_FLAGS) $^ -o $@ $(LIB_INCLUDE_DIRS_FLAGS) $(LD_FLAGS)
@@ -87,12 +83,28 @@ $(RELEASE_OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEP_DIR)/%.$$(BUILD_TYPE).d
 
 $(LIBRARY): $(LIBRARY_OBJS) src/protoapi.h | $(LIB_DIR)
 	$(LIB_ARCHIVER) $(LIB_ARCHIVER_FLAGS) $@ $?
-	./generate_lib_header.sh $(SRC_DIR)
+	scripts/generate_lib_header.sh $(SRC_DIR)
 
 
 $(DEBUG_BIN_DIR) $(RELEASE_BIN_DIR) $(LIB_DIR):
 	mkdir -p $@
 
+
+.PHONY: tests-validate
+tests-validate:
+	@scripts/validate_checksums.sh $(TESTS_DIR) || true
+
+.PHONY: tests-update
+tests-update:
+	@scripts/update_checksums.sh $(TESTS_DIR) || true
+
+.PHONY: doxy
+doxy: clean-doxy
+	doxygen
+
+.PHONY: clean
+clean: clean-tests clean-doxy
+	rm -rf $(OBJ_DIR) $(BIN_DIR) $(DEP_DIR)
 
 .PHONY: clean-debug
 clean-debug:
@@ -120,10 +132,6 @@ clean-tests:
 .PHONY: clean-doxy
 clean-doxy:
 	rm -rf $(DOXY_TREE)
-
-.PHONY: clean
-clean: clean-tests clean-doxy
-	rm -rf $(OBJ_DIR) $(BIN_DIR) $(DEP_DIR)
 
 
 $(DEPS):
