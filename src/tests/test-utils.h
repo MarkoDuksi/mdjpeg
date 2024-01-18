@@ -7,7 +7,7 @@
 #include <filesystem>
 
 
-namespace mdjpeg_test_utils {
+namespace mdjpeg::test_utils {
 
 struct Dimensions {
     Dimensions(uint16_t width_px, uint16_t height_px) :
@@ -41,4 +41,4 @@ bool write_as_pgm(const std::filesystem::path& file_path, const uint8_t* pixel_d
 
 void print_as_pgm(const uint8_t* pixel_data, uint16_t width_px, uint16_t height_px);
 
-}  // namespace mdjpeg_test_utils
+}  // namespace mdjpeg::test_utils

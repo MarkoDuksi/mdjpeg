@@ -5,6 +5,8 @@
 #include <cmath>
 
 
+namespace mdjpeg {
+
 /// \brief Abstract base class for block-wise writing of image data to memory.
 class BlockWriter {
 
@@ -32,7 +34,7 @@ class BlockWriter {
         /// - register basic information relevant to their task
         /// - (re)set initial conditions relevant to their task.
         virtual void init(uint8_t* dst, uint16_t src_width_px, [[maybe_unused]] uint16_t src_height_px) noexcept = 0;
-        
+
         /// \brief Dispatches a single block write.
         ///
         /// \param src_block  Input block.
@@ -56,3 +58,5 @@ class BlockWriter {
         uint16_t m_block_x {};
         uint16_t m_block_y {};
 };
+
+}  // namespace mdjpeg

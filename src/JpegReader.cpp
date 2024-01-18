@@ -3,6 +3,8 @@
 #include "ReadError.h"
 
 
+using namespace mdjpeg;
+
 void JpegReader::set(const uint8_t* const buff, const size_t size) noexcept {
 
     m_buff_start = buff;
@@ -110,7 +112,7 @@ int8_t JpegReader::read_bit() noexcept {
 
     //////////////////////////////////////////////////////////
     // looking at a byte that has previously been read from //
-    
+
     // read bit 0 (advance current byte)
     // mostly false (true on every 8-th evaluation)
     if (m_current_bit_pos == 0) {

@@ -3,6 +3,8 @@
 #include <algorithm>
 
 
+using namespace mdjpeg;
+
 void BoundingBox::merge(const BoundingBox &other) noexcept
 {
 

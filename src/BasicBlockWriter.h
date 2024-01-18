@@ -3,6 +3,8 @@
 #include "BlockWriter.h"
 
 
+namespace mdjpeg {
+
 /// \brief Implements BlockWriter for block-wise writing of input to output in 1:1 scale.
 class BasicBlockWriter : public BlockWriter {
 
@@ -20,7 +22,7 @@ class BasicBlockWriter : public BlockWriter {
         /// the last block of that region has been written to destination
         /// buffer.
         void init(uint8_t* const dst, const uint16_t src_width_px, [[maybe_unused]] const uint16_t src_height_px) noexcept override;
-        
+
         /// \brief Performs a single block write.
         ///
         /// \param src_block  Input block.
@@ -33,3 +35,5 @@ class BasicBlockWriter : public BlockWriter {
         /// segment.
         void write(int (&src_block)[64]) noexcept override;
 };
+
+}  // namespace mdjpeg

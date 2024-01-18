@@ -4,6 +4,8 @@
 #include <sys/types.h>
 
 
+using namespace mdjpeg;
+
 void BasicBlockWriter::init(uint8_t* const dst, const uint16_t src_width_px, [[maybe_unused]] const uint16_t src_height_px) noexcept {
 
     m_dst = dst;
@@ -11,7 +13,7 @@ void BasicBlockWriter::init(uint8_t* const dst, const uint16_t src_width_px, [[m
     m_block_x = 0;
     m_block_y = 0;
 }
-        
+
 void BasicBlockWriter::write(int (&src_block)[64]) noexcept {
 
     uint32_t offset = m_block_y * m_src_width_px + m_block_x;

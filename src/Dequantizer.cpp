@@ -3,6 +3,8 @@
 #include "JpegReader.h"
 
 
+using namespace mdjpeg;
+
 uint8_t Dequantizer::set_qtable(JpegReader& reader, const uint16_t max_read_length) noexcept {
 
     const uint8_t next_byte = *reader.read_uint8();

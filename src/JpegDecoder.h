@@ -11,6 +11,8 @@
 #include "BoundingBox.h"
 
 
+namespace mdjpeg {
+
 class BlockWriter;
 
 
@@ -67,7 +69,7 @@ class JpegDecoder {
 
             return m_has_valid_header ? m_frame_info.height_px : 0;
         }
-    
+
         /// \brief Decompresses the luma channel, writing to raw pixel buffer via BasicBlockWriter by default.
         ///
         /// \param dst     Raw pixel buffer for decompressed output, min size is `64 * (x2_blk - x1_blk) * (y2_blk - y1_blk)`.
@@ -144,3 +146,5 @@ class JpegDecoder {
             m_istate = new (m_istate) ConcreteState<state_id>(this);
         }
 };
+
+}  // namespace mdjpeg

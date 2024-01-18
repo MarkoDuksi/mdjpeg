@@ -9,6 +9,8 @@
 #include "ReadError.h"
 
 
+using namespace mdjpeg;
+
 uint16_t Huffman::set_htable(JpegReader& reader, uint16_t max_read_length) noexcept {
 
     const uint8_t next_byte = *reader.read_uint8();

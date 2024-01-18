@@ -6,6 +6,8 @@
 #include "BlockWriter.h"
 
 
+namespace mdjpeg {
+
 /// \brief Implements BlockWriter for block-wise writing with downscaling.
 ///
 /// \tparam DST_WIDTH_PX   Width of the destination image in pixels.
@@ -282,3 +284,5 @@ class DownscalingBlockWriter : public BlockWriter {
             return (input != floored && input - floored < m_epsilon_vert) ? floored : input;
         }
 };
+
+}  // namespace mdjpeg

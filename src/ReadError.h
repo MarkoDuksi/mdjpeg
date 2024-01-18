@@ -1,7 +1,7 @@
 #pragma once
 
 
-namespace ReadError {
+namespace mdjpeg::ReadError {
 
 /// \brief Error codes indicating failure when reading the ECS from buffer.
 ///
@@ -15,10 +15,10 @@ namespace ReadError {
 /// Therefore the need for individually tailored error codes to be returned by
 /// different callers depending on which one was first to detect the error (even
 /// if the underlying cause was simply a corrupted ECS).
-enum ReadError {
+enum {
     ECS_BIT = -1,        ///< Error code returned by JpegReader::read_bit
     HUFF_SYMBOL = 0xff,  ///< Error code returned by Huffman::get_symbol
     DCT_COEF = 0x2000    ///< Error code returned by Huffman::get_dct_coeff
 };
 
-}  // namespace ReadError
+}  // namespace mdjpeg::ReadError

@@ -4,6 +4,8 @@
 #include <sys/types.h>
 
 
+namespace mdjpeg {
+
 class JpegReader;
 
 
@@ -42,3 +44,5 @@ class Dequantizer {
 
         const uint8_t* m_qtable {nullptr};
 };
+
+}  // namespace mdjpeg

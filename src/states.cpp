@@ -19,6 +19,8 @@
 #endif
 
 
+using namespace mdjpeg;
+
 template<>
 void ConcreteState<StateID::ENTRY>::parse_header(JpegReader& reader) noexcept {
 

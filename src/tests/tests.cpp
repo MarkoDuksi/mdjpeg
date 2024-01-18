@@ -3,13 +3,13 @@
 #include <fstream>
 
 
-uint full_frame_dc_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
+uint full_frame_dc_decoding_tests(const mdjpeg::test_utils::Dimensions& src_dims,
                                   const std::filesystem::path& test_imgs_dir,
                                   const std::filesystem::path& output_subdir) {
 
     assert(src_dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
 
-    using namespace mdjpeg_test_utils;
+    using namespace mdjpeg::test_utils;
 
     const auto input_files_dir = test_imgs_dir / src_dims.to_str();
     const auto input_files_paths = get_input_img_paths(input_files_dir);
@@ -22,7 +22,7 @@ uint full_frame_dc_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
         std::cout << "Full-frame DC-only decoding test on \"" << file_path.filename().c_str() << "\"";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
-        JpegDecoder decoder;
+        mdjpeg::JpegDecoder decoder;
         decoder.assign(buff, size);
         std::unique_ptr<uint8_t[]> decoded_img = std::make_unique<uint8_t[]>(src_dims.width_blk * src_dims.height_blk);
 
@@ -55,13 +55,13 @@ uint full_frame_dc_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
     return tests_failed;
 }
 
-uint full_frame_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
+uint full_frame_decoding_tests(const mdjpeg::test_utils::Dimensions& src_dims,
                                const std::filesystem::path& test_imgs_dir,
                                const std::filesystem::path& output_subdir) {
 
     assert(src_dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
 
-    using namespace mdjpeg_test_utils;
+    using namespace mdjpeg::test_utils;
 
     const auto input_files_dir = test_imgs_dir / src_dims.to_str();
     const auto input_files_paths = get_input_img_paths(input_files_dir);
@@ -74,7 +74,7 @@ uint full_frame_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
         std::cout << "Full-frame decoding test on \"" << file_path.filename().c_str() << "\"";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
-        JpegDecoder decoder;
+        mdjpeg::JpegDecoder decoder;
         decoder.assign(buff, size);
         std::unique_ptr<uint8_t[]> decoded_img = std::make_unique<uint8_t[]>(src_dims.width_px * src_dims.height_px);
 
@@ -107,11 +107,11 @@ uint full_frame_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
     return tests_failed;
 }
 
-uint cropped_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
+uint cropped_decoding_tests(const mdjpeg::test_utils::Dimensions& src_dims,
                             const std::filesystem::path& test_imgs_dir,
                             const std::filesystem::path& output_subdir) {
 
-    using namespace mdjpeg_test_utils;
+    using namespace mdjpeg::test_utils;
 
     const Dimensions dst_dims {static_cast<uint16_t>(src_dims.width_px / 4),
                                static_cast<uint16_t>(src_dims.height_px / 4)};
@@ -134,7 +134,7 @@ uint cropped_decoding_tests(const mdjpeg_test_utils::Dimensions& src_dims,
         std::cout << "Cropped decoding test on \"" << file_path.filename().c_str() << "\"";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
-        JpegDecoder decoder;
+        mdjpeg::JpegDecoder decoder;
         decoder.assign(buff, size);
         std::unique_ptr<uint8_t[]> decoded_img = std::make_unique<uint8_t[]>(dst_dims.width_px * dst_dims.height_px);
 

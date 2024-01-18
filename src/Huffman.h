@@ -4,6 +4,8 @@
 #include <stdint.h>
 
 
+namespace mdjpeg {
+
 class JpegReader;
 
 
@@ -68,7 +70,7 @@ class Huffman {
             const HuffmanTable& operator[](uint8_t idx) const {
 
                 if (idx == 0) {
-                    
+
                     return dc;
                 }
 
@@ -78,7 +80,7 @@ class Huffman {
             HuffmanTable& operator[](uint8_t idx) {
 
                 if (idx == 0) {
-                    
+
                     return dc;
                 }
 
@@ -95,3 +97,5 @@ class Huffman {
 
         static int16_t get_dct_coeff(JpegReader& reader, uint8_t length) noexcept;
 };
+
+}  // namespace mdjpeg

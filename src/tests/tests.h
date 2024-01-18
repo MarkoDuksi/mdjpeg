@@ -48,7 +48,7 @@
 /// images are desired as references for future validations, the checksums list
 /// can be updated by running `make tests-update`.
 uint full_frame_dc_decoding_tests(
-    const mdjpeg_test_utils::Dimensions& src_dims,
+    const mdjpeg::test_utils::Dimensions& src_dims,
     const std::filesystem::path& test_imgs_dir,
     const std::filesystem::path& output_subdir = "decoded_DC-only"
 );
@@ -80,7 +80,7 @@ uint full_frame_dc_decoding_tests(
 /// checksums by running `make tests-validate` to obtain the final passed/failed
 /// verdict.
 uint full_frame_decoding_tests(
-    const mdjpeg_test_utils::Dimensions& src_dims,
+    const mdjpeg::test_utils::Dimensions& src_dims,
     const std::filesystem::path& test_imgs_dir,
     const std::filesystem::path& output_subdir = "decoded_full_scale"
 );
@@ -113,7 +113,7 @@ uint full_frame_decoding_tests(
 /// against the checksums by running `make tests-validate` to obtain the final
 /// passed/failed verdict.
 uint cropped_decoding_tests(
-    const mdjpeg_test_utils::Dimensions& src_dims,
+    const mdjpeg::test_utils::Dimensions& src_dims,
     const std::filesystem::path& test_imgs_dir,
     const std::filesystem::path& output_subdir = "decoded_cropped"
 );
@@ -154,7 +154,7 @@ bool downscaling_test(const uint8_t fill_value,
                       const std::filesystem::path& test_imgs_dir,
                       const std::filesystem::path& output_subdir = "downscaling_diag") {
 
-    using namespace mdjpeg_test_utils;
+    using namespace mdjpeg::test_utils;
 
     const Dimensions src_dims {SRC_WIDTH_PX, SRC_HEIGHT_PX};
     const Dimensions dst_dims {DST_WIDTH_PX, DST_HEIGHT_PX};
@@ -171,7 +171,7 @@ bool downscaling_test(const uint8_t fill_value,
 
     uint8_t dst_array[DST_WIDTH_PX * DST_HEIGHT_PX] {};
 
-    DownscalingBlockWriter<DST_WIDTH_PX, DST_HEIGHT_PX> writer;
+    mdjpeg::DownscalingBlockWriter<DST_WIDTH_PX, DST_HEIGHT_PX> writer;
     writer.init(dst_array, SRC_WIDTH_PX, SRC_HEIGHT_PX);
 
     for (uint i = 0; i < src_dims.width_blk * src_dims.height_blk; ++i) {
@@ -202,7 +202,7 @@ bool downscaling_test(const uint8_t fill_value,
                                                "_with_fill_value_" +
                                                std::to_string(static_cast<uint>(fill_value)) +
                                                ".pgm";
-        
+
         if (!write_as_pgm(output_dir / filename, dst_array, dst_dims.width_px, dst_dims.height_px)) {
 
             std::cout << ": FAILED writing output\n";
@@ -297,7 +297,7 @@ template <uint SRC_WIDTH_PX, uint SRC_HEIGHT_PX, uint DST_WIDTH_PX, uint DST_HEI
 uint downscaling_decoding_test(const std::filesystem::path& test_imgs_dir,
                                const std::filesystem::path& output_subdir = "decoded_downscaled") {
 
-    using namespace mdjpeg_test_utils;
+    using namespace mdjpeg::test_utils;
 
     const Dimensions src_dims {SRC_WIDTH_PX, SRC_HEIGHT_PX};
     assert(src_dims.is_8x8_multiple() && "invalid input dimensions (not multiples of 8)");
@@ -318,9 +318,9 @@ uint downscaling_decoding_test(const std::filesystem::path& test_imgs_dir,
                   << " (" << src_dims.to_str() << " -> " << dst_dims.to_str() << ")";
 
         const auto [buff, size] = read_raw_jpeg_from_file(file_path);
-        JpegDecoder decoder;
+        mdjpeg::JpegDecoder decoder;
         decoder.assign(buff, size);
-        DownscalingBlockWriter<DST_WIDTH_PX, DST_HEIGHT_PX> writer;
+        mdjpeg::DownscalingBlockWriter<DST_WIDTH_PX, DST_HEIGHT_PX> writer;
 
         uint8_t decoded_img[DST_WIDTH_PX * DST_HEIGHT_PX] {};
         if (decoder.luma_decode(decoded_img, {0, 0, SRC_WIDTH_PX / 8 , SRC_HEIGHT_PX / 8}, writer)) {

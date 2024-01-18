@@ -8,7 +8,7 @@
 #include <fmt/core.h>
 
 
-std::vector<std::filesystem::path> mdjpeg_test_utils::get_input_img_paths(const std::filesystem::path& input_dir) {
+std::vector<std::filesystem::path> mdjpeg::test_utils::get_input_img_paths(const std::filesystem::path& input_dir) {
 
     std::vector<std::filesystem::path> input_files_paths;
 
@@ -30,10 +30,10 @@ std::vector<std::filesystem::path> mdjpeg_test_utils::get_input_img_paths(const 
     return input_files_paths;
 }
 
-std::pair<uint8_t*, size_t> mdjpeg_test_utils::read_raw_jpeg_from_file(const std::filesystem::path& file_path) {
+std::pair<uint8_t*, size_t> mdjpeg::test_utils::read_raw_jpeg_from_file(const std::filesystem::path& file_path) {
 
     std::ifstream file(file_path, std::ios::in | std::ios::binary | std::ios::ate);
-    
+
     if (!file.is_open()) {
 
         std::cout << "Error opening input file: " << file_path.c_str() << "\n";
@@ -62,7 +62,7 @@ std::pair<uint8_t*, size_t> mdjpeg_test_utils::read_raw_jpeg_from_file(const std
     return {reinterpret_cast<uint8_t*>(raw_jpeg), size};
 }
 
-uint mdjpeg_test_utils::max_abs_error(const uint8_t* const array, const Dimensions& dims, const uint8_t value) {
+uint mdjpeg::test_utils::max_abs_error(const uint8_t* const array, const Dimensions& dims, const uint8_t value) {
 
     int max_absolute_error = 0;
 
@@ -78,7 +78,7 @@ uint mdjpeg_test_utils::max_abs_error(const uint8_t* const array, const Dimensio
     return max_absolute_error;
 }
 
-bool mdjpeg_test_utils::write_as_pgm(const std::filesystem::path& file_path, const uint8_t* const pixel_data, const uint16_t width_px, const uint16_t height_px) {
+bool mdjpeg::test_utils::write_as_pgm(const std::filesystem::path& file_path, const uint8_t* const pixel_data, const uint16_t width_px, const uint16_t height_px) {
 
     std::ofstream file(file_path);
 
@@ -108,7 +108,7 @@ bool mdjpeg_test_utils::write_as_pgm(const std::filesystem::path& file_path, con
     return true;
 }
 
-void mdjpeg_test_utils::print_as_pgm(const uint8_t* const pixel_data, const uint16_t width_px, const uint16_t height_px) {
+void mdjpeg::test_utils::print_as_pgm(const uint8_t* const pixel_data, const uint16_t width_px, const uint16_t height_px) {
 
     std::cout << "P2\n" << width_px << " " << height_px << " " << 255 << "\n";
 

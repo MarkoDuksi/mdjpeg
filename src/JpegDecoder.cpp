@@ -6,6 +6,8 @@
 #include "transform.h"
 
 
+using namespace mdjpeg;
+
 bool JpegDecoder::assign(const uint8_t* const buff, const size_t size) noexcept {
 
     m_reader.set(buff, size);
@@ -58,9 +60,9 @@ bool JpegDecoder::luma_decode(uint8_t* const dst, const BoundingBox& roi_blk, Bl
             }
 
             m_dequantizer.transform(block_8x8);
-            mdjpeg_transform::reverse_zig_zag(block_8x8);
-            mdjpeg_transform::idct(block_8x8);
-            mdjpeg_transform::range_normalize(block_8x8);
+            transform::reverse_zig_zag(block_8x8);
+            transform::idct(block_8x8);
+            transform::range_normalize(block_8x8);
             writer.write(block_8x8);
         }
 
@@ -76,7 +78,7 @@ bool JpegDecoder::dc_luma_decode(uint8_t* const dst, const BoundingBox& roi_blk)
 
         return false;
     }
-    
+   
     int block_8x8[64] {0};
 
     const uint16_t src_width_blk = static_cast<uint16_t>(m_frame_info.width_px + 7) / 8;

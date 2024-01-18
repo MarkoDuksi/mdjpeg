@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
 
     /////////////////////////////
     // start downscaling tests //
-    
+
     failed_batched_tests_count = recursive_downscaling_test<120, 120, 120, 120>(0, test_imgs_dir);
     std::cout << "Failed tests count in this batch: " << failed_batched_tests_count << "\n\n";
     total_failed_tests_count += failed_batched_tests_count;
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
     // start decompression tests //
 
     // full frame, 1:1 scale //
-    
+
     // synthetic test images (small size, tracked by git)
     failed_batched_tests_count = full_frame_decoding_tests({160, 120}, test_imgs_dir);
     std::cout << "Failed tests count in this batch: " << failed_batched_tests_count << "\n\n";
@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
     // std::cout << "Failed tests count in this batch: " << failed_batched_tests_count << "\n\n";
 
     // full frame, 1:8 scale (DC-only) //
-    
+
     // synthetic test images (small size, tracked by git)
     failed_batched_tests_count = full_frame_dc_decoding_tests({160, 120}, test_imgs_dir);
     std::cout << "Failed tests count in this batch: " << failed_batched_tests_count << "\n\n";

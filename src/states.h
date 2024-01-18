@@ -3,6 +3,8 @@
 #include <stdint.h>
 
 
+namespace mdjpeg {
+
 /// \brief All the different state IDs for identifying state machine's various states.
 ///
 /// \note Marker values used for state IDs compiled from
@@ -161,7 +163,7 @@ class ConcreteState : public State {
 
             return state_id;
         }
-        
+
         /// \brief Generic version of the step function.
         ///
         /// \note Empty body is provided only to satisfy the linker but
@@ -255,3 +257,5 @@ void ConcreteState<StateID::SOF0>::parse_header(JpegReader& reader) noexcept;
 /// \note Modes other than baseline JPEG are not supported.
 template<>
 void ConcreteState<StateID::SOS>::parse_header(JpegReader& reader) noexcept;
+
+}  // namespace mdjpeg

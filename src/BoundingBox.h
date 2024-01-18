@@ -4,6 +4,8 @@
 #include <algorithm>
 
 
+namespace mdjpeg {
+
 /// \brief POD class describing rectangular frame subregion.
 struct BoundingBox {
 
@@ -95,3 +97,5 @@ struct BoundingBox {
         /// for the entire bounding box to fit within `outer_bounds`.
         bool expand_to_square(const BoundingBox& outer_bounds) noexcept;
 };
+
+}  // namespace mdjpeg

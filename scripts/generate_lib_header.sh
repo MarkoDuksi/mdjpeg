@@ -9,7 +9,7 @@ working_tree_status=$(git status --porcelain)
 for file in $(find ${SRC_DIR} -type f -name '*.h' -a \! -name 'tests.h')
 do
 	mkdir -p $(dirname api_h.tmp/$file)
-	grep -Ev '^(#include <|class\s+\w+;)' $file > api_h.tmp/$file
+	grep -Ev '^(#include <)' $file > api_h.tmp/$file
 done
 
 cp src/protoapi.h api_h.tmp/src/
@@ -24,8 +24,6 @@ printf "// Based on commit: ${commit}" >> api_h.tmp/mdjpeg.h
 printf "\n\n#pragma once\n\n" >> api_h.tmp/mdjpeg.h
 
 find src -type f -name '*.h' -a \! -name 'tests.h' -exec grep -E '^#include <' '{}' \; | sort --unique >> api_h.tmp/mdjpeg.h
-printf "\n\n" >> api_h.tmp/mdjpeg.h
-find src -type f -name '*.h' -a \! -name 'tests.h' -exec grep -E '^class\s+\w+;' '{}' \; | sort --unique >> api_h.tmp/mdjpeg.h
 
 g++ -E -P -C -nostdinc api_h.tmp/src/protoapi.h >> api_h.tmp/mdjpeg.h
 

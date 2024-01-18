@@ -5,6 +5,8 @@
 #include <optional>
 
 
+namespace mdjpeg {
+
 /// \brief Provides sequential reading facilities specific to JFIF data.
 ///
 /// \note \e ECS in the following documentation refers to entropy-coded segment.
@@ -61,7 +63,7 @@ class JpegReader {
         ///
         /// \return  Bit value on success, ReadError::ECS_BIT otherwise.
         int8_t read_bit() noexcept;
-        
+
     private:
 
         const uint8_t* m_buff_start {nullptr};
@@ -70,3 +72,5 @@ class JpegReader {
         const uint8_t* m_buff_current_byte {nullptr};
         uint8_t m_current_bit_pos {};
 };
+
+}  // namespace mdjpeg
