@@ -50,7 +50,9 @@ std::pair<uint8_t*, size_t> mdjpeg_test_utils::read_raw_jpeg_from_file(const std
     if (file.gcount() != size) {
 
         std::cout << "Error reading input file: " << file_path.c_str() << "\n";
+
         file.close();
+        delete[] raw_jpeg;
 
         return {nullptr, 0};
     }
